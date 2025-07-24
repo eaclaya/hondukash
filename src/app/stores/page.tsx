@@ -5,7 +5,8 @@ import { Store, CreateStoreRequest, UpdateStoreRequest } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { StoreForm } from '@/components/stores/StoreForm';
-import { Plus, Edit, Trash2, MapPin, Phone, Mail, User } from 'lucide-react';
+import { Plus, Edit, Trash2, MapPin, Phone, Mail, User, Store as StoreIcon, MoreVertical } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 export default function StoresPage() {
   const [stores, setStores] = useState<Store[]>([]);
@@ -135,105 +136,140 @@ export default function StoresPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      {/* Header */}
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Stores</h1>
-          <p className="text-muted-foreground">Manage your store locations and settings</p>
+          <h1 className="text-3xl font-bold text-slate-900">Stores</h1>
+          <p className="text-slate-600 mt-1">Manage your store locations and settings</p>
         </div>
-        <Button onClick={handleCreateStore}>
+        <Button onClick={handleCreateStore} className="btn-primary-modern">
           <Plus className="h-4 w-4 mr-2" />
           Add Store
         </Button>
       </div>
 
       {stores.length === 0 ? (
-        <div className="border rounded-lg p-12 text-center">
-          <div className="mx-auto w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-4">
-            <MapPin className="h-12 w-12 text-muted-foreground" />
+        {/* Empty State */}
+        <div className="card-modern p-12 text-center">
+          <div className="mx-auto w-20 h-20 bg-slate-100 rounded-2xl flex items-center justify-center mb-6">
+            <StoreIcon className="h-10 w-10 text-slate-400" />
           </div>
-          <h3 className="text-lg font-semibold mb-2">No stores found</h3>
-          <p className="text-muted-foreground mb-4">Get started by creating your first store location.</p>
-          <Button onClick={handleCreateStore}>
+          <h3 className="text-xl font-semibold text-slate-900 mb-2">No stores found</h3>
+          <p className="text-slate-600 mb-6 max-w-md mx-auto">Get started by creating your first store location to begin managing your business operations.</p>
+          <Button onClick={handleCreateStore} className="btn-primary-modern">
             <Plus className="h-4 w-4 mr-2" />
             Add Store
           </Button>
         </div>
       ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {/* Stores Grid */}
+        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
           {stores.map((store) => (
-            <div key={store.id} className="border rounded-lg p-6 space-y-4">
-              <div className="flex justify-between items-start">
-                <div>
-                  <h3 className="text-lg font-semibold">{store.name}</h3>
-                  {store.code && (
-                    <p className="text-sm text-muted-foreground">Code: {store.code}</p>
-                  )}
+            <div key={store.id} className="card-modern p-6 space-y-4 group">
+              <div className="flex items-start justify-between">
+                <div className="flex items-start space-x-3">
+                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
+                    <StoreIcon className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-slate-900">{store.name}</h3>
+                    {store.code && (
+                      <p className="text-sm text-slate-500 font-mono bg-slate-100 px-2 py-1 rounded-md inline-block">
+                        {store.code}
+                      </p>
+                    )}
+                  </div>
                 </div>
-                <div className="flex space-x-2">
-                  <Button variant="ghost" size="sm" onClick={() => handleEditStore(store)}>
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => handleDelete(store.id)}
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
+                
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => handleEditStore(store)}>
+                      <Edit className="mr-2 h-4 w-4" />
+                      Edit Store
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={() => handleDelete(store.id)}
+                      className="text-red-600 focus:text-red-600"
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete Store
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
 
               {store.description && (
-                <p className="text-sm text-muted-foreground">{store.description}</p>
+                <p className="text-sm text-slate-600 bg-slate-50 p-3 rounded-xl">{store.description}</p>
               )}
 
-              <div className="space-y-2">
+              {/* Store Details */}
+              <div className="space-y-3">
                 {store.location && (
-                  <div className="flex items-center text-sm text-muted-foreground">
-                    <MapPin className="h-4 w-4 mr-2 flex-shrink-0" />
+                  <div className="flex items-center text-sm text-slate-600">
+                    <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center mr-3">
+                      <MapPin className="h-4 w-4 text-slate-500" />
+                    </div>
                     <span>{store.location}</span>
                   </div>
                 )}
 
                 {store.phone && (
-                  <div className="flex items-center text-sm text-muted-foreground">
-                    <Phone className="h-4 w-4 mr-2 flex-shrink-0" />
+                  <div className="flex items-center text-sm text-slate-600">
+                    <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center mr-3">
+                      <Phone className="h-4 w-4 text-slate-500" />
+                    </div>
                     <span>{store.phone}</span>
                   </div>
                 )}
 
                 {store.email && (
-                  <div className="flex items-center text-sm text-muted-foreground">
-                    <Mail className="h-4 w-4 mr-2 flex-shrink-0" />
+                  <div className="flex items-center text-sm text-slate-600">
+                    <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center mr-3">
+                      <Mail className="h-4 w-4 text-slate-500" />
+                    </div>
                     <span>{store.email}</span>
                   </div>
                 )}
 
                 {store.managerName && (
-                  <div className="flex items-center text-sm text-muted-foreground">
-                    <User className="h-4 w-4 mr-2 flex-shrink-0" />
+                  <div className="flex items-center text-sm text-slate-600">
+                    <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center mr-3">
+                      <User className="h-4 w-4 text-slate-500" />
+                    </div>
                     <span>{store.managerName}</span>
                   </div>
                 )}
               </div>
 
-              <div className="flex justify-between items-center pt-4 border-t">
-                <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                  <span>{store.currency}</span>
-                  <span>{(store.taxRate * 100).toFixed(1)}% tax</span>
+              {/* Store Stats */}
+              <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+                <div className="flex items-center space-x-4 text-sm">
+                  <div className="flex items-center space-x-1">
+                    <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                    <span className="text-slate-600">{store.currency}</span>
+                  </div>
+                  <div className="flex items-center space-x-1">
+                    <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                    <span className="text-slate-600">{(store.taxRate * 100).toFixed(1)}% tax</span>
+                  </div>
                 </div>
-                <div className={`px-2 py-1 text-xs rounded-full ${
+                <div className={`px-3 py-1 text-xs font-medium rounded-full ${
                   store.isActive 
-                    ? 'bg-green-100 text-green-800' 
-                    : 'bg-gray-100 text-gray-800'
+                    ? 'badge-success' 
+                    : 'badge-error'
                 }`}>
                   {store.isActive ? 'Active' : 'Inactive'}
                 </div>
               </div>
 
-              <div className="flex justify-between items-center text-xs text-muted-foreground pt-2 border-t">
-                <span>Invoice: {store.invoicePrefix}-{store.invoiceCounter.toString().padStart(4, '0')}</span>
+              {/* Invoice Info */}
+              <div className="flex justify-between items-center text-xs text-slate-500 pt-2 border-t border-slate-100">
+                <span>Next: {store.invoicePrefix}-{store.invoiceCounter.toString().padStart(4, '0')}</span>
                 <span>Created: {new Date(store.createdAt).toLocaleDateString()}</span>
               </div>
             </div>

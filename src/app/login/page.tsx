@@ -78,23 +78,28 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="max-w-md w-full space-y-8 p-8">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+      <div className="max-w-md w-full space-y-8">
+        {/* Login Card */}
+        <div className="card-modern p-8">
         <div className="text-center">
-          <h2 className="text-3xl font-bold">Sign in to {tenant.name}</h2>
-          <p className="mt-2 text-gray-600">Access your ERP dashboard</p>
+            <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+              <div className="text-2xl font-bold text-white">H</div>
+            </div>
+            <h2 className="text-2xl font-bold text-slate-900">Welcome back</h2>
+            <p className="mt-2 text-slate-600">Sign in to {tenant.name}</p>
         </div>
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {error && (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-md">
-              <p className="text-red-800 text-sm">{error}</p>
+            <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
+              <p className="text-red-800 text-sm font-medium">{error}</p>
             </div>
           )}
 
           <div className="space-y-4">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="email" className="block text-sm font-semibold text-slate-700 mb-2">
                 Email address
               </label>
               <input
@@ -105,13 +110,13 @@ export default function LoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="input-modern"
                 placeholder="Enter your email"
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="password" className="block text-sm font-semibold text-slate-700 mb-2">
                 Password
               </label>
               <input
@@ -122,24 +127,36 @@ export default function LoginPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="input-modern"
                 placeholder="Enter your password"
               />
             </div>
           </div>
 
           <div>
-            <Button type="submit" disabled={isLoading} className="w-full">
+            <Button type="submit" disabled={isLoading} className="w-full btn-primary-modern h-12">
               {isLoading ? 'Signing in...' : 'Sign in'}
             </Button>
           </div>
 
-          <div className="text-center">
-            <p className="text-sm text-gray-600">
-              Default password: <code className="bg-gray-100 px-1 rounded">Pa$$w0rd!</code>
+          <div className="text-center space-y-2">
+            <p className="text-sm text-slate-600">
+              Default password: <code className="bg-slate-100 px-2 py-1 rounded-lg font-mono text-xs">Pa$$w0rd!</code>
             </p>
-            <p className="text-xs text-gray-500 mt-1">Please change your password after first login</p>
+            <p className="text-xs text-slate-500">Please change your password after first login</p>
           </div>
+        </form>
+        </div>
+        
+        {/* Footer Info */}
+        <div className="text-center space-y-2">
+          <p className="text-xs text-slate-400">Domain: {tenant.domain}</p>
+          {tenant.databaseContext?.hasConnection && (
+            <div className="flex items-center justify-center space-x-1">
+              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              <p className="text-xs text-green-600 font-medium">Database connected</p>
+            </div>
+          )}
         </form>
       </div>
     </div>

@@ -1,5 +1,7 @@
 import { Client, ClientContact, CreateClientRequest, UpdateClientRequest, CreateClientContactRequest, UpdateClientContactRequest } from '@/lib/types';
-import { TenantService } from './tenantService';
+import { getTenantDb } from '@/lib/turso';
+import { clients, clientContacts } from '@/lib/db/schema/tenant';
+import { eq, and, desc } from 'drizzle-orm';
 
 interface ServiceResult<T> {
   success: boolean;
@@ -14,60 +16,46 @@ export class ClientService {
 
   static async getAllClients(domain: string, storeId?: number): Promise<ServiceResult<Client[]>> {
     try {
-      const db = await TenantService.connectToTenantDatabaseByDomain(domain);
+      const db = await getTenantDb(domain);
 
-      let query = `
-        SELECT
-          id, store_id as storeId, name, client_type as clientType,
-          primary_contact_name as primaryContactName, email, phone, mobile,
-          company_registration_number as companyRegistrationNumber,
-          tax_id as taxId, industry, website,
-          address, city, state, country, postal_code as postalCode,
-          credit_limit as creditLimit, payment_terms as paymentTerms,
-          discount_percentage as discountPercentage,
-          notes, is_active as isActive, created_at as createdAt, updated_at as updatedAt
-        FROM clients
-        WHERE 1=1
-      `;
-
-      const params: any[] = [];
-
+      const queryConditions = [];
       if (storeId) {
-        query += ' AND store_id = ?';
-        params.push(storeId);
+        queryConditions.push(eq(clients.storeId, storeId));
       }
 
-      query += ' ORDER BY created_at DESC';
+      const clientsResult = await db.query.clients.findMany({
+        where: queryConditions.length > 0 ? and(...queryConditions) : undefined,
+        orderBy: [desc(clients.createdAt)]
+      });
 
-      const result = await db.execute({ sql: query, args: params });
-      const clients = result.rows.map((row) => ({
-        id: Number(row.id),
-        storeId: Number(row.storeId),
-        name: String(row.name),
-        clientType: String(row.clientType) as 'individual' | 'company',
-        primaryContactName: row.primaryContactName ? String(row.primaryContactName) : undefined,
-        email: row.email ? String(row.email) : undefined,
-        phone: row.phone ? String(row.phone) : undefined,
-        mobile: row.mobile ? String(row.mobile) : undefined,
-        companyRegistrationNumber: row.companyRegistrationNumber ? String(row.companyRegistrationNumber) : undefined,
-        taxId: row.taxId ? String(row.taxId) : undefined,
-        industry: row.industry ? String(row.industry) : undefined,
-        website: row.website ? String(row.website) : undefined,
-        address: row.address ? String(row.address) : undefined,
-        city: row.city ? String(row.city) : undefined,
-        state: row.state ? String(row.state) : undefined,
-        country: String(row.country),
-        postalCode: row.postalCode ? String(row.postalCode) : undefined,
-        creditLimit: Number(row.creditLimit),
-        paymentTerms: Number(row.paymentTerms),
-        discountPercentage: Number(row.discountPercentage),
-        notes: row.notes ? String(row.notes) : undefined,
-        isActive: Boolean(row.isActive),
-        createdAt: String(row.createdAt),
-        updatedAt: String(row.updatedAt)
+      const mappedClients: Client[] = clientsResult.map((client) => ({
+        id: client.id,
+        storeId: client.storeId,
+        name: client.name,
+        clientType: client.clientType,
+        primaryContactName: client.primaryContactName || undefined,
+        email: client.email || undefined,
+        phone: client.phone || undefined,
+        mobile: client.mobile || undefined,
+        companyRegistrationNumber: client.companyRegistrationNumber || undefined,
+        taxId: client.taxId || undefined,
+        industry: client.industry || undefined,
+        website: client.website || undefined,
+        address: client.address || undefined,
+        city: client.city || undefined,
+        state: client.state || undefined,
+        country: client.country,
+        postalCode: client.postalCode || undefined,
+        creditLimit: client.creditLimit,
+        paymentTerms: client.paymentTerms,
+        discountPercentage: client.discountPercentage,
+        notes: client.notes || undefined,
+        isActive: client.isActive,
+        createdAt: client.createdAt,
+        updatedAt: client.updatedAt
       }));
 
-      return { success: true, data: clients };
+      return { success: true, data: mappedClients };
     } catch (error: any) {
       console.error('ClientService.getAllClients error:', error);
       return { success: false, error: error.message };
@@ -78,55 +66,42 @@ export class ClientService {
     try {
       const db = await getTenantDb(domain);
 
-      const query = `
-        SELECT
-          id, store_id as storeId, name, client_type as clientType,
-          primary_contact_name as primaryContactName, email, phone, mobile,
-          company_registration_number as companyRegistrationNumber,
-          tax_id as taxId, industry, website,
-          address, city, state, country, postal_code as postalCode,
-          credit_limit as creditLimit, payment_terms as paymentTerms,
-          discount_percentage as discountPercentage,
-          notes, is_active as isActive, created_at as createdAt, updated_at as updatedAt
-        FROM clients
-        WHERE id = ?
-      `;
+      const client = await db.query.clients.findFirst({
+        where: eq(clients.id, clientId)
+      });
 
-      const result = await db.execute({ sql: query, args: [clientId] });
-
-      if (result.rows.length === 0) {
+      if (!client) {
         return { success: false, error: 'Client not found' };
       }
 
-      const row = result.rows[0];
-      const client: Client = {
-        id: Number(row.id),
-        storeId: Number(row.storeId),
-        name: String(row.name),
-        clientType: String(row.clientType) as 'individual' | 'company',
-        primaryContactName: row.primaryContactName ? String(row.primaryContactName) : undefined,
-        email: row.email ? String(row.email) : undefined,
-        phone: row.phone ? String(row.phone) : undefined,
-        mobile: row.mobile ? String(row.mobile) : undefined,
-        companyRegistrationNumber: row.companyRegistrationNumber ? String(row.companyRegistrationNumber) : undefined,
-        taxId: row.taxId ? String(row.taxId) : undefined,
-        industry: row.industry ? String(row.industry) : undefined,
-        website: row.website ? String(row.website) : undefined,
-        address: row.address ? String(row.address) : undefined,
-        city: row.city ? String(row.city) : undefined,
-        state: row.state ? String(row.state) : undefined,
-        country: String(row.country),
-        postalCode: row.postalCode ? String(row.postalCode) : undefined,
-        creditLimit: Number(row.creditLimit),
-        paymentTerms: Number(row.paymentTerms),
-        discountPercentage: Number(row.discountPercentage),
-        notes: row.notes ? String(row.notes) : undefined,
-        isActive: Boolean(row.isActive),
-        createdAt: String(row.createdAt),
-        updatedAt: String(row.updatedAt)
+      const mappedClient: Client = {
+        id: client.id,
+        storeId: client.storeId,
+        name: client.name,
+        clientType: client.clientType,
+        primaryContactName: client.primaryContactName || undefined,
+        email: client.email || undefined,
+        phone: client.phone || undefined,
+        mobile: client.mobile || undefined,
+        companyRegistrationNumber: client.companyRegistrationNumber || undefined,
+        taxId: client.taxId || undefined,
+        industry: client.industry || undefined,
+        website: client.website || undefined,
+        address: client.address || undefined,
+        city: client.city || undefined,
+        state: client.state || undefined,
+        country: client.country,
+        postalCode: client.postalCode || undefined,
+        creditLimit: client.creditLimit,
+        paymentTerms: client.paymentTerms,
+        discountPercentage: client.discountPercentage,
+        notes: client.notes || undefined,
+        isActive: client.isActive,
+        createdAt: client.createdAt,
+        updatedAt: client.updatedAt
       };
 
-      return { success: true, data: client };
+      return { success: true, data: mappedClient };
     } catch (error: any) {
       console.error('ClientService.getClientById error:', error);
       return { success: false, error: error.message };
@@ -137,43 +112,38 @@ export class ClientService {
     try {
       const db = await getTenantDb(domain);
 
-      const query = `
-        INSERT INTO clients (
-          store_id, name, client_type, primary_contact_name, email, phone, mobile,
-          company_registration_number, tax_id, industry, website,
-          address, city, state, country, postal_code,
-          credit_limit, payment_terms, discount_percentage, notes
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `;
+      const newClient = await db
+        .insert(clients)
+        .values({
+          storeId: clientData.storeId || 1,
+          name: clientData.name,
+          clientType: clientData.clientType,
+          primaryContactName: clientData.primaryContactName || null,
+          email: clientData.email || null,
+          phone: clientData.phone || null,
+          mobile: clientData.mobile || null,
+          companyRegistrationNumber: clientData.companyRegistrationNumber || null,
+          taxId: clientData.taxId || null,
+          industry: clientData.industry || null,
+          website: clientData.website || null,
+          address: clientData.address || null,
+          city: clientData.city || null,
+          state: clientData.state || null,
+          country: clientData.country || 'Honduras',
+          postalCode: clientData.postalCode || null,
+          creditLimit: clientData.creditLimit || 0,
+          paymentTerms: clientData.paymentTerms || 30,
+          discountPercentage: clientData.discountPercentage || 0,
+          notes: clientData.notes || null
+        })
+        .returning();
 
-      const values = [
-        clientData.storeId || 1,
-        clientData.name,
-        clientData.clientType,
-        clientData.primaryContactName || null,
-        clientData.email || null,
-        clientData.phone || null,
-        clientData.mobile || null,
-        clientData.companyRegistrationNumber || null,
-        clientData.taxId || null,
-        clientData.industry || null,
-        clientData.website || null,
-        clientData.address || null,
-        clientData.city || null,
-        clientData.state || null,
-        clientData.country || 'Honduras',
-        clientData.postalCode || null,
-        clientData.creditLimit || 0,
-        clientData.paymentTerms || 30,
-        clientData.discountPercentage || 0,
-        clientData.notes || null
-      ];
-
-      const result = await db.execute({ sql: query, args: values });
-      const clientId = Number(result.lastInsertRowid);
+      if (!newClient[0]) {
+        return { success: false, error: 'Failed to create client' };
+      }
 
       // Fetch the created client
-      const clientResult = await this.getClientById(domain, clientId);
+      const clientResult = await this.getClientById(domain, newClient[0].id);
       if (!clientResult.success || !clientResult.data) {
         return { success: false, error: 'Failed to fetch created client' };
       }
@@ -189,114 +159,35 @@ export class ClientService {
     try {
       const db = await getTenantDb(domain);
 
-      const fields: string[] = [];
-      const values: any[] = [];
+      const updateData: any = {};
 
-      if (clientData.name !== undefined) {
-        fields.push('name = ?');
-        values.push(clientData.name);
-      }
+      if (clientData.name !== undefined) updateData.name = clientData.name;
+      if (clientData.clientType !== undefined) updateData.clientType = clientData.clientType;
+      if (clientData.primaryContactName !== undefined) updateData.primaryContactName = clientData.primaryContactName;
+      if (clientData.email !== undefined) updateData.email = clientData.email;
+      if (clientData.phone !== undefined) updateData.phone = clientData.phone;
+      if (clientData.mobile !== undefined) updateData.mobile = clientData.mobile;
+      if (clientData.companyRegistrationNumber !== undefined) updateData.companyRegistrationNumber = clientData.companyRegistrationNumber;
+      if (clientData.taxId !== undefined) updateData.taxId = clientData.taxId;
+      if (clientData.industry !== undefined) updateData.industry = clientData.industry;
+      if (clientData.website !== undefined) updateData.website = clientData.website;
+      if (clientData.address !== undefined) updateData.address = clientData.address;
+      if (clientData.city !== undefined) updateData.city = clientData.city;
+      if (clientData.state !== undefined) updateData.state = clientData.state;
+      if (clientData.country !== undefined) updateData.country = clientData.country;
+      if (clientData.postalCode !== undefined) updateData.postalCode = clientData.postalCode;
+      if (clientData.creditLimit !== undefined) updateData.creditLimit = clientData.creditLimit;
+      if (clientData.paymentTerms !== undefined) updateData.paymentTerms = clientData.paymentTerms;
+      if (clientData.discountPercentage !== undefined) updateData.discountPercentage = clientData.discountPercentage;
+      if (clientData.notes !== undefined) updateData.notes = clientData.notes;
 
-      if (clientData.clientType !== undefined) {
-        fields.push('client_type = ?');
-        values.push(clientData.clientType);
-      }
-
-      if (clientData.primaryContactName !== undefined) {
-        fields.push('primary_contact_name = ?');
-        values.push(clientData.primaryContactName);
-      }
-
-      if (clientData.email !== undefined) {
-        fields.push('email = ?');
-        values.push(clientData.email);
-      }
-
-      if (clientData.phone !== undefined) {
-        fields.push('phone = ?');
-        values.push(clientData.phone);
-      }
-
-      if (clientData.mobile !== undefined) {
-        fields.push('mobile = ?');
-        values.push(clientData.mobile);
-      }
-
-      if (clientData.companyRegistrationNumber !== undefined) {
-        fields.push('company_registration_number = ?');
-        values.push(clientData.companyRegistrationNumber);
-      }
-
-      if (clientData.taxId !== undefined) {
-        fields.push('tax_id = ?');
-        values.push(clientData.taxId);
-      }
-
-      if (clientData.industry !== undefined) {
-        fields.push('industry = ?');
-        values.push(clientData.industry);
-      }
-
-      if (clientData.website !== undefined) {
-        fields.push('website = ?');
-        values.push(clientData.website);
-      }
-
-      if (clientData.address !== undefined) {
-        fields.push('address = ?');
-        values.push(clientData.address);
-      }
-
-      if (clientData.city !== undefined) {
-        fields.push('city = ?');
-        values.push(clientData.city);
-      }
-
-      if (clientData.state !== undefined) {
-        fields.push('state = ?');
-        values.push(clientData.state);
-      }
-
-      if (clientData.country !== undefined) {
-        fields.push('country = ?');
-        values.push(clientData.country);
-      }
-
-      if (clientData.postalCode !== undefined) {
-        fields.push('postal_code = ?');
-        values.push(clientData.postalCode);
-      }
-
-      if (clientData.creditLimit !== undefined) {
-        fields.push('credit_limit = ?');
-        values.push(clientData.creditLimit);
-      }
-
-      if (clientData.paymentTerms !== undefined) {
-        fields.push('payment_terms = ?');
-        values.push(clientData.paymentTerms);
-      }
-
-      if (clientData.discountPercentage !== undefined) {
-        fields.push('discount_percentage = ?');
-        values.push(clientData.discountPercentage);
-      }
-
-      if (clientData.notes !== undefined) {
-        fields.push('notes = ?');
-        values.push(clientData.notes);
-      }
-
-      if (fields.length === 0) {
+      if (Object.keys(updateData).length === 0) {
         return { success: false, error: 'No fields to update' };
       }
 
-      fields.push("updated_at = datetime('now', 'utc')");
-      values.push(clientData.id);
+      updateData.updatedAt = new Date().toISOString();
 
-      const query = `UPDATE clients SET ${fields.join(', ')} WHERE id = ?`;
-
-      await db.execute({ sql: query, args: values });
+      await db.update(clients).set(updateData).where(eq(clients.id, clientData.id));
 
       // Fetch the updated client
       const clientResult = await this.getClientById(domain, clientData.id);
@@ -315,8 +206,7 @@ export class ClientService {
     try {
       const db = await getTenantDb(domain);
 
-      const query = 'DELETE FROM clients WHERE id = ?';
-      await db.execute({ sql: query, args: [clientId] });
+      await db.delete(clients).where(eq(clients.id, clientId));
 
       return { success: true };
     } catch (error: any) {
@@ -333,46 +223,36 @@ export class ClientService {
     try {
       const db = await getTenantDb(domain);
 
-      const query = `
-        SELECT
-          id, client_id as clientId, contact_name as contactName, job_title as jobTitle, department,
-          email, phone, mobile, extension,
-          contact_type as contactType, can_make_purchases as canMakePurchases,
-          purchase_limit as purchaseLimit, requires_approval as requiresApproval,
-          preferred_contact_method as preferredContactMethod, language, timezone,
-          is_primary as isPrimary, is_active as isActive,
-          notes, created_at as createdAt, updated_at as updatedAt
-        FROM client_contacts
-        WHERE client_id = ?
-        ORDER BY is_primary DESC, created_at DESC
-      `;
+      const contacts = await db.query.clientContacts.findMany({
+        where: eq(clientContacts.clientId, clientId),
+        orderBy: [desc(clientContacts.isPrimary), desc(clientContacts.createdAt)]
+      });
 
-      const result = await db.execute({ sql: query, args: [clientId] });
-      const contacts = result.rows.map((row) => ({
-        id: Number(row.id),
-        clientId: Number(row.clientId),
-        contactName: String(row.contactName),
-        jobTitle: row.jobTitle ? String(row.jobTitle) : undefined,
-        department: row.department ? String(row.department) : undefined,
-        email: row.email ? String(row.email) : undefined,
-        phone: row.phone ? String(row.phone) : undefined,
-        mobile: row.mobile ? String(row.mobile) : undefined,
-        extension: row.extension ? String(row.extension) : undefined,
-        contactType: String(row.contactType) as ClientContact['contactType'],
-        canMakePurchases: Boolean(row.canMakePurchases),
-        purchaseLimit: row.purchaseLimit ? Number(row.purchaseLimit) : undefined,
-        requiresApproval: Boolean(row.requiresApproval),
-        preferredContactMethod: String(row.preferredContactMethod) as ClientContact['preferredContactMethod'],
-        language: String(row.language),
-        timezone: String(row.timezone),
-        isPrimary: Boolean(row.isPrimary),
-        isActive: Boolean(row.isActive),
-        notes: row.notes ? String(row.notes) : undefined,
-        createdAt: String(row.createdAt),
-        updatedAt: String(row.updatedAt)
+      const mappedContacts: ClientContact[] = contacts.map((contact) => ({
+        id: contact.id,
+        clientId: contact.clientId,
+        contactName: contact.contactName,
+        jobTitle: contact.jobTitle || undefined,
+        department: contact.department || undefined,
+        email: contact.email || undefined,
+        phone: contact.phone || undefined,
+        mobile: contact.mobile || undefined,
+        extension: contact.extension || undefined,
+        contactType: contact.contactType,
+        canMakePurchases: contact.canMakePurchases,
+        purchaseLimit: contact.purchaseLimit || undefined,
+        requiresApproval: contact.requiresApproval,
+        preferredContactMethod: contact.preferredContactMethod,
+        language: contact.language,
+        timezone: contact.timezone,
+        isPrimary: contact.isPrimary,
+        isActive: contact.isActive,
+        notes: contact.notes || undefined,
+        createdAt: contact.createdAt,
+        updatedAt: contact.updatedAt
       }));
 
-      return { success: true, data: contacts };
+      return { success: true, data: mappedContacts };
     } catch (error: any) {
       console.error('ClientService.getClientContacts error:', error);
       return { success: false, error: error.message };
@@ -383,84 +263,59 @@ export class ClientService {
     try {
       const db = await getTenantDb(domain);
 
-      const query = `
-        INSERT INTO client_contacts (
-          client_id, contact_name, job_title, department,
-          email, phone, mobile, extension,
-          contact_type, can_make_purchases, purchase_limit, requires_approval,
-          preferred_contact_method, language, timezone, is_primary, notes
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `;
+      const newContact = await db
+        .insert(clientContacts)
+        .values({
+          clientId: contactData.clientId!,
+          contactName: contactData.contactName,
+          jobTitle: contactData.jobTitle || null,
+          department: contactData.department || null,
+          email: contactData.email || null,
+          phone: contactData.phone || null,
+          mobile: contactData.mobile || null,
+          extension: contactData.extension || null,
+          contactType: contactData.contactType || 'employee',
+          canMakePurchases: contactData.canMakePurchases || true,
+          purchaseLimit: contactData.purchaseLimit || null,
+          requiresApproval: contactData.requiresApproval || false,
+          preferredContactMethod: contactData.preferredContactMethod || 'email',
+          language: contactData.language || 'es',
+          timezone: contactData.timezone || 'America/Tegucigalpa',
+          isPrimary: contactData.isPrimary || false,
+          notes: contactData.notes || null
+        })
+        .returning();
 
-      const values = [
-        contactData.clientId,
-        contactData.contactName,
-        contactData.jobTitle || null,
-        contactData.department || null,
-        contactData.email || null,
-        contactData.phone || null,
-        contactData.mobile || null,
-        contactData.extension || null,
-        contactData.contactType || 'employee',
-        contactData.canMakePurchases || false,
-        contactData.purchaseLimit || null,
-        contactData.requiresApproval || true,
-        contactData.preferredContactMethod || 'email',
-        contactData.language || 'en',
-        contactData.timezone || 'America/Tegucigalpa',
-        contactData.isPrimary || false,
-        contactData.notes || null
-      ];
-
-      const result = await db.execute({ sql: query, args: values });
-      const contactId = Number(result.lastInsertRowid);
-
-      // Fetch the created contact
-      const contactQuery = `
-        SELECT
-          id, client_id as clientId, contact_name as contactName, job_title as jobTitle, department,
-          email, phone, mobile, extension,
-          contact_type as contactType, can_make_purchases as canMakePurchases,
-          purchase_limit as purchaseLimit, requires_approval as requiresApproval,
-          preferred_contact_method as preferredContactMethod, language, timezone,
-          is_primary as isPrimary, is_active as isActive,
-          notes, created_at as createdAt, updated_at as updatedAt
-        FROM client_contacts
-        WHERE id = ?
-      `;
-
-      const contactResult = await db.execute({ sql: contactQuery, args: [contactId] });
-
-      if (contactResult.rows.length === 0) {
-        return { success: false, error: 'Failed to fetch created contact' };
+      if (!newContact[0]) {
+        return { success: false, error: 'Failed to create contact' };
       }
 
-      const row = contactResult.rows[0];
-      const contact: ClientContact = {
-        id: Number(row.id),
-        clientId: Number(row.clientId),
-        contactName: String(row.contactName),
-        jobTitle: row.jobTitle ? String(row.jobTitle) : undefined,
-        department: row.department ? String(row.department) : undefined,
-        email: row.email ? String(row.email) : undefined,
-        phone: row.phone ? String(row.phone) : undefined,
-        mobile: row.mobile ? String(row.mobile) : undefined,
-        extension: row.extension ? String(row.extension) : undefined,
-        contactType: String(row.contactType) as ClientContact['contactType'],
-        canMakePurchases: Boolean(row.canMakePurchases),
-        purchaseLimit: row.purchaseLimit ? Number(row.purchaseLimit) : undefined,
-        requiresApproval: Boolean(row.requiresApproval),
-        preferredContactMethod: String(row.preferredContactMethod) as ClientContact['preferredContactMethod'],
-        language: String(row.language),
-        timezone: String(row.timezone),
-        isPrimary: Boolean(row.isPrimary),
-        isActive: Boolean(row.isActive),
-        notes: row.notes ? String(row.notes) : undefined,
-        createdAt: String(row.createdAt),
-        updatedAt: String(row.updatedAt)
+      const contact = newContact[0];
+      const mappedContact: ClientContact = {
+        id: contact.id,
+        clientId: contact.clientId,
+        contactName: contact.contactName,
+        jobTitle: contact.jobTitle || undefined,
+        department: contact.department || undefined,
+        email: contact.email || undefined,
+        phone: contact.phone || undefined,
+        mobile: contact.mobile || undefined,
+        extension: contact.extension || undefined,
+        contactType: contact.contactType,
+        canMakePurchases: contact.canMakePurchases,
+        purchaseLimit: contact.purchaseLimit || undefined,
+        requiresApproval: contact.requiresApproval,
+        preferredContactMethod: contact.preferredContactMethod,
+        language: contact.language,
+        timezone: contact.timezone,
+        isPrimary: contact.isPrimary,
+        isActive: contact.isActive,
+        notes: contact.notes || undefined,
+        createdAt: contact.createdAt,
+        updatedAt: contact.updatedAt
       };
 
-      return { success: true, data: contact };
+      return { success: true, data: mappedContact };
     } catch (error: any) {
       console.error('ClientService.createClientContact error:', error);
       return { success: false, error: error.message };

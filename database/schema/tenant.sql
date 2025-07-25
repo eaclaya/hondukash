@@ -41,10 +41,6 @@ CREATE TABLE users (
     email TEXT NOT NULL UNIQUE,
     password TEXT NOT NULL,
     name TEXT NOT NULL,
-    role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('admin', 'manager', 'user')),
-
-    -- Store access (JSON array of store IDs)
-    store_access TEXT NOT NULL DEFAULT '[]',
 
     -- Profile
     phone TEXT,
@@ -52,12 +48,23 @@ CREATE TABLE users (
     language TEXT DEFAULT 'es',
     timezone TEXT DEFAULT 'America/Tegucigalpa',
 
-    -- Permissions
-    permissions TEXT NOT NULL DEFAULT '{}',
-
     -- Metadata
     is_active INTEGER NOT NULL DEFAULT 1 CHECK (is_active IN (0, 1)),
     last_login_at TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now', 'utc')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now', 'utc'))
+);
+
+-- =========================================
+-- MEMBERSHIPS TABLE
+-- =========================================
+CREATE TABLE memberships (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    store_id INTEGER NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
+
+    role TEXT NOT NULL DEFAULT 'user',
+
     created_at TEXT NOT NULL DEFAULT (datetime('now', 'utc')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now', 'utc'))
 );
@@ -636,7 +643,8 @@ CREATE TABLE tax_configurations (
 -- Core Tables
 CREATE INDEX idx_stores_is_active ON stores(is_active);
 CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_users_role ON users(role);
+CREATE INDEX idx_memberships_role ON memberships(role);
+CREATE INDEX idx_memberships_user_store ON memberships(user_id, store_id);
 CREATE INDEX idx_products_sku ON products(sku);
 CREATE INDEX idx_products_category_id ON products(category_id);
 CREATE INDEX idx_products_is_active ON products(is_active);
@@ -695,85 +703,3 @@ CREATE INDEX idx_transfers_status ON transfers(status);
 -- Payments
 CREATE INDEX idx_payments_invoice_id ON payments(invoice_id);
 CREATE INDEX idx_payments_payment_date ON payments(payment_date);
-
-
--- =========================================
--- SEED DATA FOR NEW TENANT
--- =========================================
-
--- Insert default store
-INSERT INTO stores (name, code, description, location)
-VALUES ('Main Store', 'MAIN', 'Primary store location', 'Main Location');
-
--- Insert default categories
-INSERT INTO categories (name, description, sort_order) VALUES
-('General', 'General products', 1),
-('Electronics', 'Electronic devices and accessories', 2),
-('Clothing', 'Apparel and accessories', 3),
-('Food & Beverage', 'Food and drink items', 4),
-('Home & Garden', 'Home improvement and garden supplies', 5);
-
--- Default Tax Configuration (Honduras)
-INSERT INTO tax_configurations (store_id, tax_name, tax_code, tax_rate, tax_type, is_default)
-SELECT id, 'ISV (Impuesto Sobre Ventas)', 'ISV', 0.15, 'sales', 1
-FROM stores WHERE code = 'MAIN';
-
--- Default Tags
-INSERT INTO tags (store_id, name, category, description, color)
-SELECT id, 'Wholesaler', 'client', 'Wholesale customers eligible for bulk discounts', '#10B981'
-FROM stores WHERE code = 'MAIN';
-
-INSERT INTO tags (store_id, name, category, description, color)
-SELECT id, 'VIP', 'client', 'VIP customers with premium benefits', '#F59E0B'
-FROM stores WHERE code = 'MAIN';
-
-INSERT INTO tags (store_id, name, category, description, color)
-SELECT id, 'Retail', 'client', 'Regular retail customers', '#6B7280'
-FROM stores WHERE code = 'MAIN';
-
-INSERT INTO tags (store_id, name, category, description, color)
-SELECT id, 'Featured', 'product', 'Featured products for promotions', '#EF4444'
-FROM stores WHERE code = 'MAIN';
-
-INSERT INTO tags (store_id, name, category, description, color)
-SELECT id, 'Clearance', 'product', 'Products on clearance sale', '#F97316'
-FROM stores WHERE code = 'MAIN';
-
--- Sample pricing rules
-INSERT INTO pricing_rules (
-    store_id, name, description, rule_type, priority, discount_percentage, is_active
-)
-SELECT
-    id,
-    'Wholesale Client Discount',
-    '15% discount for clients tagged as wholesaler',
-    'percentage_discount',
-    100,
-    15.00,
-    1
-FROM stores
-WHERE code = 'MAIN';
-
--- Add condition: client must have 'wholesaler' tag
-INSERT INTO rule_conditions (
-    pricing_rule_id, condition_type, operator, value_text, logical_operator, condition_group
-)
-SELECT
-    pr.id,
-    'client_has_tag',
-    'equals',
-    'wholesaler',
-    'AND',
-    1
-FROM pricing_rules pr
-WHERE pr.name = 'Wholesale Client Discount';
-
--- Add target: all products
-INSERT INTO rule_targets (
-    pricing_rule_id, target_type
-)
-SELECT
-    pr.id,
-    'all_products'
-FROM pricing_rules pr
-WHERE pr.name = 'Wholesale Client Discount';

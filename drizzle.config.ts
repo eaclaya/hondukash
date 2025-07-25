@@ -1,4 +1,4 @@
-import { defineConfig } from 'drizzle-kit'
+import { defineConfig } from 'drizzle-kit';
 
 export default defineConfig({
   dialect: 'sqlite',
@@ -7,6 +7,6 @@ export default defineConfig({
   driver: 'turso',
   dbCredentials: {
     url: process.env.NEXT_PUBLIC_TURSO_DATABASE_URL!,
-    authToken: process.env.NEXT_PUBLIC_TURSO_AUTH_TOKEN!,
-  },
-})
+    authToken: process.env.NEXT_PUBLIC_TURSO_AUTH_TOKEN!
+  }
+});

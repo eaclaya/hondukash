@@ -9,21 +9,21 @@ export async function GET(request: NextRequest) {
     const requestHeaders = headers();
     const host = requestHeaders.get('host');
     const storeIdHeader = requestHeaders.get('X-Store-ID');
-    
+    console.log(host, storeIdHeader);
     if (!host) {
       return NextResponse.json({ error: 'Host header is required' }, { status: 400 });
     }
 
     // Extract domain from host (remove port if present)
     const domain = host.split(':')[0];
-    
+
     // Use X-Store-ID header first, then fall back to query params
     const { searchParams } = new URL(request.url);
     const storeIdParam = searchParams.get('storeId');
-    const storeId = storeIdHeader ? parseInt(storeIdHeader) : (storeIdParam ? parseInt(storeIdParam) : undefined);
-    
+    const storeId = storeIdHeader ? parseInt(storeIdHeader) : storeIdParam ? parseInt(storeIdParam) : undefined;
+
     const result = await ClientService.getAllClients(domain, storeId);
-    
+
     if (!result.success) {
       return NextResponse.json({ error: result.error }, { status: 400 });
     }
@@ -40,14 +40,14 @@ export async function POST(request: NextRequest) {
   try {
     const requestHeaders = headers();
     const host = requestHeaders.get('host');
-    
+
     if (!host) {
       return NextResponse.json({ error: 'Host header is required' }, { status: 400 });
     }
 
     // Extract domain from host (remove port if present)
     const domain = host.split(':')[0];
-    
+
     const body = await request.json();
     const clientData: CreateClientRequest = body;
 
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
     }
 
     const result = await ClientService.createClient(domain, clientData);
-    
+
     if (!result.success) {
       return NextResponse.json({ error: result.error }, { status: 400 });
     }

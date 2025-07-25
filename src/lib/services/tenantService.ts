@@ -328,7 +328,7 @@ export class TenantService {
       console.log(`✅ Successfully executed ${executedCount} SQL statements`);
 
       // Create tenant-specific admin user
-      await this.createTenantAdminUser(tenantDb, domain);
+      await this.createStoreUser(tenantDb, domain);
 
       console.log(`✅ Database schema and seed data initialized for: ${domain}`);
     } catch (error: any) {
@@ -338,11 +338,11 @@ export class TenantService {
   }
 
   /**
-   * Create tenant-specific admin user (the schema already includes seed data)
+   * Create tenant-specific admin user, default store, and membership
    */
-  private static async createTenantAdminUser(tenantDb: any, domain: string): Promise<void> {
+  private static async createStoreUser(tenantDb: any, domain: string): Promise<void> {
     try {
-      console.log(`Creating tenant admin user for: ${domain}`);
+      console.log(`Creating tenant admin user and store for: ${domain}`);
 
       // Get tenant info from main database to access metadata
       const tenant = await this.getTenantByDomain(domain);
@@ -354,28 +354,72 @@ export class TenantService {
 
       // Create admin user with hashed password
       const bcrypt = await import('bcryptjs');
-      const hashedPassword = await bcrypt.hash('jobyroga@mailinator.com', 10); // Default password
+      const hashedPassword = await bcrypt.hash('Pa$$w0rd!', 10); // Default password
 
-      await tenantDb.execute({
-        sql: `INSERT INTO users (email, password, name, role, store_access, is_active, created_at)
-              VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      // 1. Create the admin user
+      const userResult = await tenantDb.execute({
+        sql: `INSERT INTO users (email, password, name, is_active, created_at, updated_at)
+              VALUES (?, ?, ?, ?, ?, ?) RETURNING id`,
         args: [
           meta.contact_email,
           hashedPassword,
           meta.contact_name,
-          'admin', // role
-          '[1]', // access to main store (id: 1)
           1, // is_active = true
+          new Date().toISOString(),
           new Date().toISOString()
         ]
       });
 
-      console.log('✓ Created tenant admin user');
-      console.log(`📧 Admin login: ${meta.contact_email} / jobyroga@mailinator.com`);
-      console.log(`✅ Tenant admin user created for: ${domain}`);
+      const userId = userResult.rows[0]?.id;
+      if (!userId) {
+        throw new Error('Failed to create user - no ID returned');
+      }
+
+      console.log(`✓ Created admin user with ID: ${userId}`);
+
+      // 2. Create the default store
+      const storeResult = await tenantDb.execute({
+        sql: `INSERT INTO stores (name, description, country, currency, tax_rate, invoice_prefix, is_active, created_at, updated_at)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id`,
+        args: [
+          tenant.name,
+          tenant.name,
+          meta.country,
+          'HNL',
+          0.15,
+          'INV',
+          1, // is_active = true
+          new Date().toISOString(),
+          new Date().toISOString()
+        ]
+      });
+
+      const storeId = storeResult.rows[0]?.id;
+      if (!storeId) {
+        throw new Error('Failed to create store - no ID returned');
+      }
+
+      console.log(`✓ Created default store with ID: ${storeId}`);
+
+      // 3. Create membership linking user to store with admin role
+      await tenantDb.execute({
+        sql: `INSERT INTO memberships (user_id, store_id, role, created_at, updated_at)
+              VALUES (?, ?, ?, ?, ?)`,
+        args: [
+          userId,
+          storeId,
+          'admin', // Admin role for the tenant owner
+          new Date().toISOString(),
+          new Date().toISOString()
+        ]
+      });
+
+      console.log(`✓ Created membership linking user ${userId} to store ${storeId}`);
+      console.log(`📧 Admin login: ${meta.contact_email} / Pa$$w0rd!`);
+      console.log(`✅ Tenant setup completed for: ${domain}`);
     } catch (error: any) {
-      console.error('Error creating tenant admin user:', error);
-      throw new Error(`Failed to create tenant admin user: ${error.message}`);
+      console.error('Error creating tenant admin user and store:', error);
+      throw new Error(`Failed to create tenant admin user and store: ${error.message}`);
     }
   }
 

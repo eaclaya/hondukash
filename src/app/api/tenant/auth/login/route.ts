@@ -7,19 +7,25 @@ export async function POST(request: NextRequest) {
     const { email, password, domain } = await request.json();
 
     if (!email || !password || !domain) {
-      return NextResponse.json({ 
-        error: 'Email, password, and domain are required' 
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          error: 'Email, password, and domain are required'
+        },
+        { status: 400 }
+      );
     }
 
     try {
       // Get tenant information
       const tenant = await TenantService.getTenantByDomain(domain);
-      
+
       if (!tenant.isActive) {
-        return NextResponse.json({ 
-          error: 'Tenant account is not active' 
-        }, { status: 403 });
+        return NextResponse.json(
+          {
+            error: 'Tenant account is not active'
+          },
+          { status: 403 }
+        );
       }
 
       // Connect to tenant database
@@ -32,21 +38,68 @@ export async function POST(request: NextRequest) {
       });
 
       if (!userResult.rows || userResult.rows.length === 0) {
-        return NextResponse.json({ 
-          error: 'Invalid email or password' 
-        }, { status: 401 });
+        return NextResponse.json(
+          {
+            error: 'Invalid email or password'
+          },
+          { status: 401 }
+        );
       }
 
       const user = userResult.rows[0];
+
+      // Query memberships from tenant database
+      const membershipResult = await tenantDb.execute({
+        sql: `SELECT * FROM memberships WHERE user_id = ?`,
+        args: [user.id]
+      });
+
+      if (!membershipResult.rows || membershipResult.rows.length === 0) {
+        return NextResponse.json(
+          {
+            error: 'Invalid email or password'
+          },
+          { status: 401 }
+        );
+      }
+
+      const memberships = membershipResult.rows;
+
+      const membershipIds = memberships.map((m) => m.id);
+
+      // Query stores from tenant database
+      const storeResult = await tenantDb.execute({
+        sql: `SELECT * FROM stores WHERE id IN (?)`,
+        args: membershipIds
+      });
+
+      if (!storeResult.rows || storeResult.rows.length === 0) {
+        return NextResponse.json(
+          {
+            error: 'Invalid email or password'
+          },
+          { status: 401 }
+        );
+      }
+
+      const stores = storeResult.rows.map((store) => {
+        return {
+          ...store,
+          memberships: memberships.filter((m) => m.store_id == store.id)
+        };
+      });
 
       // Verify password
       const bcrypt = await import('bcryptjs');
       const isValidPassword = await bcrypt.compare(password, user.password as string);
 
       if (!isValidPassword) {
-        return NextResponse.json({ 
-          error: 'Invalid email or password' 
-        }, { status: 401 });
+        return NextResponse.json(
+          {
+            error: 'Invalid email or password'
+          },
+          { status: 401 }
+        );
       }
 
       // Generate JWT token
@@ -71,6 +124,7 @@ export async function POST(request: NextRequest) {
         email: user.email,
         name: user.name,
         role: user.role,
+        stores: stores,
         isActive: user.is_active,
         createdAt: user.created_at
       };
@@ -86,18 +140,23 @@ export async function POST(request: NextRequest) {
         token,
         expiresAt: expiresAt.toISOString()
       });
-
     } catch (tenantError: any) {
       console.error('Tenant authentication error:', tenantError);
-      return NextResponse.json({ 
-        error: 'Authentication failed',
-        details: tenantError.message 
-      }, { status: 500 });
+      return NextResponse.json(
+        {
+          error: 'Authentication failed',
+          details: tenantError.message
+        },
+        { status: 500 }
+      );
     }
   } catch (error: any) {
     console.error('Login API error:', error);
-    return NextResponse.json({ 
-      error: 'Internal server error' 
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: 'Internal server error'
+      },
+      { status: 500 }
+    );
   }
 }

@@ -4,9 +4,10 @@ import { useState } from 'react';
 import { Store, CreateStoreRequest, UpdateStoreRequest } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
+import Link from 'next/link';
 
 interface StoreFormProps {
-  store? : Store;
+  store?: Store;
   onSubmit: (data: CreateStoreRequest | UpdateStoreRequest) => Promise<void>;
   onCancel: () => void;
   loading?: boolean;
@@ -62,16 +63,14 @@ export function StoreForm({ store, onSubmit, onCancel, loading = false }: StoreF
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
 
     try {
-      const submitData = store 
-        ? { ...formData, id: store.id } as UpdateStoreRequest
-        : formData as CreateStoreRequest;
-        
+      const submitData = store ? ({ ...formData, id: store.id } as UpdateStoreRequest) : (formData as CreateStoreRequest);
+
       await onSubmit(submitData);
     } catch (error) {
       console.error('Form submission error:', error);
@@ -79,36 +78,29 @@ export function StoreForm({ store, onSubmit, onCancel, loading = false }: StoreF
   };
 
   const handleChange = (field: string, value: string | number) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    
+    setFormData((prev) => ({ ...prev, [field]: value }));
+
     // Clear error when user starts typing
     if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
+      setErrors((prev) => ({ ...prev, [field]: '' }));
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center p-6 border-b">
-          <h2 className="text-xl font-semibold">
-            {store ? 'Edit Store' : 'Create New Store'}
-          </h2>
-          <Button variant="ghost" size="sm" onClick={onCancel}>
-            <X className="h-4 w-4" />
-          </Button>
+    <div className="flex flex-col">
+      <div className="bg-white rounded-lg w-full overflow-y-auto">
+        <div className="flex justify-between items-center px-6 py-2 border-b">
+          <h2 className="text-xl font-semibold">{store ? 'Edit Store' : 'Create New Store'}</h2>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {/* Basic Information */}
           <div className="space-y-4">
             <h3 className="text-lg font-medium">Basic Information</h3>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-1">
-                  Store Name *
-                </label>
+                <label className="block text-sm font-medium mb-1">Store Name *</label>
                 <input
                   type="text"
                   value={formData.name}
@@ -122,9 +114,7 @@ export function StoreForm({ store, onSubmit, onCancel, loading = false }: StoreF
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">
-                  Store Code
-                </label>
+                <label className="block text-sm font-medium mb-1">Store Code</label>
                 <input
                   type="text"
                   value={formData.code}
@@ -139,9 +129,7 @@ export function StoreForm({ store, onSubmit, onCancel, loading = false }: StoreF
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">
-                Description
-              </label>
+              <label className="block text-sm font-medium mb-1">Description</label>
               <textarea
                 value={formData.description}
                 onChange={(e) => handleChange('description', e.target.value)}
@@ -155,12 +143,10 @@ export function StoreForm({ store, onSubmit, onCancel, loading = false }: StoreF
           {/* Location Information */}
           <div className="space-y-4">
             <h3 className="text-lg font-medium">Location & Contact</h3>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-1">
-                  Location
-                </label>
+                <label className="block text-sm font-medium mb-1">Location</label>
                 <input
                   type="text"
                   value={formData.location}
@@ -171,9 +157,7 @@ export function StoreForm({ store, onSubmit, onCancel, loading = false }: StoreF
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">
-                  Manager Name
-                </label>
+                <label className="block text-sm font-medium mb-1">Manager Name</label>
                 <input
                   type="text"
                   value={formData.managerName}
@@ -185,9 +169,7 @@ export function StoreForm({ store, onSubmit, onCancel, loading = false }: StoreF
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">
-                Address
-              </label>
+              <label className="block text-sm font-medium mb-1">Address</label>
               <input
                 type="text"
                 value={formData.address}
@@ -199,9 +181,7 @@ export function StoreForm({ store, onSubmit, onCancel, loading = false }: StoreF
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-1">
-                  City
-                </label>
+                <label className="block text-sm font-medium mb-1">City</label>
                 <input
                   type="text"
                   value={formData.city}
@@ -212,9 +192,7 @@ export function StoreForm({ store, onSubmit, onCancel, loading = false }: StoreF
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">
-                  State
-                </label>
+                <label className="block text-sm font-medium mb-1">State</label>
                 <input
                   type="text"
                   value={formData.state}
@@ -225,9 +203,7 @@ export function StoreForm({ store, onSubmit, onCancel, loading = false }: StoreF
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">
-                  Postal Code
-                </label>
+                <label className="block text-sm font-medium mb-1">Postal Code</label>
                 <input
                   type="text"
                   value={formData.postalCode}
@@ -240,9 +216,7 @@ export function StoreForm({ store, onSubmit, onCancel, loading = false }: StoreF
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-1">
-                  Phone
-                </label>
+                <label className="block text-sm font-medium mb-1">Phone</label>
                 <input
                   type="tel"
                   value={formData.phone}
@@ -253,9 +227,7 @@ export function StoreForm({ store, onSubmit, onCancel, loading = false }: StoreF
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">
-                  Email
-                </label>
+                <label className="block text-sm font-medium mb-1">Email</label>
                 <input
                   type="email"
                   value={formData.email}
@@ -273,12 +245,10 @@ export function StoreForm({ store, onSubmit, onCancel, loading = false }: StoreF
           {/* Settings */}
           <div className="space-y-4">
             <h3 className="text-lg font-medium">Settings</h3>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-1">
-                  Currency
-                </label>
+                <label className="block text-sm font-medium mb-1">Currency</label>
                 <select
                   value={formData.currency}
                   onChange={(e) => handleChange('currency', e.target.value)}
@@ -290,9 +260,7 @@ export function StoreForm({ store, onSubmit, onCancel, loading = false }: StoreF
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">
-                  Tax Rate
-                </label>
+                <label className="block text-sm font-medium mb-1">Tax Rate</label>
                 <input
                   type="number"
                   step="0.01"
@@ -310,9 +278,7 @@ export function StoreForm({ store, onSubmit, onCancel, loading = false }: StoreF
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">
-                  Invoice Prefix *
-                </label>
+                <label className="block text-sm font-medium mb-1">Invoice Prefix *</label>
                 <input
                   type="text"
                   value={formData.invoicePrefix}
@@ -328,9 +294,11 @@ export function StoreForm({ store, onSubmit, onCancel, loading = false }: StoreF
           </div>
 
           <div className="flex justify-end space-x-3 pt-6 border-t">
-            <Button type="button" variant="outline" onClick={onCancel} disabled={loading}>
-              Cancel
-            </Button>
+            <Link href="/stores">
+              <Button type="button" variant="outline" disabled={loading}>
+                Cancel
+              </Button>
+            </Link>
             <Button type="submit" disabled={loading}>
               {loading ? 'Saving...' : store ? 'Update Store' : 'Create Store'}
             </Button>

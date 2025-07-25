@@ -52,17 +52,30 @@ export interface Store {
   phone?: string;
   email?: string;
   managerName?: string;
-  
+
   // Settings
   currency: string;
   taxRate: number;
   invoicePrefix: string;
   invoiceCounter: number;
-  
+
   // Metadata
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface Membership {
+  id: string;
+  userId: string;
+  storeId: string;
+  role: string;
+  createdAt: string;
+  updatedAt: string;
+
+  // Related entities (populated via joins)
+  user?: User;
+  store?: Store;
 }
 
 export interface CreateStoreRequest {

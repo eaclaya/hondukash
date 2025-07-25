@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { StoreForm } from '@/components/stores/StoreForm';
 import { Plus, Edit, Trash2, MapPin, Phone, Mail, User } from 'lucide-react';
+import Link from 'next/link';
 
 export default function StoresPage() {
   const [stores, setStores] = useState<Store[]>([]);
@@ -26,11 +27,11 @@ export default function StoresPage() {
       const response = await fetch('/api/stores', {
         headers: getAuthHeaders()
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to fetch stores');
       }
-      
+
       const data = await response.json();
       setStores(data.stores || []);
     } catch (error: any) {
@@ -75,15 +76,15 @@ export default function StoresPage() {
 
   const handleFormSubmit = async (data: CreateStoreRequest | UpdateStoreRequest) => {
     setFormLoading(true);
-    
+
     try {
       const url = editingStore ? `/api/stores/${editingStore.id}` : '/api/stores';
       const method = editingStore ? 'PUT' : 'POST';
-      
+
       const response = await fetch(url, {
         method,
         headers: getAuthHeaders(),
-        body: JSON.stringify(data),
+        body: JSON.stringify(data)
       });
 
       if (!response.ok) {
@@ -140,10 +141,12 @@ export default function StoresPage() {
           <h1 className="text-3xl font-bold">Stores</h1>
           <p className="text-muted-foreground">Manage your store locations and settings</p>
         </div>
-        <Button onClick={handleCreateStore}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Store
-        </Button>
+        <Link href="/stores/create">
+          <Button onClick={handleCreateStore}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Store
+          </Button>
+        </Link>
       </div>
 
       {stores.length === 0 ? (
@@ -165,17 +168,15 @@ export default function StoresPage() {
               <div className="flex justify-between items-start">
                 <div>
                   <h3 className="text-lg font-semibold">{store.name}</h3>
-                  {store.code && (
-                    <p className="text-sm text-muted-foreground">Code: {store.code}</p>
-                  )}
+                  {store.code && <p className="text-sm text-muted-foreground">Code: {store.code}</p>}
                 </div>
                 <div className="flex space-x-2">
                   <Button variant="ghost" size="sm" onClick={() => handleEditStore(store)}>
                     <Edit className="h-4 w-4" />
                   </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => handleDelete(store.id)}
                     className="text-red-600 hover:text-red-700 hover:bg-red-50"
                   >
@@ -184,9 +185,7 @@ export default function StoresPage() {
                 </div>
               </div>
 
-              {store.description && (
-                <p className="text-sm text-muted-foreground">{store.description}</p>
-              )}
+              {store.description && <p className="text-sm text-muted-foreground">{store.description}</p>}
 
               <div className="space-y-2">
                 {store.location && (
@@ -223,17 +222,15 @@ export default function StoresPage() {
                   <span>{store.currency}</span>
                   <span>{(store.taxRate * 100).toFixed(1)}% tax</span>
                 </div>
-                <div className={`px-2 py-1 text-xs rounded-full ${
-                  store.isActive 
-                    ? 'bg-green-100 text-green-800' 
-                    : 'bg-gray-100 text-gray-800'
-                }`}>
+                <div className={`px-2 py-1 text-xs rounded-full ${store.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
                   {store.isActive ? 'Active' : 'Inactive'}
                 </div>
               </div>
 
               <div className="flex justify-between items-center text-xs text-muted-foreground pt-2 border-t">
-                <span>Invoice: {store.invoicePrefix}-{store.invoiceCounter.toString().padStart(4, '0')}</span>
+                <span>
+                  Invoice: {store.invoicePrefix}-{store.invoiceCounter.toString().padStart(4, '0')}
+                </span>
                 <span>Created: {new Date(store.createdAt).toLocaleDateString()}</span>
               </div>
             </div>
@@ -241,14 +238,7 @@ export default function StoresPage() {
         </div>
       )}
 
-      {showForm && (
-        <StoreForm
-          store={editingStore || undefined}
-          onSubmit={handleFormSubmit}
-          onCancel={handleFormCancel}
-          loading={formLoading}
-        />
-      )}
+      {showForm && <StoreForm store={editingStore || undefined} onSubmit={handleFormSubmit} onCancel={handleFormCancel} loading={formLoading} />}
     </div>
   );
 }

@@ -22,11 +22,11 @@ export default function ClientsPage() {
       const response = await fetch('/api/clients', {
         headers: getAuthHeaders()
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to fetch clients');
       }
-      
+
       const data = await response.json();
       setClients(data.clients || []);
     } catch (error: any) {
@@ -43,8 +43,7 @@ export default function ClientsPage() {
 
     try {
       const response = await fetch(`/api/clients/${clientId}`, {
-        method: 'DELETE',
-        headers: getAuthHeaders()
+        method: 'DELETE'
       });
 
       if (!response.ok) {
@@ -116,31 +115,23 @@ export default function ClientsPage() {
             <div key={client.id} className="border rounded-lg p-6 space-y-4">
               <div className="flex justify-between items-start">
                 <div className="flex items-start space-x-3">
-                  <div className={`p-2 rounded-full ${
-                    client.clientType === 'company' 
-                      ? 'bg-blue-100 text-blue-600' 
-                      : 'bg-green-100 text-green-600'
-                  }`}>
-                    {client.clientType === 'company' ? (
-                      <Building className="h-4 w-4" />
-                    ) : (
-                      <User className="h-4 w-4" />
-                    )}
+                  <div
+                    className={`p-2 rounded-full ${client.clientType === 'company' ? 'bg-blue-100 text-blue-600' : 'bg-green-100 text-green-600'}`}
+                  >
+                    {client.clientType === 'company' ? <Building className="h-4 w-4" /> : <User className="h-4 w-4" />}
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold">{client.name}</h3>
-                    <p className="text-sm text-muted-foreground capitalize">
-                      {client.clientType}
-                    </p>
+                    <p className="text-sm text-muted-foreground capitalize">{client.clientType}</p>
                   </div>
                 </div>
                 <div className="flex space-x-2">
                   <Button variant="ghost" size="sm">
                     <Edit className="h-4 w-4" />
                   </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => handleDelete(client.id)}
                     className="text-red-600 hover:text-red-700 hover:bg-red-50"
                   >
@@ -174,9 +165,7 @@ export default function ClientsPage() {
                 {(client.city || client.country) && (
                   <div className="flex items-center text-sm text-muted-foreground">
                     <MapPin className="h-4 w-4 mr-2 flex-shrink-0" />
-                    <span>
-                      {[client.city, client.state, client.country].filter(Boolean).join(', ')}
-                    </span>
+                    <span>{[client.city, client.state, client.country].filter(Boolean).join(', ')}</span>
                   </div>
                 )}
               </div>
@@ -201,20 +190,14 @@ export default function ClientsPage() {
                   <span>Credit: ${client.creditLimit.toLocaleString()}</span>
                   <span>{client.paymentTerms} days</span>
                 </div>
-                <div className={`px-2 py-1 text-xs rounded-full ${
-                  client.isActive 
-                    ? 'bg-green-100 text-green-800' 
-                    : 'bg-gray-100 text-gray-800'
-                }`}>
+                <div className={`px-2 py-1 text-xs rounded-full ${client.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
                   {client.isActive ? 'Active' : 'Inactive'}
                 </div>
               </div>
 
               {client.discountPercentage > 0 && (
                 <div className="pt-2 border-t">
-                  <div className="text-sm text-blue-600">
-                    Default discount: {(client.discountPercentage * 100).toFixed(1)}%
-                  </div>
+                  <div className="text-sm text-blue-600">Default discount: {(client.discountPercentage * 100).toFixed(1)}%</div>
                 </div>
               )}
 

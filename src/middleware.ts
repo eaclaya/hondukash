@@ -50,7 +50,7 @@ export function middleware(request: NextRequest) {
   if (isSubdomain && subdomain && subdomain !== 'www') {
     // Store tenant info in headers for the app to use
     const requestHeaders = new Headers(request.headers);
-    requestHeaders.set('x-tenant', subdomain);
+    requestHeaders.set('X-TENANT-SUBDOMAIN', subdomain);
 
     console.log('Tenant detected:', subdomain);
 
@@ -66,21 +66,12 @@ export function middleware(request: NextRequest) {
       }
     });
   }
-  
+
   // Default redirect to admin for unrecognized domains
   url.pathname = '/admin';
   return NextResponse.redirect(url);
 }
 
 export const config = {
-  matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
-    '/((?!api|_next/static|_next/image|favicon.ico).*)'
-  ]
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)']
 };

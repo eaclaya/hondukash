@@ -20,9 +20,6 @@ export class StoreService {
       const db = await getTenantDb(domain);
 
       const queryConditions = [eq(stores.isActive, true)];
-      if (storeFilter) {
-        queryConditions.push(eq(stores.id, storeFilter));
-      }
 
       const storesResult = await db.query.stores.findMany({
         where: and(...queryConditions),

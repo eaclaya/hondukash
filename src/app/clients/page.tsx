@@ -3,10 +3,12 @@
 import { useState, useEffect } from 'react';
 import { Client, CreateClientRequest, UpdateClientRequest } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Plus, Edit, Trash2, Building, User, Phone, Mail, MapPin, Users } from 'lucide-react';
 
 export default function ClientsPage() {
+  const router = useRouter();
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -91,7 +93,7 @@ export default function ClientsPage() {
           <h1 className="text-3xl font-bold">Clients</h1>
           <p className="text-muted-foreground">Manage your customers and their contacts</p>
         </div>
-        <Button>
+        <Button onClick={() => router.push('/clients/create')}>
           <Plus className="h-4 w-4 mr-2" />
           Add Client
         </Button>
@@ -104,7 +106,7 @@ export default function ClientsPage() {
           </div>
           <h3 className="text-lg font-semibold mb-2">No clients found</h3>
           <p className="text-muted-foreground mb-4">Get started by adding your first client.</p>
-          <Button>
+          <Button onClick={() => router.push('/clients/create')}>
             <Plus className="h-4 w-4 mr-2" />
             Add Client
           </Button>
@@ -112,21 +114,28 @@ export default function ClientsPage() {
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {clients.map((client) => (
-            <div key={client.id} className="border rounded-lg p-6 space-y-4">
+            <div key={client.id} className="border rounded-lg p-6 space-y-4 hover:shadow-md transition-shadow cursor-pointer">
               <div className="flex justify-between items-start">
-                <div className="flex items-start space-x-3">
+                <div 
+                  className="flex items-start space-x-3 flex-1"
+                  onClick={() => router.push(`/clients/${client.id}`)}
+                >
                   <div
                     className={`p-2 rounded-full ${client.clientType === 'company' ? 'bg-blue-100 text-blue-600' : 'bg-green-100 text-green-600'}`}
                   >
                     {client.clientType === 'company' ? <Building className="h-4 w-4" /> : <User className="h-4 w-4" />}
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold">{client.name}</h3>
+                    <h3 className="text-lg font-semibold hover:text-blue-600">{client.name}</h3>
                     <p className="text-sm text-muted-foreground capitalize">{client.clientType}</p>
                   </div>
                 </div>
                 <div className="flex space-x-2">
-                  <Button variant="ghost" size="sm">
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => router.push(`/clients/${client.id}/edit`)}
+                  >
                     <Edit className="h-4 w-4" />
                   </Button>
                   <Button

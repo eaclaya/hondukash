@@ -74,6 +74,10 @@ export class ClientService {
         return { success: false, error: 'Client not found' };
       }
 
+      // Get client contacts
+      const contactsResult = await this.getClientContacts(domain, clientId);
+      const contacts = contactsResult.success ? contactsResult.data : [];
+
       const mappedClient: Client = {
         id: client.id,
         storeId: client.storeId,
@@ -98,7 +102,8 @@ export class ClientService {
         notes: client.notes || undefined,
         isActive: client.isActive,
         createdAt: client.createdAt,
-        updatedAt: client.updatedAt
+        updatedAt: client.updatedAt,
+        contacts: contacts
       };
 
       return { success: true, data: mappedClient };
@@ -142,8 +147,25 @@ export class ClientService {
         return { success: false, error: 'Failed to create client' };
       }
 
-      // Fetch the created client
-      const clientResult = await this.getClientById(domain, newClient[0].id);
+      const clientId = newClient[0].id;
+
+      // Create contacts if provided
+      if (clientData.contacts && clientData.contacts.length > 0) {
+        for (const contactData of clientData.contacts) {
+          const contactResult = await this.createClientContact(domain, {
+            ...contactData,
+            clientId: clientId
+          });
+          
+          if (!contactResult.success) {
+            console.error('Failed to create contact:', contactResult.error);
+            // Continue creating other contacts even if one fails
+          }
+        }
+      }
+
+      // Fetch the created client with contacts
+      const clientResult = await this.getClientById(domain, clientId);
       if (!clientResult.success || !clientResult.data) {
         return { success: false, error: 'Failed to fetch created client' };
       }
@@ -188,6 +210,27 @@ export class ClientService {
       updateData.updatedAt = new Date().toISOString();
 
       await db.update(clients).set(updateData).where(eq(clients.id, clientData.id));
+
+      // Handle contacts update if provided
+      if (clientData.contacts !== undefined) {
+        // Delete existing contacts and create new ones (simple approach)
+        await db.delete(clientContacts).where(eq(clientContacts.clientId, clientData.id));
+        
+        // Create new contacts
+        if (clientData.contacts.length > 0) {
+          for (const contactData of clientData.contacts) {
+            const contactResult = await this.createClientContact(domain, {
+              ...contactData,
+              clientId: clientData.id
+            });
+            
+            if (!contactResult.success) {
+              console.error('Failed to create contact:', contactResult.error);
+              // Continue creating other contacts even if one fails
+            }
+          }
+        }
+      }
 
       // Fetch the updated client
       const clientResult = await this.getClientById(domain, clientData.id);

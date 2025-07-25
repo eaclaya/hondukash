@@ -121,10 +121,12 @@ export interface CreateClientRequest {
   paymentTerms?: number;
   discountPercentage?: number;
   notes?: string;
+  contacts?: CreateClientContactRequest[];
 }
 
 export interface UpdateClientRequest extends Partial<CreateClientRequest> {
   id: number;
+  contacts?: CreateClientContactRequest[];
 }
 
 export interface CreateClientContactRequest {

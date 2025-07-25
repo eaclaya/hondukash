@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const storeIdParam = searchParams.get('storeId');
     const storeId = storeIdHeader ? parseInt(storeIdHeader) : storeIdParam ? parseInt(storeIdParam) : undefined;
-
+    console.log('storeId', storeId);
     const result = await ClientService.getAllClients(domain, storeId);
 
     if (!result.success) {

@@ -60,12 +60,64 @@ export default function DashboardLayout({
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b">
-        <div className="mx-auto px-4 py-4">
+        <div className="mx-auto px-4 py-3">
           <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-2xl font-bold">HonduKash ERP</h1>
-              <p className="text-sm text-muted-foreground">{tenant.name}</p>
-            </div>
+            <nav className="flex items-center space-x-6">
+              <Link href="/dashboard" className={`px-3 py-2 text-sm font-medium rounded-md hover:bg-muted transition-colors ${pathname === '/dashboard' ? 'bg-muted' : ''}`}>
+                Dashboard
+              </Link>
+              <Link href="/clients" className={`px-3 py-2 text-sm font-medium rounded-md hover:bg-muted transition-colors ${pathname === '/clients' ? 'bg-muted' : ''}`}>
+                Clients
+              </Link>
+
+              {/* Products Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className={`px-3 py-2 text-sm font-medium rounded-md hover:bg-muted transition-colors ${pathname.startsWith('/products') || pathname === '/inventory' ? 'bg-muted' : ''}`}>
+                    Products
+                    <ChevronDown className="ml-1 h-3 w-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start">
+                  <DropdownMenuItem asChild>
+                    <Link href="/products">Products</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/inventory">Inventory</Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <Link href="/invoices" className={`px-3 py-2 text-sm font-medium rounded-md hover:bg-muted transition-colors ${pathname === '/invoices' ? 'bg-muted' : ''}`}>
+                Invoices
+              </Link>
+
+              {/* Settings Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className={`px-3 py-2 text-sm font-medium rounded-md hover:bg-muted transition-colors ${pathname === '/settings' || pathname === '/stores' || pathname === '/reports' ? 'bg-muted' : ''}`}>
+                    Settings
+                    <ChevronDown className="ml-1 h-3 w-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start">
+                  <DropdownMenuItem asChild>
+                    <Link href="/settings">General Settings</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href="/stores">Stores</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/reports">Reports</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/transfers">Transfers</Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </nav>
+
             <div className="flex items-center space-x-4">
               <StoreSwitcher />
 
@@ -102,24 +154,10 @@ export default function DashboardLayout({
           </div>
         </div>
       </header>
-      <div className="flex">
-        <nav className="w-48 min-h-screen border-r bg-muted/40">
-          <div className="py-4 space-y-2 text-sm">
-            <Link href="/dashboard" className="block px-3 py-2 rounded hover:bg-muted">Dashboard</Link>
-            <Link href="/stores" className="block px-3 py-2 rounded hover:bg-muted">Stores</Link>
-            <Link href="/clients" className="block px-3 py-2 rounded hover:bg-muted">Clients</Link>
-            <Link href="/products" className="block px-3 py-2 rounded hover:bg-muted">Products</Link>
-            <Link href="/invoices" className="block px-3 py-2 rounded hover:bg-muted">Invoices</Link>
-            <Link href="/inventory" className="block px-3 py-2 rounded hover:bg-muted">Inventory</Link>
-            <Link href="/transfers" className="block px-3 py-2 rounded hover:bg-muted">Transfers</Link>
-            <Link href="/reports" className="block px-3 py-2 rounded hover:bg-muted">Reports</Link>
-            <Link href="/settings" className="block px-3 py-2 rounded hover:bg-muted">Settings</Link>
-          </div>
-        </nav>
-        <main className="flex-1 p-6">
-          {children}
-        </main>
-      </div>
+
+      <main className="p-6">
+        {children}
+      </main>
     </div>
   )
 }

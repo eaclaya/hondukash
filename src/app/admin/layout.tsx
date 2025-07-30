@@ -9,11 +9,11 @@ export default async function AdminLayout({
   children: React.ReactNode
 }) {
   const session = await getAdminSession()
-  
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b">
-        <div className="container mx-auto px-4 py-4">
+        <div className="mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-6">
               <h1 className="text-2xl font-bold">Admin Dashboard</h1>

@@ -8,6 +8,7 @@ import { User, LogOut, Settings, ChevronDown } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import Link from 'next/link';
+import StoreSwitcher from '@/components/StoreSwitcher';
 
 export default function DashboardLayout({
   children,
@@ -59,16 +60,15 @@ export default function DashboardLayout({
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b">
-        <div className="container mx-auto px-4 py-4">
+        <div className="mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-2xl font-bold">HonduKash ERP</h1>
               <p className="text-sm text-muted-foreground">{tenant.name}</p>
             </div>
             <div className="flex items-center space-x-4">
-              <span className="text-sm text-muted-foreground">Store: Main Store</span>
-              <Button variant="outline" size="sm">Switch Store</Button>
-              
+              <StoreSwitcher />
+
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm" className="flex items-center space-x-2">
@@ -89,7 +89,7 @@ export default function DashboardLayout({
                     Settings
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     onClick={logout}
                     className="text-red-600 focus:text-red-600"
                   >
@@ -103,8 +103,8 @@ export default function DashboardLayout({
         </div>
       </header>
       <div className="flex">
-        <nav className="w-64 min-h-screen border-r bg-muted/40">
-          <div className="p-4 space-y-2">
+        <nav className="w-48 min-h-screen border-r bg-muted/40">
+          <div className="py-4 space-y-2 text-sm">
             <Link href="/dashboard" className="block px-3 py-2 rounded hover:bg-muted">Dashboard</Link>
             <Link href="/stores" className="block px-3 py-2 rounded hover:bg-muted">Stores</Link>
             <Link href="/clients" className="block px-3 py-2 rounded hover:bg-muted">Clients</Link>

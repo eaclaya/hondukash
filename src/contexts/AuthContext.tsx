@@ -2,11 +2,19 @@
 
 import { createContext, useContext, useEffect, useState } from 'react';
 
+interface Store {
+  id: number;
+  name: string;
+  code?: string;
+  role: string;
+}
+
 interface User {
   id: number;
   email: string;
   name: string;
   role: string;
+  stores?: Store[];
   storeId?: number;
 }
 
@@ -15,6 +23,7 @@ interface TenantSession {
   email: string;
   name: string;
   role: string;
+  stores?: Store[];
   tenantId?: number;
   domain?: string;
   storeId?: number;
@@ -58,6 +67,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               email: sessionData.email,
               name: sessionData.name,
               role: sessionData.role,
+              stores: sessionData.stores,
               storeId: sessionData.storeId
             });
           } else {
@@ -83,6 +93,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       email: sessionData.email,
       name: sessionData.name,
       role: sessionData.role,
+      stores: sessionData.stores,
       storeId: sessionData.storeId
     });
 
@@ -105,8 +116,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       headers['Authorization'] = `Bearer ${session.token}`;
     }
 
-    if (session?.storeId) {
-      headers['X-Store-ID'] = session.storeId.toString();
+    // Get current store ID from localStorage (for store switching)
+    const currentStoreId = localStorage.getItem('currentStoreId');
+    if (currentStoreId) {
+      headers['X-Store-ID'] = currentStoreId;
     }
 
     return headers;

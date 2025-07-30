@@ -3,11 +3,19 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
+interface Store {
+  id: number;
+  name: string;
+  code?: string;
+  role: string;
+}
+
 interface TenantUser {
   id: number;
   email: string;
   name: string;
   role: string;
+  stores?: Store[];
   tenantId: number;
   domain: string;
   token: string;

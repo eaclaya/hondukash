@@ -36,15 +36,21 @@ export default function LoginPage() {
       const data = await response.json();
 
       if (response.ok) {
+        // Save default store ID to localStorage for store switching
+        if (data.defaultStoreId) {
+          localStorage.setItem('currentStoreId', data.defaultStoreId.toString());
+        }
+
         // Use AuthContext to handle login
         login({
           userId: data.user.id,
           email: data.user.email,
           name: data.user.name,
           role: data.user.role,
+          stores: data.user.stores,
           tenantId: tenant?.id,
           domain: tenant?.domain,
-          storeId: data.user.storeId || 1, // Default to store 1 if not specified
+          storeId: data.defaultStoreId || 1, // Use default store ID from API
           token: data.token,
           expiresAt: data.expiresAt
         });

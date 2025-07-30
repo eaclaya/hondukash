@@ -59,16 +59,16 @@ export default function DashboardLayout({
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b">
-        <div className="container mx-auto px-4 py-4">
+        <div className="mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-2xl font-bold">HonduKash ERP</h1>
+              <h1 className="text-2xl font-bold">HonduKash</h1>
               <p className="text-sm text-muted-foreground">{tenant.name}</p>
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-muted-foreground">Store: Main Store</span>
               <Button variant="outline" size="sm">Switch Store</Button>
-              
+
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm" className="flex items-center space-x-2">
@@ -89,7 +89,7 @@ export default function DashboardLayout({
                     Settings
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     onClick={logout}
                     className="text-red-600 focus:text-red-600"
                   >

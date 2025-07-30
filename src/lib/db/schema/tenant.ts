@@ -408,6 +408,132 @@ export const taxConfigurations = sqliteTable('tax_configurations', {
   uniqueStoreTaxCode: uniqueIndex('unique_store_tax_code').on(table.storeId, table.taxCode)
 }));
 
+// =========================================
+// RELATIONS
+// =========================================
+import { relations } from 'drizzle-orm';
+
+export const storesRelations = relations(stores, ({ many }) => ({
+  memberships: many(memberships),
+  clients: many(clients),
+  products: many(products),
+  inventory: many(inventory),
+  invoices: many(invoices),
+  taxConfigurations: many(taxConfigurations)
+}));
+
+export const usersRelations = relations(users, ({ many }) => ({
+  memberships: many(memberships),
+  clientContacts: many(clientContacts),
+  invoices: many(invoices),
+  assignedTags: many(taggable)
+}));
+
+export const membershipsRelations = relations(memberships, ({ one }) => ({
+  user: one(users, {
+    fields: [memberships.userId],
+    references: [users.id]
+  }),
+  store: one(stores, {
+    fields: [memberships.storeId],
+    references: [stores.id]
+  })
+}));
+
+export const clientsRelations = relations(clients, ({ one, many }) => ({
+  store: one(stores, {
+    fields: [clients.storeId],
+    references: [stores.id]
+  }),
+  contacts: many(clientContacts),
+  invoices: many(invoices)
+}));
+
+export const clientContactsRelations = relations(clientContacts, ({ one }) => ({
+  client: one(clients, {
+    fields: [clientContacts.clientId],
+    references: [clients.id]
+  })
+}));
+
+export const categoriesRelations = relations(categories, ({ many }) => ({
+  products: many(products)
+}));
+
+export const productsRelations = relations(products, ({ one, many }) => ({
+  category: one(categories, {
+    fields: [products.categoryId],
+    references: [categories.id]
+  }),
+  inventory: many(inventory),
+  invoiceItems: many(invoiceItems),
+  taxConfiguration: one(taxConfigurations, {
+    fields: [products.taxConfigurationId],
+    references: [taxConfigurations.id]
+  })
+}));
+
+export const inventoryRelations = relations(inventory, ({ one }) => ({
+  product: one(products, {
+    fields: [inventory.productId],
+    references: [products.id]
+  }),
+  store: one(stores, {
+    fields: [inventory.storeId],
+    references: [stores.id]
+  })
+}));
+
+export const invoicesRelations = relations(invoices, ({ one, many }) => ({
+  store: one(stores, {
+    fields: [invoices.storeId],
+    references: [stores.id]
+  }),
+  client: one(clients, {
+    fields: [invoices.clientId],
+    references: [clients.id]
+  }),
+  user: one(users, {
+    fields: [invoices.userId],
+    references: [users.id]
+  }),
+  items: many(invoiceItems)
+}));
+
+export const invoiceItemsRelations = relations(invoiceItems, ({ one }) => ({
+  invoice: one(invoices, {
+    fields: [invoiceItems.invoiceId],
+    references: [invoices.id]
+  }),
+  product: one(products, {
+    fields: [invoiceItems.productId],
+    references: [products.id]
+  })
+}));
+
+export const tagsRelations = relations(tags, ({ many }) => ({
+  taggable: many(taggable)
+}));
+
+export const taggableRelations = relations(taggable, ({ one }) => ({
+  tag: one(tags, {
+    fields: [taggable.tagId],
+    references: [tags.id]
+  }),
+  assignedBy: one(users, {
+    fields: [taggable.assignedBy],
+    references: [users.id]
+  })
+}));
+
+export const taxConfigurationsRelations = relations(taxConfigurations, ({ one, many }) => ({
+  store: one(stores, {
+    fields: [taxConfigurations.storeId],
+    references: [stores.id]
+  }),
+  products: many(products)
+}));
+
 // Export all tables as schema
 export const tenantSchema = {
   stores,
@@ -423,5 +549,19 @@ export const tenantSchema = {
   tags,
   taggable,
   pricingRules,
-  taxConfigurations
+  taxConfigurations,
+  // Relations
+  storesRelations,
+  usersRelations,
+  membershipsRelations,
+  clientsRelations,
+  clientContactsRelations,
+  categoriesRelations,
+  productsRelations,
+  inventoryRelations,
+  invoicesRelations,
+  invoiceItemsRelations,
+  tagsRelations,
+  taggableRelations,
+  taxConfigurationsRelations
 };

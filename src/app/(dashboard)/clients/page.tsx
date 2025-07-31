@@ -5,19 +5,42 @@ import { Client, CreateClientRequest, UpdateClientRequest } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Edit, Trash2, Building, User, Phone, Mail, MapPin, Users } from 'lucide-react';
+import { Plus, Edit, Trash2, Building, User, Phone, Mail, MapPin, Users, Search } from 'lucide-react';
 
 export default function ClientsPage() {
   const router = useRouter();
   const [clients, setClients] = useState<Client[]>([]);
+  const [filteredClients, setFilteredClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
   const { getAuthHeaders } = useAuth();
 
   useEffect(() => {
     fetchClients();
   }, []);
+
+  useEffect(() => {
+    if (!searchTerm.trim()) {
+      setFilteredClients(clients);
+    } else {
+      const filtered = clients.filter(client =>
+        client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        client.primaryContactName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        client.phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        client.mobile?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        client.city?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        client.state?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        client.country?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        client.industry?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        client.clientType.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      setFilteredClients(filtered);
+    }
+  }, [clients, searchTerm]);
 
   const fetchClients = async () => {
     try {
@@ -32,6 +55,7 @@ export default function ClientsPage() {
 
       const data = await response.json();
       setClients(data.clients || []);
+      setFilteredClients(data.clients || []);
     } catch (error: any) {
       setError(error.message);
     } finally {
@@ -100,7 +124,29 @@ export default function ClientsPage() {
         </Button>
       </div>
 
-      {clients.length === 0 ? (
+      {/* Search Bar */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+        <Input
+          placeholder="Search clients by name, contact, email, phone, or location..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-10"
+        />
+      </div>
+
+      {filteredClients.length === 0 && clients.length > 0 ? (
+        <div className="border rounded-lg p-12 text-center">
+          <div className="mx-auto w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-4">
+            <Search className="h-12 w-12 text-muted-foreground" />
+          </div>
+          <h3 className="text-lg font-semibold mb-2">No clients found</h3>
+          <p className="text-muted-foreground mb-4">Try adjusting your search terms.</p>
+          <Button variant="outline" onClick={() => setSearchTerm('')}>
+            Clear Search
+          </Button>
+        </div>
+      ) : clients.length === 0 ? (
         <div className="border rounded-lg p-12 text-center">
           <div className="mx-auto w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-4">
             <Users className="h-12 w-12 text-muted-foreground" />
@@ -128,7 +174,7 @@ export default function ClientsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {clients.map((client) => (
+                {filteredClients.map((client) => (
                   <TableRow key={client.id} className="cursor-pointer hover:bg-muted/50" onClick={() => router.push(`/clients/${client.id}`)}>
                     <TableCell>
                       <div className="flex items-center space-x-3">
@@ -199,7 +245,7 @@ export default function ClientsPage() {
 
           {/* Mobile Card View */}
           <div className="md:hidden grid gap-4">
-            {clients.map((client) => (
+            {filteredClients.map((client) => (
               <div key={client.id} className="border rounded-lg p-4 space-y-3 hover:shadow-md transition-shadow cursor-pointer">
                 <div className="flex justify-between items-start">
                   <div 

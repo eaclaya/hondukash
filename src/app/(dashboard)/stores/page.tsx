@@ -4,15 +4,18 @@ import { useState, useEffect } from 'react';
 import { Store, CreateStoreRequest, UpdateStoreRequest } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { StoreForm } from '@/components/stores/StoreForm';
-import { Plus, Edit, Trash2, MapPin, Phone, Mail, User } from 'lucide-react';
+import { Plus, Edit, Trash2, MapPin, Phone, Mail, User, Search } from 'lucide-react';
 import Link from 'next/link';
 
 export default function StoresPage() {
   const [stores, setStores] = useState<Store[]>([]);
+  const [filteredStores, setFilteredStores] = useState<Store[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingStore, setEditingStore] = useState<Store | null>(null);
   const [formLoading, setFormLoading] = useState(false);
@@ -21,6 +24,24 @@ export default function StoresPage() {
   useEffect(() => {
     fetchStores();
   }, []);
+
+  useEffect(() => {
+    if (!searchTerm.trim()) {
+      setFilteredStores(stores);
+    } else {
+      const filtered = stores.filter(store =>
+        store.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        store.code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        store.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        store.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        store.managerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        store.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        store.phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        store.currency.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      setFilteredStores(filtered);
+    }
+  }, [stores, searchTerm]);
 
   const fetchStores = async () => {
     try {
@@ -35,6 +56,7 @@ export default function StoresPage() {
 
       const data = await response.json();
       setStores(data.stores || []);
+      setFilteredStores(data.stores || []);
     } catch (error: any) {
       setError(error.message);
     } finally {
@@ -150,7 +172,29 @@ export default function StoresPage() {
         </Link>
       </div>
 
-      {stores.length === 0 ? (
+      {/* Search Bar */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+        <Input
+          placeholder="Search stores by name, code, location, manager, or currency..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-10"
+        />
+      </div>
+
+      {filteredStores.length === 0 && stores.length > 0 ? (
+        <div className="border rounded-lg p-12 text-center">
+          <div className="mx-auto w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-4">
+            <Search className="h-12 w-12 text-muted-foreground" />
+          </div>
+          <h3 className="text-lg font-semibold mb-2">No stores found</h3>
+          <p className="text-muted-foreground mb-4">Try adjusting your search terms.</p>
+          <Button variant="outline" onClick={() => setSearchTerm('')}>
+            Clear Search
+          </Button>
+        </div>
+      ) : stores.length === 0 ? (
         <div className="border rounded-lg p-12 text-center">
           <div className="mx-auto w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-4">
             <MapPin className="h-12 w-12 text-muted-foreground" />
@@ -178,7 +222,7 @@ export default function StoresPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {stores.map((store) => (
+                {filteredStores.map((store) => (
                   <TableRow key={store.id} className="cursor-pointer hover:bg-muted/50">
                     <TableCell>
                       <div>
@@ -239,7 +283,7 @@ export default function StoresPage() {
 
           {/* Mobile Card View */}
           <div className="md:hidden grid gap-4">
-            {stores.map((store) => (
+            {filteredStores.map((store) => (
               <div key={store.id} className="border rounded-lg p-4 space-y-3">
                 <div className="flex justify-between items-start">
                   <div>

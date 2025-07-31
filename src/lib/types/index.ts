@@ -235,12 +235,13 @@ export interface ClientContact {
 }
 
 export interface Product {
-  id: string;
+  id: number;
   name: string;
   description?: string;
-  sku: string;
+  sku?: string;
   barcode?: string;
-  categoryId?: string;
+  categoryId?: number;
+  categoryName?: string;
 
   // Pricing and costing
   baseCost: number; // Original purchase/manufacturing cost
@@ -251,7 +252,7 @@ export interface Product {
 
   // Tax configuration
   isTaxable: boolean;
-  taxConfigurationId?: string;
+  taxConfigurationId?: number;
   taxRate?: number;
 
   // Inventory settings
@@ -269,9 +270,9 @@ export interface Product {
 }
 
 export interface Inventory {
-  id: string;
-  productId: string;
-  storeId: string;
+  id?: number;
+  productId: number;
+  storeId: number;
   quantity: number; // Current stock quantity
   price: number; // Store-specific selling price
   location?: string; // Aisle, bin, etc.
@@ -281,6 +282,38 @@ export interface Inventory {
   // Related entities (populated via joins)
   product?: Product;
   store?: Store;
+}
+
+export interface ProductWithInventory extends Product {
+  inventory: Inventory;
+}
+
+export interface CreateProductRequest {
+  name: string;
+  description?: string;
+  sku?: string;
+  barcode?: string;
+  categoryId?: number;
+  baseCost?: number;
+  cost?: number;
+  basePrice?: number;
+  price: number;
+  minPrice?: number;
+  isTaxable?: boolean;
+  taxConfigurationId?: number;
+  taxRate?: number;
+  trackInventory?: boolean;
+  unit?: string;
+  imageUrl?: string;
+  images?: string[];
+  // Initial inventory data
+  quantity?: number;
+  storePrice?: number;
+  location?: string;
+}
+
+export interface UpdateProductRequest extends Partial<CreateProductRequest> {
+  id: number;
 }
 
 export interface Invoice {

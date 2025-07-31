@@ -1,0 +1,489 @@
+'use client';
+
+import { useState } from 'react';
+import { ProductWithInventory, CreateProductRequest, UpdateProductRequest } from '@/lib/types';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Package, Warehouse, Tag, DollarSign, ImageIcon, Settings } from 'lucide-react';
+
+interface ProductFormProps {
+  product?: ProductWithInventory;
+  onSubmit: (data: CreateProductRequest | UpdateProductRequest) => Promise<void>;
+  onCancel: () => void;
+  loading?: boolean;
+}
+
+export default function ProductForm({ product, onSubmit, onCancel, loading = false }: ProductFormProps) {
+  const [formData, setFormData] = useState<CreateProductRequest | UpdateProductRequest>({
+    ...(product?.id && { id: product.id }),
+    name: product?.name || '',
+    description: product?.description || '',
+    sku: product?.sku || '',
+    barcode: product?.barcode || '',
+    categoryId: product?.categoryId || undefined,
+    baseCost: product?.baseCost || 0,
+    cost: product?.cost || 0,
+    basePrice: product?.basePrice || 0,
+    price: product?.price || 0,
+    minPrice: product?.minPrice || 0,
+    isTaxable: product?.isTaxable ?? true,
+    taxConfigurationId: product?.taxConfigurationId || undefined,
+    taxRate: product?.taxRate || 0.15,
+    trackInventory: product?.trackInventory ?? true,
+    unit: product?.unit || 'unit',
+    imageUrl: product?.imageUrl || '',
+    images: product?.images || [],
+    // Inventory data
+    quantity: product?.inventory?.quantity || 0,
+    storePrice: product?.inventory?.price || product?.price || 0,
+    location: product?.inventory?.location || '',
+  });
+
+  const handleInputChange = (field: string, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await onSubmit(formData);
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('es-HN', {
+      style: 'currency',
+      currency: 'HNL'
+    }).format(amount);
+  };
+
+  return (
+    <div className="max-w-4xl mx-auto p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">
+            {product ? 'Edit Product' : 'Create New Product'}
+          </h1>
+          <p className="text-slate-600">
+            {product ? 'Update product information and inventory' : 'Add a new product to your catalog'}
+          </p>
+        </div>
+        <div className="flex space-x-3">
+          <Button variant="outline" onClick={onCancel} disabled={loading}>
+            Cancel
+          </Button>
+          <Button onClick={handleSubmit} disabled={loading} className="btn-primary-modern">
+            {loading ? 'Saving...' : product ? 'Update Product' : 'Create Product'}
+          </Button>
+        </div>
+      </div>
+
+      <Tabs defaultValue="product" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="product">Product Information</TabsTrigger>
+          <TabsTrigger value="inventory">Inventory & Pricing</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="product" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Package className="h-5 w-5" />
+                <span>Basic Information</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Product Name *</Label>
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => handleInputChange('name', e.target.value)}
+                    placeholder="Enter product name"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="sku">SKU</Label>
+                  <Input
+                    id="sku"
+                    value={formData.sku}
+                    onChange={(e) => handleInputChange('sku', e.target.value)}
+                    placeholder="Enter SKU"
+                  />
+                </div>
+
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    id="description"
+                    value={formData.description}
+                    onChange={(e) => handleInputChange('description', e.target.value)}
+                    placeholder="Enter product description"
+                    rows={3}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="barcode">Barcode</Label>
+                  <Input
+                    id="barcode"
+                    value={formData.barcode}
+                    onChange={(e) => handleInputChange('barcode', e.target.value)}
+                    placeholder="Enter barcode"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="unit">Unit of Measure</Label>
+                  <Select
+                    value={formData.unit}
+                    onValueChange={(value) => handleInputChange('unit', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select unit" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="unit">Unit</SelectItem>
+                      <SelectItem value="piece">Piece</SelectItem>
+                      <SelectItem value="kg">Kilogram</SelectItem>
+                      <SelectItem value="lb">Pound</SelectItem>
+                      <SelectItem value="liter">Liter</SelectItem>
+                      <SelectItem value="gallon">Gallon</SelectItem>
+                      <SelectItem value="meter">Meter</SelectItem>
+                      <SelectItem value="yard">Yard</SelectItem>
+                      <SelectItem value="box">Box</SelectItem>
+                      <SelectItem value="pack">Pack</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <DollarSign className="h-5 w-5" />
+                <span>Pricing</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="baseCost">Base Cost (L)</Label>
+                  <Input
+                    id="baseCost"
+                    type="number"
+                    value={formData.baseCost}
+                    onChange={(e) => handleInputChange('baseCost', parseFloat(e.target.value) || 0)}
+                    placeholder="0.00"
+                    min="0"
+                    step="0.01"
+                  />
+                  <p className="text-xs text-muted-foreground">Original purchase/manufacturing cost</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="cost">Current Cost (L)</Label>
+                  <Input
+                    id="cost"
+                    type="number"
+                    value={formData.cost}
+                    onChange={(e) => handleInputChange('cost', parseFloat(e.target.value) || 0)}
+                    placeholder="0.00"
+                    min="0"
+                    step="0.01"
+                  />
+                  <p className="text-xs text-muted-foreground">Current replacement cost</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="basePrice">Base Price (L)</Label>
+                  <Input
+                    id="basePrice"
+                    type="number"
+                    value={formData.basePrice}
+                    onChange={(e) => handleInputChange('basePrice', parseFloat(e.target.value) || 0)}
+                    placeholder="0.00"
+                    min="0"
+                    step="0.01"
+                  />
+                  <p className="text-xs text-muted-foreground">Suggested retail price</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="price">Selling Price (L) *</Label>
+                  <Input
+                    id="price"
+                    type="number"
+                    value={formData.price}
+                    onChange={(e) => handleInputChange('price', parseFloat(e.target.value) || 0)}
+                    placeholder="0.00"
+                    min="0"
+                    step="0.01"
+                    required
+                  />
+                  <p className="text-xs text-muted-foreground">Default selling price</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="minPrice">Minimum Price (L)</Label>
+                  <Input
+                    id="minPrice"
+                    type="number"
+                    value={formData.minPrice}
+                    onChange={(e) => handleInputChange('minPrice', parseFloat(e.target.value) || 0)}
+                    placeholder="0.00"
+                    min="0"
+                    step="0.01"
+                  />
+                  <p className="text-xs text-muted-foreground">Minimum selling price allowed</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Profit Margin</Label>
+                  <div className="p-2 bg-muted rounded">
+                    <span className="text-sm font-medium">
+                      {formData.price && formData.cost 
+                        ? `${(((formData.price - formData.cost) / formData.price) * 100).toFixed(1)}%`
+                        : '0%'
+                      }
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Calculated from selling price and cost</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Settings className="h-5 w-5" />
+                <span>Tax Configuration</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="isTaxable"
+                      checked={formData.isTaxable}
+                      onChange={(e) => handleInputChange('isTaxable', e.target.checked)}
+                      className="rounded border-slate-300"
+                    />
+                    <Label htmlFor="isTaxable">This product is taxable</Label>
+                  </div>
+                </div>
+
+                {formData.isTaxable && (
+                  <div className="space-y-2">
+                    <Label htmlFor="taxRate">Tax Rate (%)</Label>
+                    <Input
+                      id="taxRate"
+                      type="number"
+                      value={(formData.taxRate || 0) * 100}
+                      onChange={(e) => handleInputChange('taxRate', (parseFloat(e.target.value) || 0) / 100)}
+                      placeholder="15"
+                      min="0"
+                      max="100"
+                      step="0.01"
+                    />
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <ImageIcon className="h-5 w-5" />
+                <span>Product Images</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="imageUrl">Primary Image URL</Label>
+                <Input
+                  id="imageUrl"
+                  type="url"
+                  value={formData.imageUrl}
+                  onChange={(e) => handleInputChange('imageUrl', e.target.value)}
+                  placeholder="Enter image URL"
+                />
+              </div>
+              
+              {formData.imageUrl && (
+                <div className="mt-4">
+                  <Label>Preview</Label>
+                  <div className="mt-2 w-32 h-32 border rounded-lg overflow-hidden bg-muted flex items-center justify-center">
+                    <img 
+                      src={formData.imageUrl} 
+                      alt="Product preview" 
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        e.currentTarget.nextElementSibling!.style.display = 'flex';
+                      }}
+                    />
+                    <div className="hidden flex-col items-center justify-center text-muted-foreground">
+                      <ImageIcon className="h-8 w-8" />
+                      <span className="text-xs">Invalid URL</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="inventory" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Warehouse className="h-5 w-5" />
+                <span>Inventory Management</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="trackInventory"
+                    checked={formData.trackInventory}
+                    onChange={(e) => handleInputChange('trackInventory', e.target.checked)}
+                    className="rounded border-slate-300"
+                  />
+                  <Label htmlFor="trackInventory">Track inventory for this product</Label>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Enable this to manage stock levels and receive low stock alerts
+                </p>
+              </div>
+
+              {formData.trackInventory && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
+                  <div className="space-y-2">
+                    <Label htmlFor="quantity">Current Stock Quantity</Label>
+                    <Input
+                      id="quantity"
+                      type="number"
+                      value={formData.quantity}
+                      onChange={(e) => handleInputChange('quantity', parseFloat(e.target.value) || 0)}
+                      placeholder="0"
+                      min="0"
+                      step="0.01"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="location">Storage Location</Label>
+                    <Input
+                      id="location"
+                      value={formData.location}
+                      onChange={(e) => handleInputChange('location', e.target.value)}
+                      placeholder="e.g., Aisle A, Bin 5"
+                    />
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {formData.trackInventory && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Tag className="h-5 w-5" />
+                  <span>Store-Specific Pricing</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="storePrice">Store Price Override (L)</Label>
+                  <Input
+                    id="storePrice"
+                    type="number"
+                    value={formData.storePrice}
+                    onChange={(e) => handleInputChange('storePrice', parseFloat(e.target.value) || 0)}
+                    placeholder={formatCurrency(formData.price || 0)}
+                    min="0"
+                    step="0.01"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Leave empty to use the default selling price ({formatCurrency(formData.price || 0)})
+                  </p>
+                </div>
+
+                {formData.storePrice !== formData.price && formData.storePrice > 0 && (
+                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="flex justify-between text-sm">
+                      <span>Default Price:</span>
+                      <span>{formatCurrency(formData.price || 0)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm font-medium">
+                      <span>Store Price:</span>
+                      <span>{formatCurrency(formData.storePrice || 0)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm text-blue-600">
+                      <span>Difference:</span>
+                      <span>
+                        {formData.storePrice > formData.price ? '+' : ''}
+                        {formatCurrency((formData.storePrice || 0) - (formData.price || 0))}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {formData.trackInventory && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Stock Summary</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="p-4 bg-blue-50 rounded-lg">
+                    <div className="text-2xl font-bold text-blue-600">
+                      {formData.quantity || 0}
+                    </div>
+                    <div className="text-sm text-blue-600">Current Stock</div>
+                  </div>
+                  
+                  <div className="p-4 bg-green-50 rounded-lg">
+                    <div className="text-2xl font-bold text-green-600">
+                      {formatCurrency((formData.storePrice || formData.price || 0) * (formData.quantity || 0))}
+                    </div>
+                    <div className="text-sm text-green-600">Stock Value</div>
+                  </div>
+                  
+                  <div className="p-4 bg-purple-50 rounded-lg">
+                    <div className="text-2xl font-bold text-purple-600">
+                      {formatCurrency(formData.storePrice || formData.price || 0)}
+                    </div>
+                    <div className="text-sm text-purple-600">Unit Price</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}

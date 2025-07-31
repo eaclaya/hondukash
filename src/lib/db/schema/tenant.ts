@@ -100,10 +100,9 @@ export const products = sqliteTable('products', {
   trackInventory: integer('track_inventory', { mode: 'boolean' }).notNull().default(true),
   unit: text('unit').default('unit'),
 
-  // Tax configuration
+  // Tax rates
   isTaxable: integer('is_taxable', { mode: 'boolean' }).notNull().default(true),
-  taxConfigurationId: integer('tax_configuration_id').references(() => taxConfigurations.id),
-  taxRate: real('tax_rate'), // Kept for backward compatibility
+  taxRateId: integer('tax_rate_id').references(() => taxRates.id),
 
   // Images and files
   imageUrl: text('image_url'),
@@ -156,7 +155,7 @@ export const clients = sqliteTable('clients', {
 
   // Company-specific information
   companyRegistrationNumber: text('company_registration_number'), // For companies
-  taxId: text('tax_id'), // RTN in Honduras
+  taxId: text('tax_id'),
   industry: text('industry'),
   website: text('website'),
 
@@ -198,8 +197,8 @@ export const clientContacts = sqliteTable('client_contacts', {
   extension: text('extension'),
 
   // Contact type and permissions
-  contactType: text('contact_type', { 
-    enum: ['primary', 'employee', 'manager', 'executive', 'procurement', 'accounting', 'other'] 
+  contactType: text('contact_type', {
+    enum: ['primary', 'employee', 'manager', 'executive', 'procurement', 'accounting', 'other']
   }).notNull().default('employee'),
 
   // Purchase permissions
@@ -302,8 +301,8 @@ export const tags = sqliteTable('tags', {
   color: text('color').default('#3B82F6'), // Hex color for UI display
 
   // Tag category/type for organization
-  category: text('category', { 
-    enum: ['general', 'client', 'product', 'discount', 'marketing', 'custom'] 
+  category: text('category', {
+    enum: ['general', 'client', 'product', 'discount', 'marketing', 'custom']
   }).default('general'),
 
   // Tag settings
@@ -323,8 +322,8 @@ export const taggable = sqliteTable('taggable', {
   tagId: integer('tag_id').notNull().references(() => tags.id, { onDelete: 'cascade' }),
 
   // Polymorphic relationship
-  entityType: text('entity_type', { 
-    enum: ['client', 'product', 'invoice', 'category', 'user', 'supplier', 'expense'] 
+  entityType: text('entity_type', {
+    enum: ['client', 'product', 'invoice', 'category', 'user', 'supplier', 'expense']
   }).notNull(),
   entityId: integer('entity_id').notNull(),
 
@@ -351,8 +350,8 @@ export const pricingRules = sqliteTable('pricing_rules', {
   ruleCode: text('rule_code'),
 
   // Rule type and priority
-  ruleType: text('rule_type', { 
-    enum: ['percentage_discount', 'fixed_amount_discount', 'fixed_price', 'buy_x_get_y', 'quantity_discount'] 
+  ruleType: text('rule_type', {
+    enum: ['percentage_discount', 'fixed_amount_discount', 'fixed_price', 'buy_x_get_y', 'quantity_discount']
   }).notNull(),
   priority: integer('priority').notNull().default(0), // Higher number = higher priority
 
@@ -384,17 +383,16 @@ export const pricingRules = sqliteTable('pricing_rules', {
 }));
 
 // =========================================
-// TAX CONFIGURATIONS
+// TAX RATES
 // =========================================
-export const taxConfigurations = sqliteTable('tax_configurations', {
+export const taxRates = sqliteTable('tax_rates', {
   id: integer('id').primaryKey({ autoIncrement: true }),
-  storeId: integer('store_id').notNull().references(() => stores.id, { onDelete: 'cascade' }),
 
   // Tax details
-  taxName: text('tax_name').notNull(),
-  taxCode: text('tax_code').notNull(),
-  taxRate: real('tax_rate').notNull(),
-  taxType: text('tax_type', { enum: ['sales', 'purchase', 'both'] }).notNull(),
+  name: text('name').notNull(),
+  code: text('code').notNull(),
+  rate: real('rate').notNull(),
+  type: text('type', { enum: ['sales', 'purchase', 'both'] }).notNull(),
 
   // Settings
   isDefault: integer('is_default', { mode: 'boolean' }).default(false),
@@ -404,9 +402,7 @@ export const taxConfigurations = sqliteTable('tax_configurations', {
   description: text('description'),
   createdAt: text('created_at').notNull().$defaultFn(() => new Date().toISOString()),
   updatedAt: text('updated_at').notNull().$defaultFn(() => new Date().toISOString())
-}, (table) => ({
-  uniqueStoreTaxCode: uniqueIndex('unique_store_tax_code').on(table.storeId, table.taxCode)
-}));
+});
 
 // =========================================
 // RELATIONS
@@ -419,7 +415,7 @@ export const storesRelations = relations(stores, ({ many }) => ({
   products: many(products),
   inventory: many(inventory),
   invoices: many(invoices),
-  taxConfigurations: many(taxConfigurations)
+  taxRates: many(taxRates)
 }));
 
 export const usersRelations = relations(users, ({ many }) => ({
@@ -467,9 +463,9 @@ export const productsRelations = relations(products, ({ one, many }) => ({
   }),
   inventory: many(inventory),
   invoiceItems: many(invoiceItems),
-  taxConfiguration: one(taxConfigurations, {
-    fields: [products.taxConfigurationId],
-    references: [taxConfigurations.id]
+  taxRate: one(taxRates, {
+    fields: [products.taxRateId],
+    references: [taxRates.id]
   })
 }));
 
@@ -526,13 +522,6 @@ export const taggableRelations = relations(taggable, ({ one }) => ({
   })
 }));
 
-export const taxConfigurationsRelations = relations(taxConfigurations, ({ one, many }) => ({
-  store: one(stores, {
-    fields: [taxConfigurations.storeId],
-    references: [stores.id]
-  }),
-  products: many(products)
-}));
 
 // Export all tables as schema
 export const tenantSchema = {
@@ -549,7 +538,7 @@ export const tenantSchema = {
   tags,
   taggable,
   pricingRules,
-  taxConfigurations,
+  taxRates,
   // Relations
   storesRelations,
   usersRelations,
@@ -562,6 +551,5 @@ export const tenantSchema = {
   invoicesRelations,
   invoiceItemsRelations,
   tagsRelations,
-  taggableRelations,
-  taxConfigurationsRelations
+  taggableRelations
 };

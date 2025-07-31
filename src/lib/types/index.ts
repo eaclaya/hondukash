@@ -355,9 +355,40 @@ export interface Invoice {
 export interface InvoiceItem {
   id: string;
   productId: string;
+  productName?: string;
   quantity: number;
   unitPrice: number;
   total: number;
+}
+
+export interface CreateInvoiceRequest {
+  clientId: number;
+  clientContactId?: number;
+  storeId: number;
+  contactName?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  items: CreateInvoiceItemRequest[];
+  subtotal: number;
+  tax: number;
+  discount: number;
+  total: number;
+  status?: 'draft' | 'sent' | 'paid' | 'partial' | 'overdue' | 'cancelled';
+  invoiceDate: string;
+  dueDate?: string;
+  notes?: string;
+  terms?: string;
+}
+
+export interface CreateInvoiceItemRequest {
+  productId: number;
+  quantity: number;
+  unitPrice: number;
+  total: number;
+}
+
+export interface UpdateInvoiceRequest extends Partial<CreateInvoiceRequest> {
+  id: number;
 }
 
 // Pagination interfaces

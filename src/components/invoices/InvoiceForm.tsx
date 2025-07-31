@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Invoice, CreateInvoiceRequest, UpdateInvoiceRequest, Client, ProductWithInventory } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,6 +21,7 @@ interface InvoiceFormProps {
 
 interface InvoiceItemForm {
   productId: number | null;
+  sku: string;
   productName: string;
   quantity: number;
   unitPrice: number;
@@ -58,11 +59,12 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
   const [items, setItems] = useState<InvoiceItemForm[]>(
     invoice?.items.map(item => ({
       productId: item.productId ? parseInt(item.productId) : null,
+      sku: item.sku || '',
       productName: item.productName || '',
       quantity: item.quantity,
       unitPrice: item.unitPrice,
       total: item.total
-    })) || [{ productId: null, productName: '', quantity: 1, unitPrice: 0, total: 0 }]
+    })) || [{ productId: null, sku: '', productName: '', quantity: 1, unitPrice: 0, total: 0 }]
   );
 
   const [taxRate, setTaxRate] = useState(0.15); // 15% default tax rate
@@ -140,7 +142,7 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
   // Debounced client search
   const handleClientSearchChange = (value: string) => {
     setClientSearch(value);
-    
+
     if (clientSearchTimeout) {
       clearTimeout(clientSearchTimeout);
     }
@@ -148,14 +150,14 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
     const timeout = setTimeout(() => {
       searchClients(value);
     }, 300);
-    
+
     setClientSearchTimeout(timeout);
   };
 
   // Debounced product search
   const handleProductSearchChange = (value: string) => {
     setProductSearch(value);
-    
+
     if (productSearchTimeout) {
       clearTimeout(productSearchTimeout);
     }
@@ -163,7 +165,7 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
     const timeout = setTimeout(() => {
       searchProducts(value);
     }, 300);
-    
+
     setProductSearchTimeout(timeout);
   };
 
@@ -174,13 +176,13 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault();
-        setSelectedClientIndex(prev => 
+        setSelectedClientIndex(prev =>
           prev < clientResults.length - 1 ? prev + 1 : 0
         );
         break;
       case 'ArrowUp':
         e.preventDefault();
-        setSelectedClientIndex(prev => 
+        setSelectedClientIndex(prev =>
           prev > 0 ? prev - 1 : clientResults.length - 1
         );
         break;
@@ -203,7 +205,7 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
     setFormData(prev => ({ ...prev, clientId: client.id }));
     setShowClientDropdown(false);
     setSelectedClientIndex(-1);
-    
+
     // Move focus to product search
     setTimeout(() => {
       const productInput = document.getElementById('product-search') as HTMLInputElement;
@@ -242,12 +244,13 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
     setItems(newItems);
   };
 
-  const handleQuickProductAdd = (productId: number, quantity: number = 1) => {
+  const handleQuickProductAdd = (productId: number, sku: string, quantity: number = 1) => {
     const product = productResults.find(p => p.id === productId);
     if (!product) return;
 
     const newItem: InvoiceItemForm = {
       productId: product.id,
+      sku: product.sku,
       productName: product.name,
       quantity: quantity,
       unitPrice: product.inventory?.price || product.price,
@@ -479,7 +482,6 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
                 <TableHeader>
                   <TableRow>
                     <TableHead>Product</TableHead>
-                    <TableHead>Description</TableHead>
                     <TableHead>Quantity</TableHead>
                     <TableHead>Unit Price</TableHead>
                     <TableHead>Total</TableHead>
@@ -489,25 +491,15 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
                 <TableBody>
                   {items.map((item, index) => (
                     <TableRow key={index}>
-                      <TableCell>
-                        <Select
-                          value={item.productId?.toString() || ''}
-                          onValueChange={(value) => handleItemChange(index, 'productId', value ? parseInt(value) : null)}
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Select product" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="no-products" disabled>Search products using Quick Product Entry above</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          value={item.productName}
-                          onChange={(e) => handleItemChange(index, 'productName', e.target.value)}
-                          placeholder="Item description"
-                        />
+                      <TableCell className="min-w-0">
+                        <div className="space-y-1">
+                          <Input
+                            value={item.productName}
+                            onChange={(e) => handleItemChange(index, 'productName', e.target.value)}
+                            placeholder="Product name / description"
+                            className="font-medium"
+                          />
+                        </div>
                       </TableCell>
                       <TableCell>
                         <Input
@@ -642,7 +634,7 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
 interface QuickProductEntryProps {
   products: ProductWithInventory[];
   loading: boolean;
-  onProductAdd: (productId: number, quantity: number) => void;
+  onProductAdd: (productId: number, sku: string, quantity: number) => void;
   onSearchChange: (search: string) => void;
   searchValue: string;
 }
@@ -650,16 +642,53 @@ interface QuickProductEntryProps {
 function QuickProductEntry({ products, loading, onProductAdd, onSearchChange, searchValue }: QuickProductEntryProps) {
   const [quantity, setQuantity] = useState(1);
   const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
+  const [selectedProductIndex, setSelectedProductIndex] = useState(-1);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && selectedProductId) {
-      e.preventDefault();
-      onProductAdd(selectedProductId, quantity);
-      setSelectedProductId(null);
-      setQuantity(1);
-      onSearchChange(''); // Clear search
+    if (products.length === 0) return;
+    console.log(products)
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        const nextIndex = selectedProductIndex < products.length - 1 ? selectedProductIndex + 1 : 0;
+        setSelectedProductIndex(nextIndex);
+        setSelectedProductId(products[nextIndex].id);
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        const prevIndex = selectedProductIndex > 0 ? selectedProductIndex - 1 : products.length - 1;
+        setSelectedProductIndex(prevIndex);
+        setSelectedProductId(products[prevIndex].id);
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (selectedProductId) {
+          const product = products.find(p => p.id === selectedProductId);
+          if (!product) return;
+          onProductAdd(selectedProductId, product.sku, quantity);
+          setSelectedProductId(null);
+          setSelectedProductIndex(-1);
+          setQuantity(1);
+          onSearchChange(''); // Clear search
+        }
+        break;
+      case 'Escape':
+        setSelectedProductId(null);
+        setSelectedProductIndex(-1);
+        break;
     }
   };
+
+  // Reset selection when products change
+  React.useEffect(() => {
+    if (products.length === 0) {
+      setSelectedProductId(null);
+      setSelectedProductIndex(-1);
+    } else if (selectedProductIndex >= products.length) {
+      setSelectedProductIndex(0);
+      setSelectedProductId(products[0].id);
+    }
+  }, [products, selectedProductIndex]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-HN', {
@@ -695,7 +724,9 @@ function QuickProductEntry({ products, loading, onProductAdd, onSearchChange, se
           type="button"
           onClick={() => {
             if (selectedProductId) {
-              onProductAdd(selectedProductId, quantity);
+              const product = products.find(p => p.id === selectedProductId);
+              if (!product) return;
+              onProductAdd(selectedProductId, product.sku, quantity);
               setSelectedProductId(null);
               setQuantity(1);
               onSearchChange('');
@@ -716,13 +747,16 @@ function QuickProductEntry({ products, loading, onProductAdd, onSearchChange, se
             <div className="p-4 text-center text-muted-foreground">No products found</div>
           ) : (
             <div className="divide-y">
-              {products.map((product) => (
+              {products.map((product, index) => (
                 <div
                   key={product.id}
                   className={`p-3 cursor-pointer hover:bg-muted/50 transition-colors ${
-                    selectedProductId === product.id ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
+                    index === selectedProductIndex ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
                   }`}
-                  onClick={() => setSelectedProductId(product.id)}
+                  onClick={() => {
+                    setSelectedProductIndex(index);
+                    setSelectedProductId(product.id);
+                  }}
                 >
                   <div className="flex items-center justify-between">
                     <div>
@@ -748,7 +782,7 @@ function QuickProductEntry({ products, loading, onProductAdd, onSearchChange, se
       )}
 
       <div className="text-sm text-muted-foreground">
-        💡 Tip: Search for a product, select it, enter quantity, and press Enter to add to invoice
+        💡 Tip: Search for a product, use arrow keys to navigate, enter quantity, and press Enter to add to invoice
       </div>
     </div>
   );

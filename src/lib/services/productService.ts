@@ -29,13 +29,13 @@ export class ProductService {
 
       // Build where conditions
       let whereConditions = eq(products.isActive, true);
-      
+
       if (search) {
         const searchConditions = or(
           like(products.name, `%${search}%`),
           like(products.description, `%${search}%`),
           like(products.sku, `%${search}%`),
-          like(categories.name, `%${search}%`)
+          like(products.barcode, `%${search}%`),
         );
         whereConditions = and(whereConditions, searchConditions);
       }
@@ -46,7 +46,7 @@ export class ProductService {
         .from(products)
         .leftJoin(categories, eq(categories.id, products.categoryId))
         .where(whereConditions);
-      
+
       const totalCount = totalCountResult[0]?.count || 0;
       const totalPages = Math.ceil(totalCount / limit);
 
@@ -129,8 +129,8 @@ export class ProductService {
         }
       }));
 
-      return { 
-        success: true, 
+      return {
+        success: true,
         data: {
           data: transformedProducts,
           pagination: {

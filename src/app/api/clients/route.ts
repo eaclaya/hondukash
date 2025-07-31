@@ -21,14 +21,23 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const storeIdParam = searchParams.get('storeId');
     const storeId = storeIdHeader ? parseInt(storeIdHeader) : storeIdParam ? parseInt(storeIdParam) : undefined;
-    console.log('storeId', storeId);
-    const result = await ClientService.getAllClients(domain, storeId);
+    
+    // Get pagination and search parameters
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '10');
+    const search = searchParams.get('search') || undefined;
+
+    const result = await ClientService.getAllClients(domain, storeId, {
+      page,
+      limit,
+      search
+    });
 
     if (!result.success) {
       return NextResponse.json({ error: result.error }, { status: 400 });
     }
 
-    return NextResponse.json({ clients: result.data });
+    return NextResponse.json(result.data);
   } catch (error: any) {
     console.error('GET /api/clients error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

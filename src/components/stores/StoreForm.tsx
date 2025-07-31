@@ -16,7 +16,6 @@ interface StoreFormProps {
 export function StoreForm({ store, onSubmit, onCancel, loading = false }: StoreFormProps) {
   const [formData, setFormData] = useState({
     name: store?.name || '',
-    code: store?.code || '',
     description: store?.description || '',
     location: store?.location || '',
     address: store?.address || '',
@@ -39,10 +38,6 @@ export function StoreForm({ store, onSubmit, onCancel, loading = false }: StoreF
 
     if (!formData.name.trim()) {
       newErrors.name = 'Store name is required';
-    }
-
-    if (formData.code && !/^[A-Z0-9_-]+$/i.test(formData.code)) {
-      newErrors.code = 'Store code can only contain letters, numbers, hyphens, and underscores';
     }
 
     if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
@@ -111,20 +106,6 @@ export function StoreForm({ store, onSubmit, onCancel, loading = false }: StoreF
                   placeholder="Enter store name"
                 />
                 {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">Store Code</label>
-                <input
-                  type="text"
-                  value={formData.code}
-                  onChange={(e) => handleChange('code', e.target.value.toUpperCase())}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    errors.code ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                  placeholder="MAIN"
-                />
-                {errors.code && <p className="text-red-500 text-sm mt-1">{errors.code}</p>}
               </div>
             </div>
 

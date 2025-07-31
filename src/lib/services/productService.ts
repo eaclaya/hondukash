@@ -1,7 +1,7 @@
-import { Product, ProductWithInventory, Inventory, CreateProductRequest, UpdateProductRequest } from '@/lib/types';
+import { ProductWithInventory, CreateProductRequest, UpdateProductRequest, PaginationParams, PaginatedResponse } from '@/lib/types';
 import { getTenantDb } from '@/lib/turso';
 import { products, inventory, categories } from '@/lib/db/schema/tenant';
-import { eq, and, desc, sql } from 'drizzle-orm';
+import { eq, and, sql, like, or, count } from 'drizzle-orm';
 
 interface ServiceResult<T> {
   success: boolean;
@@ -14,13 +14,41 @@ export class ProductService {
   // PRODUCT CRUD OPERATIONS
   // =====================================================
 
-  static async getAllProducts(domain: string, storeId?: number): Promise<ServiceResult<ProductWithInventory[]>> {
+  static async getAllProducts(domain: string, storeId?: number, params?: PaginationParams): Promise<ServiceResult<PaginatedResponse<ProductWithInventory>>> {
     try {
       const db = await getTenantDb(domain);
 
       if (!storeId) {
         return { success: false, error: 'Store ID is required' };
       }
+
+      const page = params?.page || 1;
+      const limit = params?.limit || 10;
+      const search = params?.search?.trim();
+      const offset = (page - 1) * limit;
+
+      // Build where conditions
+      let whereConditions = eq(products.isActive, true);
+      
+      if (search) {
+        const searchConditions = or(
+          like(products.name, `%${search}%`),
+          like(products.description, `%${search}%`),
+          like(products.sku, `%${search}%`),
+          like(categories.name, `%${search}%`)
+        );
+        whereConditions = and(whereConditions, searchConditions);
+      }
+
+      // Get total count for pagination
+      const totalCountResult = await db
+        .select({ count: count() })
+        .from(products)
+        .leftJoin(categories, eq(categories.id, products.categoryId))
+        .where(whereConditions);
+      
+      const totalCount = totalCountResult[0]?.count || 0;
+      const totalPages = Math.ceil(totalCount / limit);
 
       // Query products with inventory data for the specific store
       const productsWithInventory = await db
@@ -60,8 +88,10 @@ export class ProductService {
           sql`${inventory.productId} = ${products.id} AND ${inventory.storeId} = ${storeId}`
         )
         .leftJoin(categories, eq(categories.id, products.categoryId))
-        .where(eq(products.isActive, true))
-        .orderBy(products.name);
+        .where(whereConditions)
+        .orderBy(products.name)
+        .limit(limit)
+        .offset(offset);
 
       // Transform the data to match the expected interface
       const transformedProducts: ProductWithInventory[] = productsWithInventory.map(product => ({
@@ -72,15 +102,15 @@ export class ProductService {
         barcode: product.barcode || undefined,
         categoryId: product.categoryId || undefined,
         categoryName: product.categoryName || undefined,
-        baseCost: product.baseCost,
-        cost: product.cost,
-        basePrice: product.basePrice,
+        baseCost: product.baseCost || 0,
+        cost: product.cost || 0,
+        basePrice: product.basePrice || 0,
         price: product.price,
-        minPrice: product.minPrice,
+        minPrice: product.minPrice || 0,
         isTaxable: product.isTaxable,
         taxRateId: product.taxRateId || undefined,
         trackInventory: product.trackInventory,
-        unit: product.unit,
+        unit: product.unit || 'unit',
         imageUrl: product.imageUrl || undefined,
         images: product.images && product.images !== 'null' ? JSON.parse(product.images) : [],
         isActive: product.isActive,
@@ -99,7 +129,18 @@ export class ProductService {
         }
       }));
 
-      return { success: true, data: transformedProducts };
+      return { 
+        success: true, 
+        data: {
+          data: transformedProducts,
+          pagination: {
+            page,
+            limit,
+            total: totalCount,
+            totalPages
+          }
+        }
+      };
     } catch (error: any) {
       console.error('ProductService.getAllProducts error:', error);
       return { success: false, error: error.message };
@@ -170,15 +211,15 @@ export class ProductService {
         barcode: product.barcode || undefined,
         categoryId: product.categoryId || undefined,
         categoryName: product.categoryName || undefined,
-        baseCost: product.baseCost,
-        cost: product.cost,
-        basePrice: product.basePrice,
+        baseCost: product.baseCost || 0,
+        cost: product.cost || 0,
+        basePrice: product.basePrice || 0,
         price: product.price,
-        minPrice: product.minPrice,
+        minPrice: product.minPrice || 0,
         isTaxable: product.isTaxable,
         taxRateId: product.taxRateId || undefined,
         trackInventory: product.trackInventory,
-        unit: product.unit,
+        unit: product.unit || 'unit',
         imageUrl: product.imageUrl || undefined,
         images: product.images && product.images !== 'null' ? JSON.parse(product.images) : [],
         isActive: product.isActive,

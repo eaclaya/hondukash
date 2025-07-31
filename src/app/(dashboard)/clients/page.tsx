@@ -1,51 +1,61 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Client, CreateClientRequest, UpdateClientRequest } from '@/lib/types';
+import { useState, useEffect, useCallback } from 'react';
+import { Client, PaginatedResponse } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Pagination } from '@/components/ui/pagination';
 import { Plus, Edit, Trash2, Building, User, Phone, Mail, MapPin, Users, Search } from 'lucide-react';
+
+// Simple debounce function
+function debounce<T extends (...args: any[]) => void>(func: T, delay: number): T {
+  let timeoutId: NodeJS.Timeout;
+  return ((...args: any[]) => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => func(...args), delay);
+  }) as T;
+}
 
 export default function ClientsPage() {
   const router = useRouter();
-  const [clients, setClients] = useState<Client[]>([]);
-  const [filteredClients, setFilteredClients] = useState<Client[]>([]);
+  const [clientsData, setClientsData] = useState<PaginatedResponse<Client> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const { getAuthHeaders } = useAuth();
+
+  // Debounce search input
+  const debouncedSetSearch = useCallback(
+    debounce((search: string) => {
+      setDebouncedSearch(search);
+      setCurrentPage(1); // Reset to first page when searching
+    }, 500),
+    []
+  );
+
+  useEffect(() => {
+    debouncedSetSearch(searchTerm);
+  }, [searchTerm, debouncedSetSearch]);
 
   useEffect(() => {
     fetchClients();
-  }, []);
-
-  useEffect(() => {
-    if (!searchTerm.trim()) {
-      setFilteredClients(clients);
-    } else {
-      const filtered = clients.filter(client =>
-        client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        client.primaryContactName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        client.phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        client.mobile?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        client.city?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        client.state?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        client.country?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        client.industry?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        client.clientType.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-      setFilteredClients(filtered);
-    }
-  }, [clients, searchTerm]);
+  }, [currentPage, debouncedSearch]);
 
   const fetchClients = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/clients', {
+      const searchParams = new URLSearchParams({
+        page: currentPage.toString(),
+        limit: '10',
+        ...(debouncedSearch && { search: debouncedSearch })
+      });
+
+      const response = await fetch(`/api/clients?${searchParams}`, {
         headers: getAuthHeaders()
       });
 
@@ -54,8 +64,7 @@ export default function ClientsPage() {
       }
 
       const data = await response.json();
-      setClients(data.clients || []);
-      setFilteredClients(data.clients || []);
+      setClientsData(data);
     } catch (error: any) {
       setError(error.message);
     } finally {
@@ -84,19 +93,6 @@ export default function ClientsPage() {
       alert(error.message);
     }
   };
-
-  if (loading) {
-    return (
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">Clients</h1>
-        </div>
-        <div className="flex items-center justify-center py-12">
-          <div className="text-lg">Loading clients...</div>
-        </div>
-      </div>
-    );
-  }
 
   if (error) {
     return (
@@ -135,7 +131,7 @@ export default function ClientsPage() {
         />
       </div>
 
-      {filteredClients.length === 0 && clients.length > 0 ? (
+      {clientsData && clientsData.data.length === 0 && clientsData.pagination.total > 0 ? (
         <div className="border rounded-lg p-12 text-center">
           <div className="mx-auto w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-4">
             <Search className="h-12 w-12 text-muted-foreground" />
@@ -146,7 +142,7 @@ export default function ClientsPage() {
             Clear Search
           </Button>
         </div>
-      ) : clients.length === 0 ? (
+      ) : !clientsData || clientsData.pagination.total === 0 ? (
         <div className="border rounded-lg p-12 text-center">
           <div className="mx-auto w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-4">
             <Users className="h-12 w-12 text-muted-foreground" />
@@ -174,7 +170,7 @@ export default function ClientsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredClients.map((client) => (
+                {clientsData?.data.map((client) => (
                   <TableRow key={client.id} className="cursor-pointer hover:bg-muted/50" onClick={() => router.push(`/clients/${client.id}`)}>
                     <TableCell>
                       <div className="flex items-center space-x-3">
@@ -220,8 +216,8 @@ export default function ClientsPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end space-x-2" onClick={(e) => e.stopPropagation()}>
-                        <Button 
-                          variant="ghost" 
+                        <Button
+                          variant="ghost"
                           size="sm"
                           onClick={() => router.push(`/clients/${client.id}/edit`)}
                         >
@@ -245,10 +241,10 @@ export default function ClientsPage() {
 
           {/* Mobile Card View */}
           <div className="md:hidden grid gap-4">
-            {filteredClients.map((client) => (
+            {clientsData?.data.map((client) => (
               <div key={client.id} className="border rounded-lg p-4 space-y-3 hover:shadow-md transition-shadow cursor-pointer">
                 <div className="flex justify-between items-start">
-                  <div 
+                  <div
                     className="flex items-start space-x-3 flex-1"
                     onClick={() => router.push(`/clients/${client.id}`)}
                   >
@@ -263,8 +259,8 @@ export default function ClientsPage() {
                     </div>
                   </div>
                   <div className="flex space-x-1">
-                    <Button 
-                      variant="ghost" 
+                    <Button
+                      variant="ghost"
                       size="sm"
                       onClick={() => router.push(`/clients/${client.id}/edit`)}
                     >
@@ -319,6 +315,17 @@ export default function ClientsPage() {
               </div>
             ))}
           </div>
+
+          {/* Pagination */}
+          {clientsData && clientsData.pagination.totalPages > 1 && (
+            <Pagination
+              currentPage={clientsData.pagination.page}
+              totalPages={clientsData.pagination.totalPages}
+              totalItems={clientsData.pagination.total}
+              itemsPerPage={clientsData.pagination.limit}
+              onPageChange={setCurrentPage}
+            />
+          )}
         </>
       )}
     </div>

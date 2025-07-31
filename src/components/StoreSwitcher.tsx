@@ -59,7 +59,6 @@ export default function StoreSwitcher() {
       <div className="flex items-center space-x-2 text-sm">
         <Store className="h-4 w-4" />
         <span>{currentStore?.name || stores[0].name}</span>
-        <span className="text-xs text-muted-foreground">({currentStore?.role || stores[0].role})</span>
       </div>
     );
   }
@@ -70,9 +69,6 @@ export default function StoreSwitcher() {
         <Button variant="outline" size="sm" className="flex items-center space-x-2">
           <Store className="h-4 w-4" />
           <span className="hidden md:inline">{currentStore?.name || 'Select Store'}</span>
-          <span className="hidden md:inline text-xs text-muted-foreground">
-            ({currentStore?.role || ''})
-          </span>
           <ChevronDown className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
@@ -85,10 +81,6 @@ export default function StoreSwitcher() {
           >
             <div className="flex flex-col">
               <span className="font-medium">{store.name}</span>
-              {store.code && (
-                <span className="text-xs text-muted-foreground">{store.code}</span>
-              )}
-              <span className="text-xs text-muted-foreground capitalize">{store.role}</span>
             </div>
             {currentStoreId === store.id && (
               <Check className="h-4 w-4 text-primary" />

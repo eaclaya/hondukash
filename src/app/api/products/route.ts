@@ -25,13 +25,22 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Store ID is required' }, { status: 400 });
     }
 
-    const result = await ProductService.getAllProducts(domain, storeId);
+    // Get pagination and search parameters
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '10');
+    const search = searchParams.get('search') || undefined;
+
+    const result = await ProductService.getAllProducts(domain, storeId, {
+      page,
+      limit,
+      search
+    });
 
     if (!result.success) {
       return NextResponse.json({ error: result.error }, { status: 400 });
     }
 
-    return NextResponse.json({ products: result.data });
+    return NextResponse.json(result.data);
   } catch (error: any) {
     console.error('GET /api/products error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

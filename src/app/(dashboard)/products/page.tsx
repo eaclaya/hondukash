@@ -1,45 +1,61 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { ProductWithInventory } from '@/lib/types';
+import { useState, useEffect, useCallback } from 'react';
+import { ProductWithInventory, PaginatedResponse } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Pagination } from '@/components/ui/pagination';
 import { Plus, Edit, Trash2, Package, Search } from 'lucide-react';
+
+// Simple debounce function
+function debounce<T extends (...args: any[]) => void>(func: T, delay: number): T {
+  let timeoutId: NodeJS.Timeout;
+  return ((...args: any[]) => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => func(...args), delay);
+  }) as T;
+}
 
 export default function ProductsPage() {
   const router = useRouter();
-  const [products, setProducts] = useState<ProductWithInventory[]>([]);
-  const [filteredProducts, setFilteredProducts] = useState<ProductWithInventory[]>([]);
+  const [productsData, setProductsData] = useState<PaginatedResponse<ProductWithInventory> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const { getAuthHeaders } = useAuth();
+
+  // Debounce search input
+  const debouncedSetSearch = useCallback(
+    debounce((search: string) => {
+      setDebouncedSearch(search);
+      setCurrentPage(1); // Reset to first page when searching
+    }, 500),
+    []
+  );
+
+  useEffect(() => {
+    debouncedSetSearch(searchTerm);
+  }, [searchTerm, debouncedSetSearch]);
 
   useEffect(() => {
     fetchProducts();
-  }, []);
-
-  useEffect(() => {
-    if (!searchTerm.trim()) {
-      setFilteredProducts(products);
-    } else {
-      const filtered = products.filter(product =>
-        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.sku?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.categoryName?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-      setFilteredProducts(filtered);
-    }
-  }, [products, searchTerm]);
+  }, [currentPage, debouncedSearch]);
 
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/products', {
+      const searchParams = new URLSearchParams({
+        page: currentPage.toString(),
+        limit: '10',
+        ...(debouncedSearch && { search: debouncedSearch })
+      });
+
+      const response = await fetch(`/api/products?${searchParams}`, {
         headers: getAuthHeaders()
       });
 
@@ -48,8 +64,7 @@ export default function ProductsPage() {
       }
 
       const data = await response.json();
-      setProducts(data.products || []);
-      setFilteredProducts(data.products || []);
+      setProductsData(data);
     } catch (error: any) {
       setError(error.message);
     } finally {
@@ -102,19 +117,6 @@ export default function ProductsPage() {
     }).format(amount);
   };
 
-  if (loading) {
-    return (
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">Products</h1>
-        </div>
-        <div className="flex items-center justify-center py-12">
-          <div className="text-lg">Loading products...</div>
-        </div>
-      </div>
-    );
-  }
-
   if (error) {
     return (
       <div className="space-y-6">
@@ -152,7 +154,7 @@ export default function ProductsPage() {
         />
       </div>
 
-      {filteredProducts.length === 0 && products.length > 0 ? (
+      {productsData && productsData.data.length === 0 && productsData.pagination.total > 0 ? (
         <div className="border rounded-lg p-12 text-center">
           <div className="mx-auto w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-4">
             <Search className="h-12 w-12 text-muted-foreground" />
@@ -163,7 +165,7 @@ export default function ProductsPage() {
             Clear Search
           </Button>
         </div>
-      ) : products.length === 0 ? (
+      ) : !productsData || productsData.pagination.total === 0 ? (
         <div className="border rounded-lg p-12 text-center">
           <div className="mx-auto w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-4">
             <Package className="h-12 w-12 text-muted-foreground" />
@@ -192,10 +194,10 @@ export default function ProductsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredProducts.map((product) => {
+                {productsData?.data.map((product) => {
                   const stockStatus = getStockStatus(product);
                   const hasStorePrice = product.inventory.price !== product.price;
-                  
+
                   return (
                     <TableRow key={product.id} className="cursor-pointer hover:bg-muted/50" onClick={() => router.push(`/products/${product.id}`)}>
                       <TableCell>
@@ -260,8 +262,8 @@ export default function ProductsPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end space-x-2" onClick={(e) => e.stopPropagation()}>
-                          <Button 
-                            variant="ghost" 
+                          <Button
+                            variant="ghost"
                             size="sm"
                             onClick={() => router.push(`/products/${product.id}/edit`)}
                           >
@@ -286,14 +288,14 @@ export default function ProductsPage() {
 
           {/* Mobile Card View */}
           <div className="md:hidden grid gap-4">
-            {filteredProducts.map((product) => {
+            {productsData?.data.map((product) => {
               const stockStatus = getStockStatus(product);
               const hasStorePrice = product.inventory.price !== product.price;
-              
+
               return (
                 <div key={product.id} className="border rounded-lg p-4 space-y-3 hover:shadow-md transition-shadow cursor-pointer">
                   <div className="flex justify-between items-start">
-                    <div 
+                    <div
                       className="flex items-start space-x-3 flex-1"
                       onClick={() => router.push(`/products/${product.id}`)}
                     >
@@ -315,8 +317,8 @@ export default function ProductsPage() {
                       </div>
                     </div>
                     <div className="flex space-x-1 flex-shrink-0">
-                      <Button 
-                        variant="ghost" 
+                      <Button
+                        variant="ghost"
                         size="sm"
                         onClick={() => router.push(`/products/${product.id}/edit`)}
                       >
@@ -376,6 +378,17 @@ export default function ProductsPage() {
               );
             })}
           </div>
+
+          {/* Pagination */}
+          {productsData && productsData.pagination.totalPages > 1 && (
+            <Pagination
+              currentPage={productsData.pagination.page}
+              totalPages={productsData.pagination.totalPages}
+              totalItems={productsData.pagination.total}
+              itemsPerPage={productsData.pagination.limit}
+              onPageChange={setCurrentPage}
+            />
+          )}
         </>
       )}
     </div>

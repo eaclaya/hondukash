@@ -360,5 +360,22 @@ export interface InvoiceItem {
   total: number;
 }
 
+// Pagination interfaces
+export interface PaginationParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
 // Re-export accounting types
 export * from './accounting';

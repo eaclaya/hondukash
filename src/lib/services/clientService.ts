@@ -1,7 +1,7 @@
-import { Client, ClientContact, CreateClientRequest, UpdateClientRequest, CreateClientContactRequest, UpdateClientContactRequest } from '@/lib/types';
+import { Client, ClientContact, CreateClientRequest, UpdateClientRequest, CreateClientContactRequest, UpdateClientContactRequest, PaginationParams, PaginatedResponse } from '@/lib/types';
 import { getTenantDb } from '@/lib/turso';
 import { clients, clientContacts } from '@/lib/db/schema/tenant';
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, desc, like, or, count } from 'drizzle-orm';
 
 interface ServiceResult<T> {
   success: boolean;
@@ -14,19 +14,53 @@ export class ClientService {
   // CLIENT CRUD OPERATIONS
   // =====================================================
 
-  static async getAllClients(domain: string, storeId?: number): Promise<ServiceResult<Client[]>> {
+  static async getAllClients(domain: string, storeId?: number, params?: PaginationParams): Promise<ServiceResult<PaginatedResponse<Client>>> {
     try {
       const db = await getTenantDb(domain);
+
+      const page = params?.page || 1;
+      const limit = params?.limit || 10;
+      const search = params?.search?.trim();
+      const offset = (page - 1) * limit;
 
       const queryConditions = [];
       if (storeId) {
         queryConditions.push(eq(clients.storeId, storeId));
       }
 
-      const clientsResult = await db.query.clients.findMany({
-        where: queryConditions.length > 0 ? and(...queryConditions) : undefined,
-        orderBy: [desc(clients.createdAt)]
-      });
+      // Add search conditions
+      if (search) {
+        const searchConditions = or(
+          like(clients.name, `%${search}%`),
+          like(clients.primaryContactName, `%${search}%`),
+          like(clients.email, `%${search}%`),
+          like(clients.phone, `%${search}%`),
+          like(clients.mobile, `%${search}%`),
+          like(clients.city, `%${search}%`),
+          like(clients.state, `%${search}%`),
+          like(clients.country, `%${search}%`),
+          like(clients.industry, `%${search}%`),
+          like(clients.clientType, `%${search}%`)
+        );
+        queryConditions.push(searchConditions);
+      }
+
+      // Get total count
+      const totalCountResult = await db
+        .select({ count: count() })
+        .from(clients)
+        .where(queryConditions.length > 0 ? and(...queryConditions) : undefined);
+      
+      const totalCount = totalCountResult[0]?.count || 0;
+      const totalPages = Math.ceil(totalCount / limit);
+
+      const clientsResult = await db
+        .select()
+        .from(clients)
+        .where(queryConditions.length > 0 ? and(...queryConditions) : undefined)
+        .orderBy(desc(clients.createdAt))
+        .limit(limit)
+        .offset(offset);
 
       const mappedClients: Client[] = clientsResult.map((client) => ({
         id: client.id,
@@ -55,7 +89,18 @@ export class ClientService {
         updatedAt: client.updatedAt
       }));
 
-      return { success: true, data: mappedClients };
+      return { 
+        success: true, 
+        data: {
+          data: mappedClients,
+          pagination: {
+            page,
+            limit,
+            total: totalCount,
+            totalPages
+          }
+        }
+      };
     } catch (error: any) {
       console.error('ClientService.getAllClients error:', error);
       return { success: false, error: error.message };

@@ -1,12 +1,13 @@
-import { Store, CreateStoreRequest, UpdateStoreRequest } from '@/lib/types';
+import { Store, CreateStoreRequest, UpdateStoreRequest, PaginationParams, PaginatedResponse } from '@/lib/types';
 import { getTenantDb } from '@/lib/turso';
 import { stores, clients } from '@/lib/db/schema/tenant';
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, desc, like, or, count } from 'drizzle-orm';
 
 export interface StoreServiceResult {
   success: boolean;
   store?: Store;
   stores?: Store[];
+  data?: PaginatedResponse<Store>;
   stats?: any;
   error?: string;
 }
@@ -15,16 +16,48 @@ export class StoreService {
   /**
    * Get all stores for the current tenant
    */
-  static async getAllStores(domain: string, storeFilter?: number): Promise<StoreServiceResult> {
+  static async getAllStores(domain: string, storeFilter?: number, params?: PaginationParams): Promise<StoreServiceResult> {
     try {
       const db = await getTenantDb(domain);
 
+      const page = params?.page || 1;
+      const limit = params?.limit || 10;
+      const search = params?.search?.trim();
+      const offset = (page - 1) * limit;
+
       const queryConditions = [eq(stores.isActive, true)];
 
-      const storesResult = await db.query.stores.findMany({
-        where: and(...queryConditions),
-        orderBy: [stores.name]
-      });
+      // Add search conditions
+      if (search) {
+        const searchConditions = or(
+          like(stores.name, `%${search}%`),
+          like(stores.code, `%${search}%`),
+          like(stores.description, `%${search}%`),
+          like(stores.location, `%${search}%`),
+          like(stores.managerName, `%${search}%`),
+          like(stores.email, `%${search}%`),
+          like(stores.phone, `%${search}%`),
+          like(stores.currency, `%${search}%`)
+        );
+        queryConditions.push(searchConditions);
+      }
+
+      // Get total count
+      const totalCountResult = await db
+        .select({ count: count() })
+        .from(stores)
+        .where(and(...queryConditions));
+      
+      const totalCount = totalCountResult[0]?.count || 0;
+      const totalPages = Math.ceil(totalCount / limit);
+
+      const storesResult = await db
+        .select()
+        .from(stores)
+        .where(and(...queryConditions))
+        .orderBy(stores.name)
+        .limit(limit)
+        .offset(offset);
 
       const mappedStores: Store[] = storesResult.map((store) => ({
         id: store.id,
@@ -51,7 +84,15 @@ export class StoreService {
 
       return {
         success: true,
-        stores: mappedStores
+        data: {
+          data: mappedStores,
+          pagination: {
+            page,
+            limit,
+            total: totalCount,
+            totalPages
+          }
+        }
       };
     } catch (error: any) {
       console.error('StoreService.getAllStores error:', error);

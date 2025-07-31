@@ -7,7 +7,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Combobox } from '@/components/ui/combobox';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Plus, Trash2, Calculator } from 'lucide-react';
@@ -36,8 +35,13 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
   const [loadingProducts, setLoadingProducts] = useState(false);
   const [clientSearch, setClientSearch] = useState('');
   const [productSearch, setProductSearch] = useState('');
-  const [filteredClients, setFilteredClients] = useState<Client[]>([]);
-  const [filteredProducts, setFilteredProducts] = useState<ProductWithInventory[]>([]);
+  const [clientResults, setClientResults] = useState<Client[]>([]);
+  const [productResults, setProductResults] = useState<ProductWithInventory[]>([]);
+  const [showClientDropdown, setShowClientDropdown] = useState(false);
+  const [selectedClientIndex, setSelectedClientIndex] = useState(-1);
+  const [clientSearchTimeout, setClientSearchTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [productSearchTimeout, setProductSearchTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
 
   const [formData, setFormData] = useState({
     clientId: invoice?.clientId ? parseInt(invoice.clientId) : null,
@@ -64,70 +68,149 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
   const [taxRate, setTaxRate] = useState(0.15); // 15% default tax rate
 
   useEffect(() => {
-    fetchClients();
-    fetchProducts();
+    // Auto-focus client search on component mount
+    const clientInput = document.getElementById('client-search') as HTMLInputElement;
+    if (clientInput) {
+      clientInput.focus();
+    }
   }, []);
 
-  // Filter clients based on search
+  // Set initial selected client if editing
   useEffect(() => {
-    if (clientSearch.trim() === '') {
-      setFilteredClients(clients.slice(0, 10)); // Show first 10 clients
-    } else {
-      const filtered = clients.filter(client =>
-        client.name.toLowerCase().includes(clientSearch.toLowerCase()) ||
-        client.email?.toLowerCase().includes(clientSearch.toLowerCase())
-      );
-      setFilteredClients(filtered.slice(0, 10));
+    if (invoice && formData.clientId) {
+      const client = clients.find(c => c.id === formData.clientId);
+      if (client) {
+        setSelectedClient(client);
+        setClientSearch(client.name);
+      }
     }
-  }, [clients, clientSearch]);
+  }, [invoice, formData.clientId, clients]);
 
-  // Filter products based on search
-  useEffect(() => {
-    if (productSearch.trim() === '') {
-      setFilteredProducts(products.slice(0, 10)); // Show first 10 products
-    } else {
-      const filtered = products.filter(product =>
-        product.name.toLowerCase().includes(productSearch.toLowerCase()) ||
-        product.sku?.toLowerCase().includes(productSearch.toLowerCase())
-      );
-      setFilteredProducts(filtered.slice(0, 10));
+  const searchClients = async (searchTerm: string) => {
+    if (searchTerm.trim() === '') {
+      setClientResults([]);
+      setShowClientDropdown(false);
+      return;
     }
-  }, [products, productSearch]);
 
-  const fetchClients = async () => {
     try {
       setLoadingClients(true);
-      const response = await fetch('/api/clients?limit=100', {
+      const response = await fetch(`/api/clients?search=${encodeURIComponent(searchTerm)}&limit=10`, {
         headers: getAuthHeaders()
       });
 
       if (response.ok) {
         const data = await response.json();
-        setClients(data.data || []);
+        setClientResults(data.data || []);
+        setShowClientDropdown(true);
+        setSelectedClientIndex(-1);
       }
     } catch (error) {
-      console.error('Failed to fetch clients:', error);
+      console.error('Failed to search clients:', error);
+      setClientResults([]);
     } finally {
       setLoadingClients(false);
     }
   };
 
-  const fetchProducts = async () => {
+  const searchProducts = async (searchTerm: string) => {
+    if (searchTerm.trim() === '') {
+      setProductResults([]);
+      return;
+    }
+
     try {
       setLoadingProducts(true);
-      const response = await fetch('/api/products?limit=100', {
+      const response = await fetch(`/api/products?search=${encodeURIComponent(searchTerm)}&limit=10`, {
         headers: getAuthHeaders()
       });
 
       if (response.ok) {
         const data = await response.json();
-        setProducts(data.data || []);
+        setProductResults(data.data || []);
       }
     } catch (error) {
-      console.error('Failed to fetch products:', error);
+      console.error('Failed to search products:', error);
+      setProductResults([]);
     } finally {
       setLoadingProducts(false);
     }
+  };
+
+  // Debounced client search
+  const handleClientSearchChange = (value: string) => {
+    setClientSearch(value);
+    
+    if (clientSearchTimeout) {
+      clearTimeout(clientSearchTimeout);
+    }
+
+    const timeout = setTimeout(() => {
+      searchClients(value);
+    }, 300);
+    
+    setClientSearchTimeout(timeout);
+  };
+
+  // Debounced product search
+  const handleProductSearchChange = (value: string) => {
+    setProductSearch(value);
+    
+    if (productSearchTimeout) {
+      clearTimeout(productSearchTimeout);
+    }
+
+    const timeout = setTimeout(() => {
+      searchProducts(value);
+    }, 300);
+    
+    setProductSearchTimeout(timeout);
+  };
+
+  // Client keyboard navigation
+  const handleClientKeyDown = (e: React.KeyboardEvent) => {
+    if (!showClientDropdown || clientResults.length === 0) return;
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setSelectedClientIndex(prev => 
+          prev < clientResults.length - 1 ? prev + 1 : 0
+        );
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setSelectedClientIndex(prev => 
+          prev > 0 ? prev - 1 : clientResults.length - 1
+        );
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (selectedClientIndex >= 0) {
+          selectClient(clientResults[selectedClientIndex]);
+        }
+        break;
+      case 'Escape':
+        setShowClientDropdown(false);
+        setSelectedClientIndex(-1);
+        break;
+    }
+  };
+
+  const selectClient = (client: Client) => {
+    setSelectedClient(client);
+    setClientSearch(client.name);
+    setFormData(prev => ({ ...prev, clientId: client.id }));
+    setShowClientDropdown(false);
+    setSelectedClientIndex(-1);
+    
+    // Move focus to product search
+    setTimeout(() => {
+      const productInput = document.getElementById('product-search') as HTMLInputElement;
+      if (productInput) {
+        productInput.focus();
+      }
+    }, 100);
   };
 
   const handleInputChange = (field: string, value: any) => {
@@ -160,7 +243,7 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
   };
 
   const handleQuickProductAdd = (productId: number, quantity: number = 1) => {
-    const product = products.find(p => p.id === productId);
+    const product = productResults.find(p => p.id === productId);
     if (!product) return;
 
     const newItem: InvoiceItemForm = {
@@ -186,6 +269,7 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
 
     // Clear product search
     setProductSearch('');
+    setProductResults([]);
   };
 
   const addItem = () => {
@@ -287,25 +371,48 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
         <Card>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="clientId">Client *</Label>
-                <Combobox
-                  options={filteredClients.map(client => ({
-                    value: client.id.toString(),
-                    label: `${client.name}${client.email ? ` (${client.email})` : ''}`
-                  }))}
-                  value={formData.clientId ? formData.clientId.toString() : ""}
-                  onValueChange={(value) => {
-                    handleInputChange('clientId', value ? parseInt(value) : null);
-                    setClientSearch('');
+              <div className="space-y-2 relative">
+                <Label htmlFor="client-search">Client *</Label>
+                <Input
+                  id="client-search"
+                  value={clientSearch}
+                  onChange={(e) => handleClientSearchChange(e.target.value)}
+                  onKeyDown={handleClientKeyDown}
+                  onFocus={() => {
+                    if (clientResults.length > 0) {
+                      setShowClientDropdown(true);
+                    }
                   }}
-                  onSearchChange={setClientSearch}
-                  placeholder="Select a client"
-                  searchPlaceholder="Search clients..."
-                  emptyText="No clients found. Try searching..."
-                  loading={loadingClients}
-                  className="w-full"
+                  onBlur={() => {
+                    // Delay hiding dropdown to allow clicking on items
+                    setTimeout(() => setShowClientDropdown(false), 200);
+                  }}
+                  placeholder="Search clients..."
+                  autoComplete="off"
                 />
+                {showClientDropdown && clientResults.length > 0 && (
+                  <div className="absolute z-50 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto top-full">
+                    {clientResults.map((client, index) => (
+                      <div
+                        key={client.id}
+                        className={`px-3 py-2 cursor-pointer hover:bg-gray-50 ${
+                          index === selectedClientIndex ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
+                        }`}
+                        onClick={() => selectClient(client)}
+                      >
+                        <div className="font-medium">{client.name}</div>
+                        {client.email && (
+                          <div className="text-sm text-gray-500">{client.email}</div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {loadingClients && (
+                  <div className="absolute z-50 w-full bg-white border border-gray-200 rounded-md shadow-lg top-full">
+                    <div className="px-3 py-2 text-gray-500">Searching clients...</div>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -346,10 +453,10 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
         <Card>
           <CardContent>
             <QuickProductEntry
-              products={filteredProducts}
+              products={productResults}
               loading={loadingProducts}
               onProductAdd={handleQuickProductAdd}
-              onSearchChange={setProductSearch}
+              onSearchChange={handleProductSearchChange}
               searchValue={productSearch}
             />
           </CardContent>
@@ -391,15 +498,7 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
                             <SelectValue placeholder="Select product" />
                           </SelectTrigger>
                           <SelectContent>
-                            {loadingProducts ? (
-                              <SelectItem value="loading-products" disabled>Loading products...</SelectItem>
-                            ) : (
-                              products.map((product) => (
-                                <SelectItem key={product.id} value={product.id.toString()}>
-                                  {product.name} - {formatCurrency(product.inventory?.price || product.price)}
-                                </SelectItem>
-                              ))
-                            )}
+                            <SelectItem value="no-products" disabled>Search products using Quick Product Entry above</SelectItem>
                           </SelectContent>
                         </Select>
                       </TableCell>
@@ -574,6 +673,7 @@ function QuickProductEntry({ products, loading, onProductAdd, onSearchChange, se
       <div className="flex items-center space-x-4">
         <div className="flex-1">
           <Input
+            id="product-search"
             placeholder="Search products by name or SKU..."
             value={searchValue}
             onChange={(e) => onSearchChange(e.target.value)}

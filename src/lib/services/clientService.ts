@@ -24,9 +24,6 @@ export class ClientService {
       const offset = (page - 1) * limit;
 
       const queryConditions = [];
-      if (storeId) {
-        queryConditions.push(eq(clients.storeId, storeId));
-      }
 
       // Add search conditions
       if (search) {
@@ -50,7 +47,7 @@ export class ClientService {
         .select({ count: count() })
         .from(clients)
         .where(queryConditions.length > 0 ? and(...queryConditions) : undefined);
-      
+
       const totalCount = totalCountResult[0]?.count || 0;
       const totalPages = Math.ceil(totalCount / limit);
 
@@ -89,8 +86,8 @@ export class ClientService {
         updatedAt: client.updatedAt
       }));
 
-      return { 
-        success: true, 
+      return {
+        success: true,
         data: {
           data: mappedClients,
           pagination: {
@@ -201,7 +198,7 @@ export class ClientService {
             ...contactData,
             clientId: clientId
           });
-          
+
           if (!contactResult.success) {
             console.error('Failed to create contact:', contactResult.error);
             // Continue creating other contacts even if one fails
@@ -260,7 +257,7 @@ export class ClientService {
       if (clientData.contacts !== undefined) {
         // Delete existing contacts and create new ones (simple approach)
         await db.delete(clientContacts).where(eq(clientContacts.clientId, clientData.id));
-        
+
         // Create new contacts
         if (clientData.contacts.length > 0) {
           for (const contactData of clientData.contacts) {
@@ -268,7 +265,7 @@ export class ClientService {
               ...contactData,
               clientId: clientData.id
             });
-            
+
             if (!contactResult.success) {
               console.error('Failed to create contact:', contactResult.error);
               // Continue creating other contacts even if one fails

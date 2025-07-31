@@ -16,7 +16,7 @@ export class StoreService {
   /**
    * Get all stores for the current tenant
    */
-  static async getAllStores(domain: string, storeFilter?: number, params?: PaginationParams): Promise<StoreServiceResult> {
+  static async getAllStores(domain: string, params?: PaginationParams): Promise<StoreServiceResult> {
     try {
       const db = await getTenantDb(domain);
 
@@ -31,13 +31,7 @@ export class StoreService {
       if (search) {
         const searchConditions = or(
           like(stores.name, `%${search}%`),
-          like(stores.code, `%${search}%`),
-          like(stores.description, `%${search}%`),
-          like(stores.location, `%${search}%`),
-          like(stores.managerName, `%${search}%`),
           like(stores.email, `%${search}%`),
-          like(stores.phone, `%${search}%`),
-          like(stores.currency, `%${search}%`)
         );
         queryConditions.push(searchConditions);
       }
@@ -47,7 +41,7 @@ export class StoreService {
         .select({ count: count() })
         .from(stores)
         .where(and(...queryConditions));
-      
+
       const totalCount = totalCountResult[0]?.count || 0;
       const totalPages = Math.ceil(totalCount / limit);
 

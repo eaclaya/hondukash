@@ -228,7 +228,6 @@ export const invoices = sqliteTable('invoices', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   storeId: integer('store_id').notNull().references(() => stores.id, { onDelete: 'restrict' }),
   clientId: integer('client_id').notNull().references(() => clients.id, { onDelete: 'restrict' }),
-  clientContactId: integer('client_contact_id').references(() => clientContacts.id, { onDelete: 'set null' }), // Who made this purchase
   userId: integer('user_id').references(() => users.id, { onDelete: 'set null' }),
 
   // Invoice details
@@ -237,9 +236,7 @@ export const invoices = sqliteTable('invoices', {
   dueDate: text('due_date'),
 
   // Contact info at time of invoice (for historical record)
-  contactName: text('contact_name'), // Name of person who made purchase
-  contactEmail: text('contact_email'),
-  contactPhone: text('contact_phone'),
+  clientName: text('client_name'), // Name of client who made purchase
 
   // Amounts
   subtotal: real('subtotal').notNull().default(0),
@@ -277,11 +274,11 @@ export const invoiceItems = sqliteTable('invoice_items', {
   unitPrice: real('unit_price').notNull(),
 
   // Calculated fields (handled in application code)
-  // lineTotal: real('line_total'), // quantity * unitPrice
+  lineTotal: real('line_total'), // quantity * unitPrice
 
   // Tax
   taxRate: real('tax_rate').default(0),
-  // taxAmount: real('tax_amount'), // lineTotal * taxRate
+  taxAmount: real('tax_amount'), // lineTotal * taxRate
 
   // Metadata
   sortOrder: integer('sort_order').default(0),

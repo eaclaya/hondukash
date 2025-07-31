@@ -6,22 +6,18 @@ import { CreateStoreRequest } from '@/lib/types';
 // GET /api/stores - Get all stores
 export async function GET(request: NextRequest) {
   try {
-    const requestHeaders = headers();
+    const requestHeaders = await headers();
     const host = requestHeaders.get('host');
-    const storeId = requestHeaders.get('X-Store-ID');
-    
+
     if (!host) {
       return NextResponse.json({ error: 'Host header is required' }, { status: 400 });
     }
 
     // Extract domain from host (remove port if present)
     const domain = host.split(':')[0];
-    
-    // Filter by store if X-Store-ID header is provided
-    const storeFilter = storeId ? parseInt(storeId) : undefined;
-    
-    const result = await StoreService.getAllStores(domain, storeFilter);
-    
+
+    const result = await StoreService.getAllStores(domain);
+
     if (!result.success) {
       return NextResponse.json({ error: result.error }, { status: 400 });
     }
@@ -36,16 +32,17 @@ export async function GET(request: NextRequest) {
 // POST /api/stores - Create a new store
 export async function POST(request: NextRequest) {
   try {
-    const requestHeaders = headers();
+    const requestHeaders = await headers();
     const host = requestHeaders.get('host');
-    
+    const storeIdHeader = requestHeaders.get('X-Store-ID');
+
     if (!host) {
       return NextResponse.json({ error: 'Host header is required' }, { status: 400 });
     }
 
     // Extract domain from host (remove port if present)
     const domain = host.split(':')[0];
-    
+
     const body = await request.json();
     const storeData: CreateStoreRequest = body;
 
@@ -55,7 +52,7 @@ export async function POST(request: NextRequest) {
     }
 
     const result = await StoreService.createStore(domain, storeData);
-    
+
     if (!result.success) {
       return NextResponse.json({ error: result.error }, { status: 400 });
     }

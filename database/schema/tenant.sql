@@ -239,7 +239,6 @@ CREATE TABLE invoices (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     store_id INTEGER NOT NULL REFERENCES stores(id) ON DELETE RESTRICT,
     client_id INTEGER NOT NULL REFERENCES clients(id) ON DELETE RESTRICT,
-    client_contact_id INTEGER REFERENCES client_contacts(id) ON DELETE SET NULL, -- Who made this purchase
     user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
 
     -- Invoice details
@@ -248,9 +247,7 @@ CREATE TABLE invoices (
     due_date TEXT,
 
     -- Contact info at time of invoice (for historical record)
-    contact_name TEXT, -- Name of person who made purchase
-    contact_email TEXT,
-    contact_phone TEXT,
+    client_name TEXT, -- Name of client who made purchase
 
     -- Amounts
     subtotal REAL NOT NULL DEFAULT 0,
@@ -661,7 +658,6 @@ CREATE INDEX idx_client_contacts_active ON client_contacts(is_active);
 -- Invoices
 CREATE INDEX idx_invoices_store_id ON invoices(store_id);
 CREATE INDEX idx_invoices_client_id ON invoices(client_id);
-CREATE INDEX idx_invoices_client_contact_id ON invoices(client_contact_id);
 CREATE INDEX idx_invoices_status ON invoices(status);
 CREATE INDEX idx_invoices_invoice_date ON invoices(invoice_date);
 CREATE INDEX idx_invoice_items_invoice_id ON invoice_items(invoice_id);

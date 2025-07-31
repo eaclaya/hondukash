@@ -28,12 +28,10 @@ export class InvoiceService {
       if (storeId) {
         queryConditions.push(eq(invoices.storeId, storeId));
       }
-      
+
       if (search) {
         const searchConditions = or(
           like(invoices.invoiceNumber, `%${search}%`),
-          like(invoices.contactName, `%${search}%`),
-          like(invoices.contactEmail, `%${search}%`),
           like(clients.name, `%${search}%`),
           like(invoices.status, `%${search}%`)
         );
@@ -46,7 +44,7 @@ export class InvoiceService {
         .from(invoices)
         .leftJoin(clients, eq(clients.id, invoices.clientId))
         .where(queryConditions.length > 0 ? and(...queryConditions) : undefined);
-      
+
       const totalCount = totalCountResult[0]?.count || 0;
       const totalPages = Math.ceil(totalCount / limit);
 
@@ -58,9 +56,6 @@ export class InvoiceService {
           invoiceNumber: invoices.invoiceNumber,
           invoiceDate: invoices.invoiceDate,
           dueDate: invoices.dueDate,
-          contactName: invoices.contactName,
-          contactEmail: invoices.contactEmail,
-          contactPhone: invoices.contactPhone,
           subtotal: invoices.subtotal,
           taxAmount: invoices.taxAmount,
           discountAmount: invoices.discountAmount,
@@ -89,9 +84,6 @@ export class InvoiceService {
         number: invoice.invoiceNumber,
         clientId: invoice.clientId.toString(),
         storeId: invoice.storeId.toString(),
-        contactName: invoice.contactName || undefined,
-        contactEmail: invoice.contactEmail || undefined,
-        contactPhone: invoice.contactPhone || undefined,
         items: [], // Will be loaded separately if needed
         subtotal: invoice.subtotal,
         tax: invoice.taxAmount,
@@ -121,8 +113,8 @@ export class InvoiceService {
         } : undefined
       }));
 
-      return { 
-        success: true, 
+      return {
+        success: true,
         data: {
           data: transformedInvoices,
           pagination: {
@@ -150,9 +142,6 @@ export class InvoiceService {
           invoiceNumber: invoices.invoiceNumber,
           invoiceDate: invoices.invoiceDate,
           dueDate: invoices.dueDate,
-          contactName: invoices.contactName,
-          contactEmail: invoices.contactEmail,
-          contactPhone: invoices.contactPhone,
           subtotal: invoices.subtotal,
           taxAmount: invoices.taxAmount,
           discountAmount: invoices.discountAmount,
@@ -165,10 +154,8 @@ export class InvoiceService {
           updatedAt: invoices.updatedAt,
           clientId: invoices.clientId,
           storeId: invoices.storeId,
-          clientName: clients.name
         })
         .from(invoices)
-        .leftJoin(clients, eq(clients.id, invoices.clientId))
         .where(eq(invoices.id, invoiceId))
         .limit(1);
 
@@ -186,7 +173,7 @@ export class InvoiceService {
           description: invoiceItems.description,
           quantity: invoiceItems.quantity,
           unitPrice: invoiceItems.unitPrice,
-          totalPrice: invoiceItems.totalPrice,
+          lineTotal: invoiceItems.lineTotal,
           productName: products.name
         })
         .from(invoiceItems)
@@ -199,7 +186,7 @@ export class InvoiceService {
         productName: item.productName || item.description,
         quantity: item.quantity,
         unitPrice: item.unitPrice,
-        total: item.totalPrice
+        total: item.lineTotal
       }));
 
       const transformedInvoice: Invoice = {
@@ -207,9 +194,6 @@ export class InvoiceService {
         number: invoice.invoiceNumber,
         clientId: invoice.clientId.toString(),
         storeId: invoice.storeId.toString(),
-        contactName: invoice.contactName || undefined,
-        contactEmail: invoice.contactEmail || undefined,
-        contactPhone: invoice.contactPhone || undefined,
         items,
         subtotal: invoice.subtotal,
         tax: invoice.taxAmount,
@@ -262,7 +246,7 @@ export class InvoiceService {
       }
 
       const { invoicePrefix, invoiceCounter } = storeResult[0];
-      const invoiceNumber = `${invoicePrefix}-${invoiceCounter.toString().padStart(6, '0')}`;
+      const invoiceNumber = `${invoicePrefix}-${invoiceCounter?.toString().padStart(6, '0')}`;
 
       // Start transaction
       const result = await db.transaction(async (tx) => {
@@ -272,13 +256,10 @@ export class InvoiceService {
           .values({
             storeId: invoiceData.storeId,
             clientId: invoiceData.clientId,
-            clientContactId: invoiceData.clientContactId || null,
             invoiceNumber,
             invoiceDate: invoiceData.invoiceDate,
             dueDate: invoiceData.dueDate || null,
-            contactName: invoiceData.contactName || null,
-            contactEmail: invoiceData.contactEmail || null,
-            contactPhone: invoiceData.contactPhone || null,
+            clientName: invoiceData.clientName || null,
             subtotal: invoiceData.subtotal,
             taxAmount: invoiceData.tax,
             discountAmount: invoiceData.discount,
@@ -299,7 +280,7 @@ export class InvoiceService {
               description: '', // Will be filled from product name
               quantity: item.quantity,
               unitPrice: item.unitPrice,
-              totalPrice: item.total
+              lineTotal: item.total
             }))
           );
         }
@@ -315,6 +296,7 @@ export class InvoiceService {
 
       // Fetch the created invoice with full data
       const createdInvoice = await this.getInvoiceById(domain, result.id);
+      console.log('CREATED INVOICE', createdInvoice)
       return createdInvoice;
     } catch (error: any) {
       console.error('InvoiceService.createInvoice error:', error);
@@ -332,12 +314,9 @@ export class InvoiceService {
           .update(invoices)
           .set({
             clientId: invoiceData.clientId,
-            clientContactId: invoiceData.clientContactId || null,
             invoiceDate: invoiceData.invoiceDate,
             dueDate: invoiceData.dueDate || null,
-            contactName: invoiceData.contactName || null,
-            contactEmail: invoiceData.contactEmail || null,
-            contactPhone: invoiceData.contactPhone || null,
+            clientName: invoiceData.clientName || null,
             subtotal: invoiceData.subtotal,
             taxAmount: invoiceData.tax,
             discountAmount: invoiceData.discount,
@@ -363,7 +342,7 @@ export class InvoiceService {
                 description: '',
                 quantity: item.quantity,
                 unitPrice: item.unitPrice,
-                totalPrice: item.total
+                lineTotal: item.total
               }))
             );
           }
@@ -386,7 +365,7 @@ export class InvoiceService {
       await db.transaction(async (tx) => {
         // Delete invoice items first
         await tx.delete(invoiceItems).where(eq(invoiceItems.invoiceId, invoiceId));
-        
+
         // Delete invoice
         await tx.delete(invoices).where(eq(invoices.id, invoiceId));
       });
@@ -402,7 +381,7 @@ export class InvoiceService {
     try {
       const db = await getTenantDb(domain);
 
-      const updateData: any = { 
+      const updateData: any = {
         status,
         updatedAt: new Date().toISOString()
       };

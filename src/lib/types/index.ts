@@ -320,13 +320,10 @@ export interface Invoice {
   id: string;
   number: string;
   clientId: string;
-  clientContactId?: string;
   storeId: string;
 
   // Contact info (captured at time of invoice)
-  contactName?: string;
-  contactEmail?: string;
-  contactPhone?: string;
+  clientName?: string;
 
   items: InvoiceItem[];
   subtotal: number;
@@ -349,7 +346,6 @@ export interface Invoice {
 
   // Related entities
   client?: Client;
-  clientContact?: ClientContact;
 }
 
 export interface InvoiceItem {
@@ -358,16 +354,13 @@ export interface InvoiceItem {
   productName?: string;
   quantity: number;
   unitPrice: number;
-  total: number;
+  lineTotal: number;
 }
 
 export interface CreateInvoiceRequest {
   clientId: number;
-  clientContactId?: number;
   storeId: number;
-  contactName?: string;
-  contactEmail?: string;
-  contactPhone?: string;
+  clientName?: string;
   items: CreateInvoiceItemRequest[];
   subtotal: number;
   tax: number;

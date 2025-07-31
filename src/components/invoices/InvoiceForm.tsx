@@ -57,7 +57,7 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
   });
 
   const [items, setItems] = useState<InvoiceItemForm[]>(
-    invoice?.items.map(item => ({
+    invoice?.items?.map(item => ({
       productId: item.productId ? parseInt(item.productId) : null,
       sku: item.sku || '',
       productName: item.productName || '',
@@ -276,7 +276,7 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
   };
 
   const addItem = () => {
-    setItems([...items, { productId: null, productName: '', quantity: 1, unitPrice: 0, total: 0 }]);
+    setItems([...items, { productId: null, sku: '', productName: '', quantity: 1, unitPrice: 0, total: 0 }]);
   };
 
   const removeItem = (index: number) => {

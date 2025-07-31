@@ -32,7 +32,7 @@ export default function ProductForm({ product, onSubmit, onCancel, loading = fal
     price: product?.price || 0,
     minPrice: product?.minPrice || 0,
     isTaxable: product?.isTaxable ?? true,
-    taxConfigurationId: product?.taxConfigurationId || undefined,
+    taxRateId: product?.taxRateId || undefined,
     taxRate: product?.taxRate || 0.15,
     trackInventory: product?.trackInventory ?? true,
     unit: product?.unit || 'unit',
@@ -253,7 +253,7 @@ export default function ProductForm({ product, onSubmit, onCancel, loading = fal
                   <Label>Profit Margin</Label>
                   <div className="p-2 bg-muted rounded">
                     <span className="text-sm font-medium">
-                      {formData.price && formData.cost 
+                      {formData.price && formData.cost
                         ? `${(((formData.price - formData.cost) / formData.price) * 100).toFixed(1)}%`
                         : '0%'
                       }
@@ -324,14 +324,14 @@ export default function ProductForm({ product, onSubmit, onCancel, loading = fal
                   placeholder="Enter image URL"
                 />
               </div>
-              
+
               {formData.imageUrl && (
                 <div className="mt-4">
                   <Label>Preview</Label>
                   <div className="mt-2 w-32 h-32 border rounded-lg overflow-hidden bg-muted flex items-center justify-center">
-                    <img 
-                      src={formData.imageUrl} 
-                      alt="Product preview" 
+                    <img
+                      src={formData.imageUrl}
+                      alt="Product preview"
                       className="w-full h-full object-cover"
                       onError={(e) => {
                         e.currentTarget.style.display = 'none';
@@ -464,14 +464,14 @@ export default function ProductForm({ product, onSubmit, onCancel, loading = fal
                     </div>
                     <div className="text-sm text-blue-600">Current Stock</div>
                   </div>
-                  
+
                   <div className="p-4 bg-green-50 rounded-lg">
                     <div className="text-2xl font-bold text-green-600">
                       {formatCurrency((formData.storePrice || formData.price || 0) * (formData.quantity || 0))}
                     </div>
                     <div className="text-sm text-green-600">Stock Value</div>
                   </div>
-                  
+
                   <div className="p-4 bg-purple-50 rounded-lg">
                     <div className="text-2xl font-bold text-purple-600">
                       {formatCurrency(formData.storePrice || formData.price || 0)}

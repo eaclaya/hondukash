@@ -38,8 +38,7 @@ export class ProductService {
           price: products.price,
           minPrice: products.minPrice,
           isTaxable: products.isTaxable,
-          taxConfigurationId: products.taxConfigurationId,
-          taxRate: products.taxRate,
+          taxRateId: products.taxRateId,
           trackInventory: products.trackInventory,
           unit: products.unit,
           imageUrl: products.imageUrl,
@@ -57,7 +56,7 @@ export class ProductService {
         })
         .from(products)
         .leftJoin(
-          inventory, 
+          inventory,
           sql`${inventory.productId} = ${products.id} AND ${inventory.storeId} = ${storeId}`
         )
         .leftJoin(categories, eq(categories.id, products.categoryId))
@@ -79,8 +78,7 @@ export class ProductService {
         price: product.price,
         minPrice: product.minPrice,
         isTaxable: product.isTaxable,
-        taxConfigurationId: product.taxConfigurationId || undefined,
-        taxRate: product.taxRate || undefined,
+        taxRateId: product.taxRateId || undefined,
         trackInventory: product.trackInventory,
         unit: product.unit,
         imageUrl: product.imageUrl || undefined,
@@ -132,8 +130,7 @@ export class ProductService {
           price: products.price,
           minPrice: products.minPrice,
           isTaxable: products.isTaxable,
-          taxConfigurationId: products.taxConfigurationId,
-          taxRate: products.taxRate,
+          taxRateId: products.taxRateId,
           trackInventory: products.trackInventory,
           unit: products.unit,
           imageUrl: products.imageUrl,
@@ -151,7 +148,7 @@ export class ProductService {
         })
         .from(products)
         .leftJoin(
-          inventory, 
+          inventory,
           sql`${inventory.productId} = ${products.id} AND ${inventory.storeId} = ${storeId}`
         )
         .leftJoin(categories, eq(categories.id, products.categoryId))
@@ -179,8 +176,7 @@ export class ProductService {
         price: product.price,
         minPrice: product.minPrice,
         isTaxable: product.isTaxable,
-        taxConfigurationId: product.taxConfigurationId || undefined,
-        taxRate: product.taxRate || undefined,
+        taxRateId: product.taxRateId || undefined,
         trackInventory: product.trackInventory,
         unit: product.unit,
         imageUrl: product.imageUrl || undefined,
@@ -229,8 +225,7 @@ export class ProductService {
             price: productData.price,
             minPrice: productData.minPrice || 0,
             isTaxable: productData.isTaxable !== false,
-            taxConfigurationId: productData.taxConfigurationId || null,
-            taxRate: productData.taxRate || null,
+            taxRateId: productData.taxRateId || null,
             trackInventory: productData.trackInventory !== false,
             unit: productData.unit || 'unit',
             imageUrl: productData.imageUrl || null,
@@ -286,16 +281,15 @@ export class ProductService {
       if (productData.price !== undefined) updateData.price = productData.price;
       if (productData.minPrice !== undefined) updateData.minPrice = productData.minPrice;
       if (productData.isTaxable !== undefined) updateData.isTaxable = productData.isTaxable;
-      if (productData.taxConfigurationId !== undefined) updateData.taxConfigurationId = productData.taxConfigurationId;
-      if (productData.taxRate !== undefined) updateData.taxRate = productData.taxRate;
+      if (productData.taxRateId !== undefined) updateData.taxRateId = productData.taxRateId;
       if (productData.trackInventory !== undefined) updateData.trackInventory = productData.trackInventory;
       if (productData.unit !== undefined) updateData.unit = productData.unit;
       if (productData.imageUrl !== undefined) updateData.imageUrl = productData.imageUrl;
       if (productData.images !== undefined) updateData.images = JSON.stringify(productData.images);
 
-      if (Object.keys(updateData).length === 0 && 
-          productData.quantity === undefined && 
-          productData.storePrice === undefined && 
+      if (Object.keys(updateData).length === 0 &&
+          productData.quantity === undefined &&
+          productData.storePrice === undefined &&
           productData.location === undefined) {
         return { success: false, error: 'No fields to update' };
       }
@@ -309,10 +303,10 @@ export class ProductService {
         }
 
         // Update inventory if there are inventory fields to update
-        if (productData.quantity !== undefined || 
-            productData.storePrice !== undefined || 
+        if (productData.quantity !== undefined ||
+            productData.storePrice !== undefined ||
             productData.location !== undefined) {
-          
+
           const inventoryUpdateData: any = {};
           if (productData.quantity !== undefined) inventoryUpdateData.quantity = productData.quantity;
           if (productData.storePrice !== undefined) inventoryUpdateData.price = productData.storePrice;
@@ -360,7 +354,7 @@ export class ProductService {
 
       // Delete inventory records first (due to foreign key constraint)
       await db.delete(inventory).where(eq(inventory.productId, productId));
-      
+
       // Then delete the product
       await db.delete(products).where(eq(products.id, productId));
 

@@ -252,7 +252,7 @@ export interface Product {
 
   // Tax configuration
   isTaxable: boolean;
-  taxConfigurationId?: number;
+  taxRateId?: number;
   taxRate?: number;
 
   // Inventory settings
@@ -300,7 +300,7 @@ export interface CreateProductRequest {
   price: number;
   minPrice?: number;
   isTaxable?: boolean;
-  taxConfigurationId?: number;
+  taxRateId?: number;
   taxRate?: number;
   trackInventory?: boolean;
   unit?: string;

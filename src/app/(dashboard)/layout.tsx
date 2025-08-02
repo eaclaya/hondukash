@@ -62,7 +62,7 @@ export default function DashboardLayout({
       <header className="border-b">
         <div className="mx-auto px-4 py-3">
           <div className="flex justify-between items-center">
-            <nav className="flex items-center space-x-6">
+            <nav className="flex items-center space-x-3">
               <Link href="/dashboard" className={`px-3 py-2 text-sm font-medium rounded-md hover:bg-muted transition-colors ${pathname === '/dashboard' ? 'bg-muted' : ''}`}>
                 Dashboard
               </Link>
@@ -76,6 +76,10 @@ export default function DashboardLayout({
 
               <Link href="/invoices" className={`px-3 py-2 text-sm font-medium rounded-md hover:bg-muted transition-colors ${pathname === '/invoices' ? 'bg-muted' : ''}`}>
                 Invoices
+              </Link>
+
+              <Link href="/quotes" className={`px-3 py-2 text-sm font-medium rounded-md hover:bg-muted transition-colors ${pathname === '/quotes' ? 'bg-muted' : ''}`}>
+                Quotes
               </Link>
 
               {/* Settings Dropdown */}
@@ -104,7 +108,7 @@ export default function DashboardLayout({
               </DropdownMenu>
             </nav>
 
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
               <StoreSwitcher />
 
               <DropdownMenu>

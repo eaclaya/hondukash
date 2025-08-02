@@ -8,7 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Edit, ArrowLeft, Download, Send, DollarSign } from 'lucide-react';
+import { Edit, ArrowLeft, Download, Send, DollarSign, Printer } from 'lucide-react';
+import Link from 'next/link';
 
 export default function InvoiceDetailPage() {
   const router = useRouter();
@@ -77,6 +78,34 @@ export default function InvoiceDetailPage() {
     return new Date(dateString).toLocaleDateString('es-HN');
   };
 
+  const handleDownloadPDF = async () => {
+    try {
+      const response = await fetch(`/api/invoices/${invoiceId}/pdf`, {
+        headers: getAuthHeaders()
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate PDF');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `invoice-${invoice?.number || invoiceId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error: any) {
+      alert('Error generating PDF: ' + error.message);
+    }
+  };
+
+  const handlePrint = () => {
+    window.open(`/invoices/${invoiceId}/print`, '_blank');
+  };
+
   if (loading) {
     return (
       <div className="max-w-4xl mx-auto p-6">
@@ -119,7 +148,11 @@ export default function InvoiceDetailPage() {
           </div>
         </div>
         <div className="flex space-x-3">
-          <Button variant="outline">
+          <Button variant="outline" onClick={handlePrint}>
+            <Printer className="h-4 w-4 mr-2" />
+            Print
+          </Button>
+          <Button variant="outline" onClick={handleDownloadPDF}>
             <Download className="h-4 w-4 mr-2" />
             Download PDF
           </Button>

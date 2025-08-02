@@ -23,6 +23,11 @@ export const stores = sqliteTable('stores', {
   taxRate: real('tax_rate').default(0.15), // 15% default tax rate
   invoicePrefix: text('invoice_prefix').default('INV'),
   invoiceCounter: integer('invoice_counter').default(1),
+  quotePrefix: text('quote_prefix').default('QUO'),
+  quoteCounter: integer('quote_counter').default(1),
+
+  // Invoice Sequence Feature (JSON field)
+  invoiceSequence: text('invoice_sequence'), // JSON: {hash, sequence_start, sequence_end, limit_date, enabled}
 
   // Metadata
   isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
@@ -135,6 +140,39 @@ export const inventory = sqliteTable('inventory', {
 }, (table) => ({
   uniqueProductStore: uniqueIndex('unique_product_store').on(table.productId, table.storeId)
 }));
+
+// =========================================
+// INVENTORY MOVEMENTS TABLE
+// =========================================
+export const inventoryMovements = sqliteTable('inventory_movements', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  productId: integer('product_id').notNull().references(() => products.id, { onDelete: 'cascade' }),
+  storeId: integer('store_id').notNull().references(() => stores.id, { onDelete: 'cascade' }),
+  
+  // Movement details
+  movementType: text('movement_type', { 
+    enum: ['in', 'out', 'adjustment', 'transfer_in', 'transfer_out'] 
+  }).notNull(),
+  quantity: real('quantity').notNull(), // Positive for in, negative for out
+  previousQuantity: real('previous_quantity').notNull(),
+  newQuantity: real('new_quantity').notNull(),
+  
+  // Reference information
+  referenceType: text('reference_type', {
+    enum: ['invoice', 'purchase', 'adjustment', 'transfer', 'initial', 'return']
+  }),
+  referenceId: integer('reference_id'), // ID of invoice, purchase, etc.
+  referenceNumber: text('reference_number'), // Invoice number, PO number, etc.
+  
+  // Additional details
+  unitCost: real('unit_cost').default(0), // Cost per unit at time of movement
+  totalValue: real('total_value').default(0), // quantity * unitCost
+  notes: text('notes'),
+  
+  // Metadata
+  userId: integer('user_id').references(() => users.id, { onDelete: 'set null' }),
+  createdAt: text('created_at').notNull().$defaultFn(() => new Date().toISOString())
+});
 
 // =========================================
 // CLIENTS TABLE
@@ -266,19 +304,83 @@ export const invoices = sqliteTable('invoices', {
 export const invoiceItems = sqliteTable('invoice_items', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   invoiceId: integer('invoice_id').notNull().references(() => invoices.id, { onDelete: 'cascade' }),
-  productId: integer('product_id').references(() => products.id, { onDelete: 'restrict' }),
+  productId: integer('product_id').notNull().references(() => products.id, { onDelete: 'restrict' }),
 
   // Item details
   description: text('description').notNull(),
   quantity: real('quantity').notNull(),
   unitPrice: real('unit_price').notNull(),
 
-  // Calculated fields (handled in application code)
-  lineTotal: real('line_total'), // quantity * unitPrice
+  // Calculated fields
+  lineTotal: real('line_total').notNull(),
 
   // Tax
   taxRate: real('tax_rate').default(0),
-  taxAmount: real('tax_amount'), // lineTotal * taxRate
+  taxAmount: real('tax_amount').default(0),
+
+  // Metadata
+  sortOrder: integer('sort_order').default(0),
+  createdAt: text('created_at').notNull().$defaultFn(() => new Date().toISOString())
+});
+
+// =========================================
+// QUOTES TABLE
+// =========================================
+export const quotes = sqliteTable('quotes', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  storeId: integer('store_id').notNull().references(() => stores.id, { onDelete: 'restrict' }),
+  clientId: integer('client_id').notNull().references(() => clients.id, { onDelete: 'restrict' }),
+  userId: integer('user_id').references(() => users.id, { onDelete: 'set null' }),
+
+  // Quote details
+  quoteNumber: text('quote_number').notNull().unique(),
+  quoteDate: text('quote_date').notNull().$defaultFn(() => new Date().toISOString().split('T')[0]),
+  validUntil: text('valid_until'),
+
+  // Contact info at time of quote (for historical record)
+  clientName: text('client_name'), // Name of client who requested quote
+
+  // Amounts
+  subtotal: real('subtotal').notNull().default(0),
+  taxAmount: real('tax_amount').notNull().default(0),
+  discountAmount: real('discount_amount').notNull().default(0),
+  totalAmount: real('total_amount').notNull().default(0),
+
+  // Status
+  status: text('status', { enum: ['draft', 'sent', 'accepted', 'declined', 'expired', 'converted'] }).notNull().default('draft'),
+
+  // Conversion tracking
+  convertedToInvoiceId: integer('converted_to_invoice_id').references(() => invoices.id, { onDelete: 'set null' }),
+  convertedAt: text('converted_at'),
+
+  // Additional info
+  notes: text('notes'),
+  terms: text('terms'),
+
+  // Metadata
+  createdAt: text('created_at').notNull().$defaultFn(() => new Date().toISOString()),
+  updatedAt: text('updated_at').notNull().$defaultFn(() => new Date().toISOString())
+});
+
+// =========================================
+// QUOTE ITEMS TABLE
+// =========================================
+export const quoteItems = sqliteTable('quote_items', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  quoteId: integer('quote_id').notNull().references(() => quotes.id, { onDelete: 'cascade' }),
+  productId: integer('product_id').notNull().references(() => products.id, { onDelete: 'restrict' }),
+
+  // Item details
+  description: text('description').notNull(),
+  quantity: real('quantity').notNull(),
+  unitPrice: real('unit_price').notNull(),
+
+  // Calculated fields
+  lineTotal: real('line_total').notNull(),
+
+  // Tax
+  taxRate: real('tax_rate').default(0),
+  taxAmount: real('tax_amount').default(0),
 
   // Metadata
   sortOrder: integer('sort_order').default(0),
@@ -412,6 +514,7 @@ export const storesRelations = relations(stores, ({ many }) => ({
   products: many(products),
   inventory: many(inventory),
   invoices: many(invoices),
+  quotes: many(quotes),
   taxRates: many(taxRates)
 }));
 
@@ -419,6 +522,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   memberships: many(memberships),
   clientContacts: many(clientContacts),
   invoices: many(invoices),
+  quotes: many(quotes),
   assignedTags: many(taggable)
 }));
 
@@ -439,7 +543,8 @@ export const clientsRelations = relations(clients, ({ one, many }) => ({
     references: [stores.id]
   }),
   contacts: many(clientContacts),
-  invoices: many(invoices)
+  invoices: many(invoices),
+  quotes: many(quotes)
 }));
 
 export const clientContactsRelations = relations(clientContacts, ({ one }) => ({
@@ -466,7 +571,7 @@ export const productsRelations = relations(products, ({ one, many }) => ({
   })
 }));
 
-export const inventoryRelations = relations(inventory, ({ one }) => ({
+export const inventoryRelations = relations(inventory, ({ one, many }) => ({
   product: one(products, {
     fields: [inventory.productId],
     references: [products.id]
@@ -474,6 +579,22 @@ export const inventoryRelations = relations(inventory, ({ one }) => ({
   store: one(stores, {
     fields: [inventory.storeId],
     references: [stores.id]
+  }),
+  movements: many(inventoryMovements)
+}));
+
+export const inventoryMovementsRelations = relations(inventoryMovements, ({ one }) => ({
+  product: one(products, {
+    fields: [inventoryMovements.productId],
+    references: [products.id]
+  }),
+  store: one(stores, {
+    fields: [inventoryMovements.storeId],
+    references: [stores.id]
+  }),
+  user: one(users, {
+    fields: [inventoryMovements.userId],
+    references: [users.id]
   })
 }));
 
@@ -504,6 +625,37 @@ export const invoiceItemsRelations = relations(invoiceItems, ({ one }) => ({
   })
 }));
 
+export const quotesRelations = relations(quotes, ({ one, many }) => ({
+  store: one(stores, {
+    fields: [quotes.storeId],
+    references: [stores.id]
+  }),
+  client: one(clients, {
+    fields: [quotes.clientId],
+    references: [clients.id]
+  }),
+  user: one(users, {
+    fields: [quotes.userId],
+    references: [users.id]
+  }),
+  convertedToInvoice: one(invoices, {
+    fields: [quotes.convertedToInvoiceId],
+    references: [invoices.id]
+  }),
+  items: many(quoteItems)
+}));
+
+export const quoteItemsRelations = relations(quoteItems, ({ one }) => ({
+  quote: one(quotes, {
+    fields: [quoteItems.quoteId],
+    references: [quotes.id]
+  }),
+  product: one(products, {
+    fields: [quoteItems.productId],
+    references: [products.id]
+  })
+}));
+
 export const tagsRelations = relations(tags, ({ many }) => ({
   taggable: many(taggable)
 }));
@@ -528,10 +680,13 @@ export const tenantSchema = {
   categories,
   products,
   inventory,
+  inventoryMovements,
   clients,
   clientContacts,
   invoices,
   invoiceItems,
+  quotes,
+  quoteItems,
   tags,
   taggable,
   pricingRules,
@@ -545,8 +700,11 @@ export const tenantSchema = {
   categoriesRelations,
   productsRelations,
   inventoryRelations,
+  inventoryMovementsRelations,
   invoicesRelations,
   invoiceItemsRelations,
+  quotesRelations,
+  quoteItemsRelations,
   tagsRelations,
   taggableRelations
 };

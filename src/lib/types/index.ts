@@ -13,6 +13,14 @@ export interface TenantMeta {
   database_created_at?: string;
 }
 
+export interface InvoiceSequence {
+  enabled: boolean;
+  hash: string;
+  sequence_start: string;
+  sequence_end: string;
+  limit_date?: string;
+}
+
 export interface Tenant {
   id: number;
   name: string;
@@ -58,6 +66,11 @@ export interface Store {
   taxRate: number;
   invoicePrefix: string;
   invoiceCounter: number;
+  quotePrefix: string;
+  quoteCounter: number;
+
+  // Invoice Sequence Feature (JSON field)
+  invoiceSequence?: InvoiceSequence;
 
   // Metadata
   isActive: boolean;
@@ -94,6 +107,10 @@ export interface CreateStoreRequest {
   currency?: string;
   taxRate?: number;
   invoicePrefix?: string;
+  quotePrefix?: string;
+
+  // Invoice Sequence Feature (JSON field)
+  invoiceSequence?: InvoiceSequence;
 }
 
 export interface UpdateStoreRequest extends Partial<CreateStoreRequest> {
@@ -377,11 +394,88 @@ export interface CreateInvoiceItemRequest {
   productId: number;
   quantity: number;
   unitPrice: number;
+  description: string;
   total: number;
 }
 
 export interface UpdateInvoiceRequest extends Partial<CreateInvoiceRequest> {
   id: number;
+}
+
+export interface Quote {
+  id: string;
+  number: string;
+  clientId: string;
+  storeId: string;
+
+  // Contact info (captured at time of quote)
+  clientName?: string;
+
+  items: QuoteItem[];
+  subtotal: number;
+  tax: number;
+  discount: number;
+  total: number;
+  status: 'draft' | 'sent' | 'accepted' | 'declined' | 'expired' | 'converted';
+
+  // Conversion tracking
+  convertedToInvoiceId?: string;
+  convertedAt?: string;
+
+  quoteDate: string;
+  validUntil?: string;
+  notes?: string;
+  terms?: string;
+
+  createdAt: string;
+  updatedAt: string;
+
+  // Related entities
+  client?: Client;
+  convertedToInvoice?: Invoice;
+}
+
+export interface QuoteItem {
+  id: string;
+  productId: string;
+  productName?: string;
+  quantity: number;
+  unitPrice: number;
+  lineTotal: number;
+}
+
+export interface CreateQuoteRequest {
+  clientId: number;
+  storeId: number;
+  clientName?: string;
+  items: CreateQuoteItemRequest[];
+  subtotal: number;
+  tax: number;
+  discount: number;
+  total: number;
+  status?: 'draft' | 'sent' | 'accepted' | 'declined' | 'expired' | 'converted';
+  quoteDate: string;
+  validUntil?: string;
+  notes?: string;
+  terms?: string;
+}
+
+export interface CreateQuoteItemRequest {
+  productId: number; // Required - must be > 0
+  quantity: number;
+  unitPrice: number;
+  total: number;
+  description?: string;
+}
+
+export interface UpdateQuoteRequest extends Partial<CreateQuoteRequest> {
+  id: number;
+}
+
+export interface ConvertQuoteToInvoiceRequest {
+  quoteId: number;
+  invoiceDate?: string;
+  dueDate?: string;
 }
 
 // Pagination interfaces
@@ -399,6 +493,20 @@ export interface PaginatedResponse<T> {
     total: number;
     totalPages: number;
   };
+}
+
+// Tax Rate types
+export interface TaxRate {
+  id: number;
+  name: string;
+  code: string;
+  rate: number;
+  type: 'sales' | 'purchase' | 'both';
+  isDefault: boolean;
+  isActive: boolean;
+  description?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // Re-export accounting types

@@ -1,52 +1,50 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Store, CreateStoreRequest, UpdateStoreRequest } from '@/lib/types';
+import { Store, PaginatedResponse } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { StoreForm } from '@/components/stores/StoreForm';
+import { Pagination } from '@/components/ui/pagination';
 import { Plus, Edit, Trash2, MapPin, Phone, Mail, User, Search } from 'lucide-react';
 import Link from 'next/link';
 
 export default function StoresPage() {
   const [stores, setStores] = useState<Store[]>([]);
-  const [filteredStores, setFilteredStores] = useState<Store[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [showForm, setShowForm] = useState(false);
-  const [editingStore, setEditingStore] = useState<Store | null>(null);
-  const [formLoading, setFormLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [itemsPerPage] = useState(10);
   const { getAuthHeaders } = useAuth();
 
   useEffect(() => {
     fetchStores();
-  }, []);
+  }, [currentPage, searchTerm]);
 
+  // Debounce search to avoid too many API calls
   useEffect(() => {
-    if (!searchTerm.trim()) {
-      setFilteredStores(stores);
-    } else {
-      const filtered = stores.filter(store =>
-        store.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        store.code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        store.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        store.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        store.managerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        store.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        store.phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        store.currency.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-      setFilteredStores(filtered);
-    }
-  }, [stores, searchTerm]);
+    const timeoutId = setTimeout(() => {
+      setCurrentPage(1);
+      fetchStores();
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm]);
 
   const fetchStores = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/stores', {
+      const params = new URLSearchParams({
+        page: currentPage.toString(),
+        limit: itemsPerPage.toString(),
+        ...(searchTerm && { search: searchTerm })
+      });
+
+      const response = await fetch(`/api/stores?${params}`, {
         headers: getAuthHeaders()
       });
 
@@ -54,9 +52,10 @@ export default function StoresPage() {
         throw new Error('Failed to fetch stores');
       }
 
-      const data = await response.json();
-      setStores(data.stores || []);
-      setFilteredStores(data.stores || []);
+      const data: PaginatedResponse<Store> = await response.json();
+      setStores(data.data || []);
+      setTotalPages(data.pagination.totalPages);
+      setTotalItems(data.pagination.total);
     } catch (error: any) {
       setError(error.message);
     } finally {
@@ -85,50 +84,6 @@ export default function StoresPage() {
     } catch (error: any) {
       alert(error.message);
     }
-  };
-
-  const handleCreateStore = () => {
-    setEditingStore(null);
-    setShowForm(true);
-  };
-
-  const handleEditStore = (store: Store) => {
-    setEditingStore(store);
-    setShowForm(true);
-  };
-
-  const handleFormSubmit = async (data: CreateStoreRequest | UpdateStoreRequest) => {
-    setFormLoading(true);
-
-    try {
-      const url = editingStore ? `/api/stores/${editingStore.id}` : '/api/stores';
-      const method = editingStore ? 'PUT' : 'POST';
-
-      const response = await fetch(url, {
-        method,
-        headers: getAuthHeaders(),
-        body: JSON.stringify(data)
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to save store');
-      }
-
-      // Close form and refresh list
-      setShowForm(false);
-      setEditingStore(null);
-      fetchStores();
-    } catch (error: any) {
-      alert(error.message);
-    } finally {
-      setFormLoading(false);
-    }
-  };
-
-  const handleFormCancel = () => {
-    setShowForm(false);
-    setEditingStore(null);
   };
 
   if (loading) {
@@ -165,7 +120,7 @@ export default function StoresPage() {
           <p className="text-muted-foreground">Manage your store locations and settings</p>
         </div>
         <Link href="/stores/create">
-          <Button onClick={handleCreateStore}>
+          <Button>
             <Plus className="h-4 w-4 mr-2" />
             Add Store
           </Button>
@@ -183,7 +138,7 @@ export default function StoresPage() {
         />
       </div>
 
-      {filteredStores.length === 0 && stores.length > 0 ? (
+      {stores.length === 0 && !loading && searchTerm ? (
         <div className="border rounded-lg p-12 text-center">
           <div className="mx-auto w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-4">
             <Search className="h-12 w-12 text-muted-foreground" />
@@ -194,17 +149,19 @@ export default function StoresPage() {
             Clear Search
           </Button>
         </div>
-      ) : stores.length === 0 ? (
+      ) : stores.length === 0 && !loading ? (
         <div className="border rounded-lg p-12 text-center">
           <div className="mx-auto w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-4">
             <MapPin className="h-12 w-12 text-muted-foreground" />
           </div>
           <h3 className="text-lg font-semibold mb-2">No stores found</h3>
           <p className="text-muted-foreground mb-4">Get started by creating your first store location.</p>
-          <Button onClick={handleCreateStore}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Store
-          </Button>
+          <Link href="/stores/create">
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Store
+            </Button>
+          </Link>
         </div>
       ) : (
         <>
@@ -222,7 +179,7 @@ export default function StoresPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredStores.map((store) => (
+                {stores.map((store) => (
                   <TableRow key={store.id} className="cursor-pointer hover:bg-muted/50">
                     <TableCell>
                       <div>
@@ -262,9 +219,11 @@ export default function StoresPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end space-x-2" onClick={(e) => e.stopPropagation()}>
-                        <Button variant="ghost" size="sm" onClick={() => handleEditStore(store)}>
-                          <Edit className="h-4 w-4" />
-                        </Button>
+                        <Link href={`/stores/${store.id}/edit`}>
+                          <Button variant="ghost" size="sm">
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        </Link>
                         <Button
                           variant="ghost"
                           size="sm"
@@ -283,7 +242,7 @@ export default function StoresPage() {
 
           {/* Mobile Card View */}
           <div className="md:hidden grid gap-4">
-            {filteredStores.map((store) => (
+            {stores.map((store) => (
               <div key={store.id} className="border rounded-lg p-4 space-y-3">
                 <div className="flex justify-between items-start">
                   <div>
@@ -291,9 +250,11 @@ export default function StoresPage() {
                     {store.code && <p className="text-sm text-muted-foreground">Code: {store.code}</p>}
                   </div>
                   <div className="flex space-x-1">
-                    <Button variant="ghost" size="sm" onClick={() => handleEditStore(store)}>
-                      <Edit className="h-4 w-4" />
-                    </Button>
+                    <Link href={`/stores/${store.id}/edit`}>
+                      <Button variant="ghost" size="sm">
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    </Link>
                     <Button
                       variant="ghost"
                       size="sm"
@@ -345,10 +306,21 @@ export default function StoresPage() {
               </div>
             ))}
           </div>
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="mt-6">
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={totalItems}
+                itemsPerPage={itemsPerPage}
+                onPageChange={(page) => setCurrentPage(page)}
+              />
+            </div>
+          )}
         </>
       )}
 
-      {showForm && <StoreForm store={editingStore || undefined} onSubmit={handleFormSubmit} onCancel={handleFormCancel} loading={formLoading} />}
     </div>
   );
 }

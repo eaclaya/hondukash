@@ -24,8 +24,13 @@ CREATE TABLE stores (
     -- Settings
     currency TEXT DEFAULT 'HNL',
     tax_rate REAL DEFAULT 0.15, -- 15% default tax rate
-    invoice_prefix TEXT DEFAULT 'INV',
+    invoice_prefix TEXT DEFAULT 'F',
     invoice_counter INTEGER DEFAULT 1,
+    quote_prefix TEXT DEFAULT 'C',
+    quote_counter INTEGER DEFAULT 1,
+
+    -- Invoice Sequence Feature (JSON field)
+    invoice_sequence TEXT, -- JSON: {hash, sequence_start, sequence_end, limit_date, enabled}
 
     -- Metadata
     is_active INTEGER NOT NULL DEFAULT 1 CHECK (is_active IN (0, 1)),
@@ -277,7 +282,7 @@ CREATE TABLE invoices (
 CREATE TABLE invoice_items (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     invoice_id INTEGER NOT NULL REFERENCES invoices(id) ON DELETE CASCADE,
-    product_id INTEGER REFERENCES products(id) ON DELETE RESTRICT,
+    product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE RESTRICT,
 
     -- Item details
     description TEXT NOT NULL,
@@ -285,11 +290,75 @@ CREATE TABLE invoice_items (
     unit_price REAL NOT NULL,
 
     -- Calculated fields
-    line_total REAL GENERATED ALWAYS AS (quantity * unit_price) STORED,
+    line_total REAL NOT NULL,
 
     -- Tax
     tax_rate REAL DEFAULT 0,
-    tax_amount REAL GENERATED ALWAYS AS (line_total * tax_rate) STORED,
+    tax_amount REAL NOT NULL,
+
+    -- Metadata
+    sort_order INTEGER DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now', 'utc'))
+);
+
+-- =========================================
+-- QUOTES TABLE
+-- =========================================
+CREATE TABLE quotes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    store_id INTEGER NOT NULL REFERENCES stores(id) ON DELETE RESTRICT,
+    client_id INTEGER NOT NULL REFERENCES clients(id) ON DELETE RESTRICT,
+    user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+
+    -- Quote details
+    quote_number TEXT NOT NULL UNIQUE,
+    quote_date TEXT NOT NULL DEFAULT (date('now')),
+    valid_until TEXT,
+
+    -- Contact info at time of quote (for historical record)
+    client_name TEXT, -- Name of client who requested quote
+
+    -- Amounts
+    subtotal REAL NOT NULL DEFAULT 0,
+    tax_amount REAL NOT NULL DEFAULT 0,
+    discount_amount REAL NOT NULL DEFAULT 0,
+    total_amount REAL NOT NULL DEFAULT 0,
+
+    -- Status
+    status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'sent', 'accepted', 'declined', 'expired', 'converted')),
+
+    -- Conversion tracking
+    converted_to_invoice_id INTEGER REFERENCES invoices(id) ON DELETE SET NULL,
+    converted_at TEXT,
+
+    -- Additional info
+    notes TEXT,
+    terms TEXT,
+
+    -- Metadata
+    created_at TEXT NOT NULL DEFAULT (datetime('now', 'utc')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now', 'utc'))
+);
+
+-- =========================================
+-- QUOTE ITEMS TABLE
+-- =========================================
+CREATE TABLE quote_items (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    quote_id INTEGER NOT NULL REFERENCES quotes(id) ON DELETE CASCADE,
+    product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE RESTRICT,
+
+    -- Item details
+    description TEXT NOT NULL,
+    quantity REAL NOT NULL,
+    unit_price REAL NOT NULL,
+
+    -- Calculated fields
+    line_total REAL NOT NULL,
+
+    -- Tax
+    tax_rate REAL DEFAULT 0,
+    tax_amount REAL DEFAULT 0,
 
     -- Metadata
     sort_order INTEGER DEFAULT 0,
@@ -308,21 +377,24 @@ CREATE TABLE inventory_movements (
     -- Movement details
     movement_type TEXT NOT NULL CHECK (movement_type IN ('in', 'out', 'adjustment', 'transfer')),
     quantity REAL NOT NULL,
+    previous_quantity REAL NOT NULL,
+    new_quantity REAL NOT NULL,
     unit_cost REAL,
+    total_value REAL,
+    notes TEXT,
 
     -- References
     reference_type TEXT, -- 'invoice', 'purchase', 'adjustment', 'transfer'
     reference_id INTEGER,
+    reference_number TEXT,
 
     -- Transfer specific (when movement_type = 'transfer')
     from_store_id INTEGER REFERENCES stores(id) ON DELETE SET NULL,
     to_store_id INTEGER REFERENCES stores(id) ON DELETE SET NULL,
 
-    -- Additional info
-    notes TEXT,
-
     -- Metadata
-    created_at TEXT NOT NULL DEFAULT (datetime('now', 'utc'))
+    created_at TEXT NOT NULL DEFAULT (datetime('now', 'utc')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now', 'utc'))
 );
 
 -- =========================================
@@ -662,6 +734,16 @@ CREATE INDEX idx_invoices_status ON invoices(status);
 CREATE INDEX idx_invoices_invoice_date ON invoices(invoice_date);
 CREATE INDEX idx_invoice_items_invoice_id ON invoice_items(invoice_id);
 CREATE INDEX idx_invoice_items_product_id ON invoice_items(product_id);
+
+-- Quotes
+CREATE INDEX idx_quotes_store_id ON quotes(store_id);
+CREATE INDEX idx_quotes_client_id ON quotes(client_id);
+CREATE INDEX idx_quotes_status ON quotes(status);
+CREATE INDEX idx_quotes_quote_date ON quotes(quote_date);
+CREATE INDEX idx_quotes_valid_until ON quotes(valid_until);
+CREATE INDEX idx_quotes_converted_invoice ON quotes(converted_to_invoice_id);
+CREATE INDEX idx_quote_items_quote_id ON quote_items(quote_id);
+CREATE INDEX idx_quote_items_product_id ON quote_items(product_id);
 
 -- Tagging System
 CREATE INDEX idx_tags_store_active ON tags(store_id, is_active);

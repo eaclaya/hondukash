@@ -71,6 +71,12 @@ export class StoreService {
         taxRate: store.taxRate,
         invoicePrefix: store.invoicePrefix,
         invoiceCounter: store.invoiceCounter,
+        quotePrefix: store.quotePrefix,
+        quoteCounter: store.quoteCounter,
+
+        // Invoice Sequence Feature (JSON field)
+        invoiceSequence: store.invoiceSequence ? JSON.parse(store.invoiceSequence) : undefined,
+
         isActive: store.isActive,
         createdAt: store.createdAt,
         updatedAt: store.updatedAt
@@ -133,6 +139,12 @@ export class StoreService {
         taxRate: store.taxRate,
         invoicePrefix: store.invoicePrefix,
         invoiceCounter: store.invoiceCounter,
+        quotePrefix: store.quotePrefix,
+        quoteCounter: store.quoteCounter,
+
+        // Invoice Sequence Feature (JSON field)
+        invoiceSequence: store.invoiceSequence ? JSON.parse(store.invoiceSequence) : undefined,
+
         isActive: store.isActive,
         createdAt: store.createdAt,
         updatedAt: store.updatedAt
@@ -175,7 +187,11 @@ export class StoreService {
           managerName: storeData.managerName || null,
           currency: storeData.currency || 'HNL',
           taxRate: storeData.taxRate || 0.15,
-          invoicePrefix: storeData.invoicePrefix || 'INV'
+          invoicePrefix: storeData.invoicePrefix || 'INV',
+          quotePrefix: storeData.quotePrefix || 'QUO',
+
+          // Invoice Sequence Feature (JSON field)
+          invoiceSequence: storeData.invoiceSequence ? JSON.stringify(storeData.invoiceSequence) : null
         })
         .returning();
 
@@ -222,6 +238,12 @@ export class StoreService {
       if (storeData.currency !== undefined) updateData.currency = storeData.currency;
       if (storeData.taxRate !== undefined) updateData.taxRate = storeData.taxRate;
       if (storeData.invoicePrefix !== undefined) updateData.invoicePrefix = storeData.invoicePrefix;
+      if (storeData.quotePrefix !== undefined) updateData.quotePrefix = storeData.quotePrefix;
+
+      // Invoice Sequence Feature (JSON field)
+      if (storeData.invoiceSequence !== undefined) {
+        updateData.invoiceSequence = storeData.invoiceSequence ? JSON.stringify(storeData.invoiceSequence) : null;
+      }
 
       if (Object.keys(updateData).length === 0) {
         return {

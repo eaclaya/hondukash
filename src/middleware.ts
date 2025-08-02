@@ -1,15 +1,14 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { getTenantDb } from './lib/turso';
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const hostname = request.headers.get('host') || '';
   const url = request.nextUrl.clone();
 
   // Handle hostname with port (e.g., hondukash.test:3000)
   const hostWithoutPort = hostname.split(':')[0];
   const appDomain = process.env.NEXT_PUBLIC_APP_DOMAIN || 'hondukash.test';
-
-  console.log('Middleware:', { hostname, hostWithoutPort, pathname: url.pathname, appDomain });
 
   // Check if this is the naked domain (hondukash.test)
   const isNakedDomain = hostWithoutPort === appDomain;
@@ -19,8 +18,8 @@ export function middleware(request: NextRequest) {
 
   // Extract subdomain name
   const subdomain = isSubdomain ? hostWithoutPort.split('.')[0] : null;
-
-  console.log('Domain analysis:', { isNakedDomain, isSubdomain, subdomain });
+  console.log('Subdomain:', subdomain);
+  const db = await getTenantDb('mpv.hondukash.test');
 
   if (isNakedDomain) {
     // Handle admin routes with authentication
@@ -51,8 +50,6 @@ export function middleware(request: NextRequest) {
     // Store tenant info in headers for the app to use
     const requestHeaders = new Headers(request.headers);
     requestHeaders.set('X-TENANT-SUBDOMAIN', subdomain);
-
-    console.log('Tenant detected:', subdomain);
 
     // If accessing root, redirect to login
     if (url.pathname === '/') {

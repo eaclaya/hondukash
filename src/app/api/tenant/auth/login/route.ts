@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
         });
       } catch (relationError) {
         console.log('Drizzle relation error, falling back to separate queries:', relationError);
-        
+
         // Fallback: Query memberships separately and then get stores
         const membershipList = await db.query.memberships.findMany({
           where: eq(memberships.userId, user.id)

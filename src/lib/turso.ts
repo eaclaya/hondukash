@@ -32,9 +32,16 @@ export async function getTenantDb(domain: string) {
 
   // Create tenant-specific Turso client
   const tenantTurso = createClient({
-    url: meta.database_url,
-    authToken: meta.database_auth_token
+    url: "file:database/mpv.db",
+    authToken: meta.database_auth_token,
+    syncUrl: meta.database_url,
+    syncInterval: 60,
+    // url: meta.database_url,
+    // authToken: meta.database_auth_token
   });
+
+  await tenantTurso.sync();
+  console.log('Syncing tenant database:', meta.database_url);
 
   // Create Drizzle instance for tenant database with tenant schema
   return drizzle(tenantTurso, { schema: tenantSchema });

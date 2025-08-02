@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Invoice, CreateInvoiceRequest, UpdateInvoiceRequest, Client, ProductWithInventory } from '@/lib/types';
+import { Quote, CreateQuoteRequest, UpdateQuoteRequest, Client, ProductWithInventory } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,14 +12,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Plus, Trash2, Calculator } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
-interface InvoiceFormProps {
-  invoice?: Invoice;
-  onSubmit: (data: CreateInvoiceRequest | UpdateInvoiceRequest) => Promise<void>;
+interface QuoteFormProps {
+  quote?: Quote;
+  onSubmit: (data: CreateQuoteRequest | UpdateQuoteRequest) => Promise<void>;
   onCancel: () => void;
   loading?: boolean;
 }
 
-interface InvoiceItemForm {
+interface QuoteItemForm {
   productId: number | null;
   sku: string;
   productName: string;
@@ -28,7 +28,7 @@ interface InvoiceItemForm {
   total: number;
 }
 
-export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = false }: InvoiceFormProps) {
+export default function QuoteForm({ quote, onSubmit, onCancel, loading = false }: QuoteFormProps) {
   const { getAuthHeaders } = useAuth();
   const [clients, setClients] = useState<Client[]>([]);
   const [products, setProducts] = useState<ProductWithInventory[]>([]);
@@ -45,15 +45,16 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
 
   const [formData, setFormData] = useState({
-    clientId: invoice?.clientId ? parseInt(invoice.clientId) : null,
-    invoiceDate: invoice?.invoiceDate || new Date().toISOString().split('T')[0],
-    dueDate: invoice?.dueDate || '',
-    notes: invoice?.notes || '',
-    terms: invoice?.terms || '',
-    status: invoice?.status || 'draft' as const
+    clientId: quote?.clientId ? parseInt(quote.clientId) : null,
+    clientName: quote?.clientName || '',
+    quoteDate: quote?.quoteDate || new Date().toISOString().split('T')[0],
+    validUntil: quote?.validUntil || '',
+    notes: quote?.notes || '',
+    terms: quote?.terms || '',
+    status: quote?.status || 'draft' as const
   });
 
-  const [items, setItems] = useState<InvoiceItemForm[]>([]);
+  const [items, setItems] = useState<QuoteItemForm[]>([]);
 
   const [taxRate, setTaxRate] = useState(0.15); // 15% default tax rate
 
@@ -67,14 +68,14 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
 
   // Set initial selected client if editing
   useEffect(() => {
-    if (invoice && formData.clientId) {
+    if (quote && formData.clientId) {
       const client = clients.find(c => c.id === formData.clientId);
       if (client) {
         setSelectedClient(client);
         setClientSearch(client.name);
       }
     }
-  }, [invoice, formData.clientId, clients]);
+  }, [quote, formData.clientId, clients]);
 
   const searchClients = async (searchTerm: string) => {
     if (searchTerm.trim() === '') {
@@ -210,7 +211,7 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
     }));
   };
 
-  const handleItemChange = (index: number, field: keyof InvoiceItemForm, value: any) => {
+  const handleItemChange = (index: number, field: keyof QuoteItemForm, value: any) => {
     const newItems = [...items];
     newItems[index] = { ...newItems[index], [field]: value };
 
@@ -236,7 +237,7 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
     const product = productResults.find(p => p.id === productId);
     if (!product) return;
 
-    const newItem: InvoiceItemForm = {
+    const newItem: QuoteItemForm = {
       productId: product.id,
       sku: product.sku,
       productName: product.name,
@@ -294,28 +295,28 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
       return;
     }
 
-    if (items.length === 0 || items.every(item => !item.productName)) {
-      alert('Please add at least one item');
+    if (items.length === 0 || items.every(item => !item.productName || !item.productId || item.productId === 0)) {
+      alert('Please add at least one item with a selected product');
       return;
     }
 
     const totals = calculateTotals();
 
     const submitData = {
-      ...(invoice?.id && { id: parseInt(invoice.id) }),
+      ...(quote?.id && { id: parseInt(quote.id) }),
       clientId: formData.clientId,
-      invoiceDate: formData.invoiceDate,
-      dueDate: formData.dueDate || undefined,
+      clientName: formData.clientName || undefined,
+      quoteDate: formData.quoteDate,
+      validUntil: formData.validUntil || undefined,
       notes: formData.notes || undefined,
       terms: formData.terms || undefined,
       status: formData.status,
-      items: items.filter(item => item.productName).map(item => ({
+      items: items.filter(item => item.productName && item.productId && item.productId > 0).map(item => ({
         productId: item.productId || 0,
-        sku: item.sku,
-        description: item.productName,
         quantity: item.quantity,
         unitPrice: item.unitPrice,
-        total: item.total
+        total: item.total,
+        description: item.productName
       })),
       subtotal: totals.subtotal,
       tax: totals.tax,
@@ -340,10 +341,10 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-slate-900">
-            {invoice ? 'Edit Invoice' : 'Create New Invoice'}
+            {quote ? 'Edit Quote' : 'Create New Quote'}
           </h1>
           <p className="text-slate-600">
-            {invoice ? 'Update invoice details and line items' : 'Create a new invoice for your client'}
+            {quote ? 'Update quote details and line items' : 'Create a new quote for your client'}
           </p>
         </div>
         <div className="flex space-x-3">
@@ -351,7 +352,7 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
             Cancel
           </Button>
           <Button onClick={handleSubmit} disabled={loading} className="btn-primary-modern">
-            {loading ? 'Saving...' : invoice ? 'Update Invoice' : 'Create Invoice'}
+            {loading ? 'Saving...' : quote ? 'Update Quote' : 'Create Quote'}
           </Button>
         </div>
       </div>
@@ -360,7 +361,7 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
         {/* Basic Information */}
         <Card>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="space-y-2 relative">
                 <Label htmlFor="client-search">Client *</Label>
                 <Input
@@ -417,24 +418,33 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
                   <SelectContent>
                     <SelectItem value="draft">Draft</SelectItem>
                     <SelectItem value="sent">Sent</SelectItem>
-                    <SelectItem value="paid">Paid</SelectItem>
-                    <SelectItem value="partial">Partial Payment</SelectItem>
-                    <SelectItem value="overdue">Overdue</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                    <SelectItem value="accepted">Accepted</SelectItem>
+                    <SelectItem value="declined">Declined</SelectItem>
+                    <SelectItem value="expired">Expired</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="invoiceDate">Invoice Date *</Label>
+                <Label htmlFor="quoteDate">Quote Date *</Label>
                 <Input
-                  id="invoiceDate"
+                  id="quoteDate"
                   type="date"
-                  value={formData.invoiceDate}
-                  onChange={(e) => handleInputChange('invoiceDate', e.target.value)}
+                  value={formData.quoteDate}
+                  onChange={(e) => handleInputChange('quoteDate', e.target.value)}
                   required
                 />
               </div>
+
+              <div className="space-y-2">
+              <Label htmlFor="validUntil">Valid Until</Label>
+              <Input
+                id="validUntil"
+                type="date"
+                value={formData.validUntil}
+                onChange={(e) => handleInputChange('validUntil', e.target.value)}
+              />
+            </div>
             </div>
           </CardContent>
         </Card>
@@ -528,7 +538,7 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <Calculator className="h-5 w-5" />
-              <span>Invoice Summary</span>
+              <span>Quote Summary</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -596,7 +606,7 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
                 id="terms"
                 value={formData.terms}
                 onChange={(e) => handleInputChange('terms', e.target.value)}
-                placeholder="Payment terms and conditions"
+                placeholder="Quote terms and conditions"
                 rows={3}
               />
             </div>
@@ -622,7 +632,7 @@ function QuickProductEntry({ products, loading, onProductAdd, onSearchChange, se
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (products.length === 0) return;
-    console.log(products)
+
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault();
@@ -758,7 +768,7 @@ function QuickProductEntry({ products, loading, onProductAdd, onSearchChange, se
       )}
 
       <div className="text-sm text-muted-foreground">
-        💡 Tip: Search for a product, use arrow keys to navigate, enter quantity, and press Enter to add to invoice
+        💡 Tip: Search for a product, use arrow keys to navigate, enter quantity, and press Enter to add to quote
       </div>
     </div>
   );

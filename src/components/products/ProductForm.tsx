@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Package, Warehouse, Tag, DollarSign, ImageIcon, Settings } from 'lucide-react';
+import TaxRateSelector from '@/components/ui/TaxRateSelector';
 
 interface ProductFormProps {
   product?: ProductWithInventory;
@@ -19,6 +20,11 @@ interface ProductFormProps {
 }
 
 export default function ProductForm({ product, onSubmit, onCancel, loading = false }: ProductFormProps) {
+  const initialBasePrice = product?.basePrice || 0;
+  const initialTaxRate = product?.taxRate || 0.15;
+  const initialIsTaxable = product?.isTaxable ?? true;
+  const calculatedPrice = initialIsTaxable ? initialBasePrice * (1 + initialTaxRate) : initialBasePrice;
+
   const [formData, setFormData] = useState<CreateProductRequest | UpdateProductRequest>({
     ...(product?.id && { id: product.id }),
     name: product?.name || '',
@@ -28,27 +34,67 @@ export default function ProductForm({ product, onSubmit, onCancel, loading = fal
     categoryId: product?.categoryId || undefined,
     baseCost: product?.baseCost || 0,
     cost: product?.cost || 0,
-    basePrice: product?.basePrice || 0,
-    price: product?.price || 0,
+    basePrice: initialBasePrice,
+    price: calculatedPrice,
     minPrice: product?.minPrice || 0,
-    isTaxable: product?.isTaxable ?? true,
+    isTaxable: initialIsTaxable,
     taxRateId: product?.taxRateId || undefined,
-    taxRate: product?.taxRate || 0.15,
+    taxRate: initialTaxRate,
     trackInventory: product?.trackInventory ?? true,
     unit: product?.unit || 'unit',
     imageUrl: product?.imageUrl || '',
     images: product?.images || [],
     // Inventory data
     quantity: product?.inventory?.quantity || 0,
-    storePrice: product?.inventory?.price || product?.price || 0,
+    storePrice: product?.inventory?.price || calculatedPrice,
     location: product?.inventory?.location || '',
   });
 
+  const validateAlphanumericCode = (value: string): string => {
+    // Allow only letters, numbers, dash, dot, underscore
+    return value.replace(/[^a-zA-Z0-9\-\._]/g, '');
+  };
+
   const handleInputChange = (field: string, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    setFormData(prev => {
+      const updated = {
+        ...prev,
+        [field]: value
+      };
+      
+      // Validate SKU and barcode fields
+      if (field === 'sku' || field === 'barcode') {
+        updated[field] = validateAlphanumericCode(value);
+      }
+      
+      // Auto-calculate selling price when base price or tax rate changes
+      if (field === 'basePrice' || field === 'taxRate' || field === 'isTaxable' || field === 'taxRateId') {
+        const basePrice = field === 'basePrice' ? value : updated.basePrice || 0;
+        const taxRate = field === 'taxRate' ? value : updated.taxRate || 0;
+        const isTaxable = field === 'isTaxable' ? value : updated.isTaxable;
+        
+        updated.price = isTaxable ? basePrice * (1 + taxRate) : basePrice;
+      }
+      
+      return updated;
+    });
+  };
+
+  const handleTaxRateChange = (taxRateId: number | undefined, taxRate: number) => {
+    setFormData(prev => {
+      const updated = {
+        ...prev,
+        taxRateId,
+        taxRate
+      };
+      
+      // Recalculate selling price
+      const basePrice = updated.basePrice || 0;
+      const isTaxable = updated.isTaxable;
+      updated.price = isTaxable ? basePrice * (1 + taxRate) : basePrice;
+      
+      return updated;
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -117,8 +163,11 @@ export default function ProductForm({ product, onSubmit, onCancel, loading = fal
                     id="sku"
                     value={formData.sku}
                     onChange={(e) => handleInputChange('sku', e.target.value)}
-                    placeholder="Enter SKU"
+                    placeholder="e.g., ABC123, PROD-001"
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Only letters, numbers, dash (-), dot (.), and underscore (_) allowed
+                  </p>
                 </div>
 
                 <div className="space-y-2 md:col-span-2">
@@ -138,8 +187,11 @@ export default function ProductForm({ product, onSubmit, onCancel, loading = fal
                     id="barcode"
                     value={formData.barcode}
                     onChange={(e) => handleInputChange('barcode', e.target.value)}
-                    placeholder="Enter barcode"
+                    placeholder="e.g., 123456789012"
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Only letters, numbers, dash (-), dot (.), and underscore (_) allowed
+                  </p>
                 </div>
 
                 <div className="space-y-2">
@@ -225,14 +277,17 @@ export default function ProductForm({ product, onSubmit, onCancel, loading = fal
                   <Input
                     id="price"
                     type="number"
-                    value={formData.price}
-                    onChange={(e) => handleInputChange('price', parseFloat(e.target.value) || 0)}
+                    value={(formData.price || 0).toFixed(2)}
+                    disabled
                     placeholder="0.00"
-                    min="0"
-                    step="0.01"
-                    required
+                    className="bg-muted"
                   />
-                  <p className="text-xs text-muted-foreground">Default selling price</p>
+                  <p className="text-xs text-muted-foreground">
+                    {formData.isTaxable 
+                      ? `Calculated: Base Price (${formatCurrency(formData.basePrice || 0)}) + Tax (${((formData.taxRate || 0) * 100).toFixed(1)}%)`
+                      : 'Calculated: Base Price (no tax)'
+                    }
+                  </p>
                 </div>
 
                 <div className="space-y-2">
@@ -288,25 +343,18 @@ export default function ProductForm({ product, onSubmit, onCancel, loading = fal
                 </div>
 
                 {formData.isTaxable && (
-                  <div className="space-y-2">
-                    <Label htmlFor="taxRate">Tax Rate (%)</Label>
-                    <Input
-                      id="taxRate"
-                      type="number"
-                      value={(formData.taxRate || 0) * 100}
-                      onChange={(e) => handleInputChange('taxRate', (parseFloat(e.target.value) || 0) / 100)}
-                      placeholder="15"
-                      min="0"
-                      max="100"
-                      step="0.01"
-                    />
-                  </div>
+                  <TaxRateSelector
+                    value={formData.taxRateId}
+                    onValueChange={handleTaxRateChange}
+                    allowNone={true}
+                    className="space-y-2"
+                  />
                 )}
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          {/* <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <ImageIcon className="h-5 w-5" />
@@ -346,7 +394,7 @@ export default function ProductForm({ product, onSubmit, onCancel, loading = fal
                 </div>
               )}
             </CardContent>
-          </Card>
+          </Card> */}
         </TabsContent>
 
         <TabsContent value="inventory" className="space-y-6">
@@ -428,7 +476,7 @@ export default function ProductForm({ product, onSubmit, onCancel, loading = fal
                   </p>
                 </div>
 
-                {formData.storePrice !== formData.price && formData.storePrice > 0 && (
+                {(formData.storePrice || 0) !== (formData.price || 0) && (formData.storePrice || 0) > 0 && (
                   <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
                     <div className="flex justify-between text-sm">
                       <span>Default Price:</span>
@@ -441,7 +489,7 @@ export default function ProductForm({ product, onSubmit, onCancel, loading = fal
                     <div className="flex justify-between text-sm text-blue-600">
                       <span>Difference:</span>
                       <span>
-                        {formData.storePrice > formData.price ? '+' : ''}
+                        {(formData.storePrice || 0) > (formData.price || 0) ? '+' : ''}
                         {formatCurrency((formData.storePrice || 0) - (formData.price || 0))}
                       </span>
                     </div>

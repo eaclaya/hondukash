@@ -2,19 +2,19 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { CreateStoreRequest } from '@/lib/types';
+import { CreateQuoteRequest } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
-import { StoreForm } from '@/components/stores/StoreForm';
+import QuoteForm from '@/components/quotes/QuoteForm';
 
-export default function CreateStorePage() {
+export default function CreateQuotePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const { getAuthHeaders } = useAuth();
 
-  const handleSubmit = async (data: CreateStoreRequest) => {
+  const handleSubmit = async (data: CreateQuoteRequest) => {
     setLoading(true);
     try {
-      const response = await fetch('/api/stores', {
+      const response = await fetch('/api/quotes', {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify(data)
@@ -22,13 +22,13 @@ export default function CreateStorePage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create store');
+        throw new Error(errorData.error || 'Failed to create quote');
       }
 
       const result = await response.json();
       
-      // Redirect to store list
-      router.push('/stores');
+      // Redirect to quote list
+      router.push('/quotes');
     } catch (error: any) {
       alert(error.message);
     } finally {
@@ -37,11 +37,11 @@ export default function CreateStorePage() {
   };
 
   const handleCancel = () => {
-    router.push('/stores');
+    router.push('/quotes');
   };
 
   return (
-    <StoreForm
+    <QuoteForm
       onSubmit={handleSubmit}
       onCancel={handleCancel}
       loading={loading}

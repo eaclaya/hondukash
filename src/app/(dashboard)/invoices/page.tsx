@@ -22,7 +22,7 @@ function debounce<T extends (...args: unknown[]) => void>(func: T, delay: number
 export default function InvoicesPage() {
   const router = useRouter();
   const [invoicesData, setInvoicesData] = useState<PaginatedResponse<Invoice> | null>(null);
-  const [, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);

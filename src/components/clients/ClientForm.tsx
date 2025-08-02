@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Client, CreateClientRequest, UpdateClientRequest, ClientContact, CreateClientContactRequest } from '@/lib/types';
+import { Client, CreateClientRequest, UpdateClientRequest } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -85,7 +85,7 @@ export default function ClientForm({ client, onSubmit, onCancel, loading = false
   const [showContactForm, setShowContactForm] = useState(false);
   const [editingContactIndex, setEditingContactIndex] = useState<number | null>(null);
 
-  const handleInputChange = (field: string, value: any) => {
+  const handleInputChange = (field: string, value: string | number | boolean) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -574,7 +574,7 @@ function ContactForm({ contact, onSave, onCancel, isPrimary = false }: ContactFo
     notes: contact?.notes || '',
   });
 
-  const handleInputChange = (field: string, value: any) => {
+  const handleInputChange = (field: string, value: string | number | boolean) => {
     setFormData(prev => ({
       ...prev,
       [field]: value

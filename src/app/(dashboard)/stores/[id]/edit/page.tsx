@@ -55,7 +55,7 @@ export default function EditStorePage() {
         throw new Error(errorData.error || 'Failed to update store');
       }
 
-      const result = await response.json();
+      await response.json();
       
       // Redirect to store list
       router.push('/stores');

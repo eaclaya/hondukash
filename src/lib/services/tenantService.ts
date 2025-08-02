@@ -340,7 +340,7 @@ export class TenantService {
   /**
    * Create tenant-specific admin user, default store, and membership
    */
-  private static async createStoreUser(tenantDb: any, domain: string): Promise<void> {
+  private static async createStoreUser(tenantClient: ReturnType<typeof createClient>, domain: string): Promise<void> {
     try {
       console.log(`Creating tenant admin user and store for: ${domain}`);
 
@@ -357,7 +357,7 @@ export class TenantService {
       const hashedPassword = await bcrypt.hash('Pa$$w0rd!', 10); // Default password
 
       // 1. Create the admin user
-      const userResult = await tenantDb.execute({
+      const userResult = await tenantClient.execute({
         sql: `INSERT INTO users (email, password, name, is_active, created_at, updated_at)
               VALUES (?, ?, ?, ?, ?, ?) RETURNING id`,
         args: [
@@ -378,7 +378,7 @@ export class TenantService {
       console.log(`✓ Created admin user with ID: ${userId}`);
 
       // 2. Create the default store
-      const storeResult = await tenantDb.execute({
+      const storeResult = await tenantClient.execute({
         sql: `INSERT INTO stores (name, description, country, currency, tax_rate, invoice_prefix, is_active, created_at, updated_at)
               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id`,
         args: [
@@ -402,7 +402,7 @@ export class TenantService {
       console.log(`✓ Created default store with ID: ${storeId}`);
 
       // 3. Create membership linking user to store with admin role
-      await tenantDb.execute({
+      await tenantClient.execute({
         sql: `INSERT INTO memberships (user_id, store_id, role, created_at, updated_at)
               VALUES (?, ?, ?, ?, ?)`,
         args: [

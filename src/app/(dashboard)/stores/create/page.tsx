@@ -25,7 +25,7 @@ export default function CreateStorePage() {
         throw new Error(errorData.error || 'Failed to create store');
       }
 
-      const result = await response.json();
+      await response.json();
       
       // Redirect to store list
       router.push('/stores');

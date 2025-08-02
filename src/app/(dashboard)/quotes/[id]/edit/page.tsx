@@ -55,7 +55,7 @@ export default function EditQuotePage() {
         throw new Error(errorData.error || 'Failed to update quote');
       }
 
-      const result = await response.json();
+      await response.json();
       
       // Redirect to quote list
       router.push('/quotes');

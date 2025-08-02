@@ -25,7 +25,7 @@ export default function CreateQuotePage() {
         throw new Error(errorData.error || 'Failed to create quote');
       }
 
-      const result = await response.json();
+      await response.json();
       
       // Redirect to quote list
       router.push('/quotes');

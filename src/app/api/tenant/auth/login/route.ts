@@ -254,12 +254,12 @@ export async function POST(request: NextRequest) {
       }
 
       return response;
-    } catch (tenantError: any) {
+    } catch (tenantError: unknown) {
       console.error('Tenant authentication error:', tenantError);
       return NextResponse.json(
         {
           error: 'Authentication failed',
-          details: tenantError.message
+          details: tenantError instanceof Error ? tenantError.message : 'Unknown error'
         },
         { status: 500 }
       );

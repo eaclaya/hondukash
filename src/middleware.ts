@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { getTenantDb } from './lib/turso';
 
 export async function middleware(request: NextRequest) {
   const hostname = request.headers.get('host') || '';

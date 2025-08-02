@@ -46,8 +46,8 @@ export default function TaxRateSelector({
       } else {
         setError(result.error || 'Failed to load tax rates');
       }
-    } catch (error: any) {
-      setError(error.message);
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : 'Unknown error occurred');
     } finally {
       setLoading(false);
     }

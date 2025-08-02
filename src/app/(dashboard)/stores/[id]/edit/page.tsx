@@ -34,8 +34,8 @@ export default function EditStorePage() {
 
       const data = await response.json();
       setStore(data.store);
-    } catch (error: any) {
-      setError(error.message);
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : 'Unknown error');
     } finally {
       setFetchLoading(false);
     }
@@ -59,8 +59,8 @@ export default function EditStorePage() {
       
       // Redirect to store list
       router.push('/stores');
-    } catch (error: any) {
-      alert(error.message);
+    } catch (error: unknown) {
+      alert(error instanceof Error ? error.message : 'Unknown error');
     } finally {
       setLoading(false);
     }

@@ -264,7 +264,7 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Login API error:', error);
     return NextResponse.json(
       {

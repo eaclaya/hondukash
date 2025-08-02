@@ -13,7 +13,7 @@ interface Tenant {
   domain: string;
   database: string;
   isActive: boolean;
-  meta?: any;
+  meta?: unknown;
   databaseContext: TenantDatabaseContext;
 }
 
@@ -21,7 +21,7 @@ interface TenantContextType {
   tenant: Tenant | null;
   setTenant: (tenant: Tenant | null) => void;
   isLoading: boolean;
-  connectToTenantDb: () => Promise<any>;
+  connectToTenantDb: () => Promise<unknown>;
 }
 
 const TenantContext = createContext<TenantContextType | undefined>(undefined);

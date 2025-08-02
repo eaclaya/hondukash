@@ -27,7 +27,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     }
 
     return NextResponse.json({ invoice: result.data });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('GET /api/invoices/[id] error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
@@ -61,7 +61,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     }
 
     return NextResponse.json({ invoice: result.data });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('PUT /api/invoices/[id] error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
@@ -92,7 +92,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     }
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('DELETE /api/invoices/[id] error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
@@ -130,7 +130,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     }
 
     return NextResponse.json({ invoice: result.data });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('PATCH /api/invoices/[id] error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

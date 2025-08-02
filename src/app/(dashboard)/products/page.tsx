@@ -11,9 +11,9 @@ import { Pagination } from '@/components/ui/pagination';
 import { Plus, Edit, Trash2, Package, Search } from 'lucide-react';
 
 // Simple debounce function
-function debounce<T extends (...args: any[]) => void>(func: T, delay: number): T {
+function debounce<T extends (...args: unknown[]) => void>(func: T, delay: number): T {
   let timeoutId: NodeJS.Timeout;
-  return ((...args: any[]) => {
+  return ((...args: unknown[]) => {
     clearTimeout(timeoutId);
     timeoutId = setTimeout(() => func(...args), delay);
   }) as T;
@@ -22,7 +22,7 @@ function debounce<T extends (...args: any[]) => void>(func: T, delay: number): T
 export default function ProductsPage() {
   const router = useRouter();
   const [productsData, setProductsData] = useState<PaginatedResponse<ProductWithInventory> | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -65,8 +65,8 @@ export default function ProductsPage() {
 
       const data = await response.json();
       setProductsData(data);
-    } catch (error: any) {
-      setError(error.message);
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : 'Unknown error');
     } finally {
       setLoading(false);
     }
@@ -90,8 +90,8 @@ export default function ProductsPage() {
 
       // Refresh the products list
       fetchProducts();
-    } catch (error: any) {
-      alert(error.message);
+    } catch (error: unknown) {
+      alert(error instanceof Error ? error.message : 'Unknown error');
     }
   };
 

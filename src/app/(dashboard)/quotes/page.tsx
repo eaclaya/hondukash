@@ -65,8 +65,8 @@ export default function QuotesPage() {
       setQuotes(data.data || []);
       setTotalPages(data.pagination.totalPages);
       setTotalItems(data.pagination.total);
-    } catch (error: any) {
-      setError(error.message);
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : 'Unknown error');
     } finally {
       setLoading(false);
     }
@@ -90,8 +90,8 @@ export default function QuotesPage() {
 
       // Refresh the quotes list
       fetchQuotes();
-    } catch (error: any) {
-      alert(error.message);
+    } catch (error: unknown) {
+      alert(error instanceof Error ? error.message : 'Unknown error');
     }
   };
 
@@ -126,8 +126,8 @@ export default function QuotesPage() {
       setConvertDialogOpen(false);
       setConvertingQuote(null);
       fetchQuotes();
-    } catch (error: any) {
-      alert(error.message);
+    } catch (error: unknown) {
+      alert(error instanceof Error ? error.message : 'Unknown error');
     } finally {
       setConverting(false);
     }
@@ -278,7 +278,7 @@ export default function QuotesPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end space-x-2" onClick={(e) => e.stopPropagation()}>
-                        {quote.status === 'accepted' && quote.status !== 'converted' && (
+                        {quote.status === 'accepted' && (
                           <Button
                             variant="ghost"
                             size="sm"
@@ -321,7 +321,7 @@ export default function QuotesPage() {
                     </p>
                   </div>
                   <div className="flex space-x-1" onClick={(e) => e.stopPropagation()}>
-                    {quote.status === 'accepted' && quote.status !== 'converted' && (
+                    {quote.status === 'accepted' && (
                       <Button
                         variant="ghost" 
                         size="sm"

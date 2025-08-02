@@ -30,7 +30,7 @@ export async function GET(
     }
 
     return NextResponse.json({ quote: result.data });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('GET /api/quotes/[id] error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
@@ -86,7 +86,7 @@ export async function PUT(
     }
 
     return NextResponse.json({ quote: result.data });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('PUT /api/quotes/[id] error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
@@ -120,7 +120,7 @@ export async function DELETE(
     }
 
     return NextResponse.json({ message: 'Quote deleted successfully' });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('DELETE /api/quotes/[id] error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

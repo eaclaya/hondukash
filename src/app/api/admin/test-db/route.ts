@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase'
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const supabase = createClient()
 
@@ -42,11 +42,11 @@ export async function GET(request: NextRequest) {
       tenantsData: tenants
     })
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Database test error:', error)
     return NextResponse.json({ 
       error: 'Database test failed',
-      message: error.message 
+      message: error instanceof Error ? error.message : 'Unknown error occurred' 
     }, { status: 500 })
   }
 }

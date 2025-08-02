@@ -1,6 +1,6 @@
 import { getTenantDb } from '@/lib/turso';
 import { taxRates } from '@/lib/db/schema/tenant';
-import { eq, and, desc, like, or, count } from 'drizzle-orm';
+import { eq, and, desc } from 'drizzle-orm';
 
 export interface TaxRate {
   id: number;
@@ -49,9 +49,9 @@ export class TaxRateService {
         success: true,
         data: taxRatesResult
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('TaxRateService.getAllTaxRates error:', error);
-      return { success: false, error: error.message };
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
   }
 
@@ -70,9 +70,9 @@ export class TaxRateService {
       }
 
       return { success: true, data: taxRateResult[0] };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('TaxRateService.getTaxRateById error:', error);
-      return { success: false, error: error.message };
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
   }
 
@@ -102,9 +102,9 @@ export class TaxRateService {
         .returning();
 
       return { success: true, data: newTaxRate };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('TaxRateService.createTaxRate error:', error);
-      return { success: false, error: error.message };
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
   }
 
@@ -142,9 +142,9 @@ export class TaxRateService {
       }
 
       return { success: true, data: updatedTaxRate };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('TaxRateService.updateTaxRate error:', error);
-      return { success: false, error: error.message };
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
   }
 
@@ -162,9 +162,9 @@ export class TaxRateService {
         .where(eq(taxRates.id, taxRateId));
 
       return { success: true };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('TaxRateService.deleteTaxRate error:', error);
-      return { success: false, error: error.message };
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
   }
 
@@ -185,9 +185,9 @@ export class TaxRateService {
         success: true, 
         data: defaultTaxRateResult[0] || null 
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('TaxRateService.getDefaultTaxRate error:', error);
-      return { success: false, error: error.message };
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
   }
 }

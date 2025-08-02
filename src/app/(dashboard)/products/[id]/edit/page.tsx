@@ -36,8 +36,8 @@ export default function EditProductPage() {
 
       const data = await response.json();
       setProduct(data.product);
-    } catch (error: any) {
-      alert(error.message);
+    } catch (error: unknown) {
+      alert(error instanceof Error ? error.message : 'Unknown error');
       router.push('/products');
     } finally {
       setFetchLoading(false);
@@ -60,8 +60,8 @@ export default function EditProductPage() {
 
       // Redirect to products list
       router.push('/products');
-    } catch (error: any) {
-      alert(error.message);
+    } catch (error: unknown) {
+      alert(error instanceof Error ? error.message : 'Unknown error');
     } finally {
       setLoading(false);
     }

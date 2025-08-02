@@ -8,12 +8,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Pagination } from '@/components/ui/pagination';
-import { Plus, Edit, Trash2, FileText, Search, Eye, DollarSign } from 'lucide-react';
+import { Plus, Edit, Trash2, FileText, Search, Eye } from 'lucide-react';
 
 // Simple debounce function
-function debounce<T extends (...args: any[]) => void>(func: T, delay: number): T {
+function debounce<T extends (...args: unknown[]) => void>(func: T, delay: number): T {
   let timeoutId: NodeJS.Timeout;
-  return ((...args: any[]) => {
+  return ((...args: unknown[]) => {
     clearTimeout(timeoutId);
     timeoutId = setTimeout(() => func(...args), delay);
   }) as T;
@@ -22,7 +22,7 @@ function debounce<T extends (...args: any[]) => void>(func: T, delay: number): T
 export default function InvoicesPage() {
   const router = useRouter();
   const [invoicesData, setInvoicesData] = useState<PaginatedResponse<Invoice> | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -65,8 +65,8 @@ export default function InvoicesPage() {
 
       const data = await response.json();
       setInvoicesData(data);
-    } catch (error: any) {
-      setError(error.message);
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : 'Unknown error');
     } finally {
       setLoading(false);
     }
@@ -90,8 +90,8 @@ export default function InvoicesPage() {
 
       // Refresh the invoices list
       fetchInvoices();
-    } catch (error: any) {
-      alert(error.message);
+    } catch (error: unknown) {
+      alert(error instanceof Error ? error.message : 'Unknown error');
     }
   };
 

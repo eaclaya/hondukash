@@ -50,8 +50,8 @@ export default function ClientDetailsPage() {
 
       const data = await response.json();
       setClient(data.client);
-    } catch (error: any) {
-      alert(error.message);
+    } catch (error: unknown) {
+      alert(error instanceof Error ? error.message : 'Unknown error');
       router.push('/clients');
     } finally {
       setLoading(false);
@@ -68,7 +68,7 @@ export default function ClientDetailsPage() {
         const data = await response.json();
         setContacts(data.contacts || []);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to fetch contacts:', error);
     } finally {
       setContactsLoading(false);
@@ -92,8 +92,8 @@ export default function ClientDetailsPage() {
       }
 
       router.push('/clients');
-    } catch (error: any) {
-      alert(error.message);
+    } catch (error: unknown) {
+      alert(error instanceof Error ? error.message : 'Unknown error');
     }
   };
 

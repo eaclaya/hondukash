@@ -18,7 +18,7 @@ export class InvoiceService {
    * Validates stock availability for invoice items (optimized single query)
    */
   private static async validateStockAvailability(
-    db: any,
+    db: unknown,
     items: { productId: number; quantity: number }[],
     storeId: number
   ): Promise<{ success: boolean; error?: string }> {
@@ -69,7 +69,7 @@ export class InvoiceService {
    * Creates inventory movement records for invoice items
    */
   private static async createInventoryMovements(
-    tx: any,
+    tx: unknown,
     invoiceId: number,
     invoiceNumber: string,
     items: { productId: number; quantity: number; unitPrice: number }[],
@@ -218,9 +218,9 @@ export class InvoiceService {
           }
         }
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('InvoiceService.getAllInvoices error:', error);
-      return { success: false, error: error.message };
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error occurred' };
     }
   }
 
@@ -317,9 +317,9 @@ export class InvoiceService {
       };
 
       return { success: true, data: transformedInvoice };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('InvoiceService.getInvoiceById error:', error);
-      return { success: false, error: error.message };
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error occurred' };
     }
   }
 
@@ -389,7 +389,7 @@ export class InvoiceService {
 
       let invoiceNumber: string;
       let sequenceData = null;
-      let defaultPrefix = invoicePrefix || '';
+      const defaultPrefix = invoicePrefix || '';
 
       // Check if invoice sequence is enabled
       if (invoiceSequence) {
@@ -552,9 +552,9 @@ export class InvoiceService {
       const createdInvoice = await this.getInvoiceById(domain, result.id);
       console.log('CREATED INVOICE', createdInvoice)
       return createdInvoice;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('InvoiceService.createInvoice error:', error);
-      return { success: false, error: error.message };
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error occurred' };
     }
   }
 
@@ -610,9 +610,9 @@ export class InvoiceService {
       // Fetch updated invoice
       const updatedInvoice = await this.getInvoiceById(domain, invoiceData.id);
       return updatedInvoice;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('InvoiceService.updateInvoice error:', error);
-      return { success: false, error: error.message };
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error occurred' };
     }
   }
 
@@ -629,9 +629,9 @@ export class InvoiceService {
       });
 
       return { success: true };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('InvoiceService.deleteInvoice error:', error);
-      return { success: false, error: error.message };
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error occurred' };
     }
   }
 
@@ -639,7 +639,7 @@ export class InvoiceService {
     try {
       const db = await getTenantDb(domain);
 
-      const updateData: any = {
+      const updateData: Record<string, unknown> = {
         status,
         updatedAt: new Date().toISOString()
       };
@@ -656,9 +656,9 @@ export class InvoiceService {
       // Fetch updated invoice
       const updatedInvoice = await this.getInvoiceById(domain, invoiceId);
       return updatedInvoice;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('InvoiceService.updateInvoiceStatus error:', error);
-      return { success: false, error: error.message };
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error occurred' };
     }
   }
 }

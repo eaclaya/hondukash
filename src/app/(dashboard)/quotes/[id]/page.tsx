@@ -40,8 +40,8 @@ export default function QuoteDetailPage() {
 
       const data = await response.json();
       setQuote(data.quote);
-    } catch (error: any) {
-      setError(error.message);
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : 'Unknown error');
     } finally {
       setLoading(false);
     }
@@ -74,8 +74,8 @@ export default function QuoteDetailPage() {
       
       // Refresh the quote to show updated status
       fetchQuote();
-    } catch (error: any) {
-      alert(error.message);
+    } catch (error: unknown) {
+      alert(error instanceof Error ? error.message : 'Unknown error');
     } finally {
       setConverting(false);
     }
@@ -125,8 +125,8 @@ export default function QuoteDetailPage() {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-    } catch (error: any) {
-      alert('Error generating PDF: ' + error.message);
+    } catch (error: unknown) {
+      alert('Error generating PDF: ' + (error instanceof Error ? error.message : 'Unknown error'));
     }
   };
 
@@ -175,7 +175,7 @@ export default function QuoteDetailPage() {
             <Download className="h-4 w-4 mr-2" />
             Download PDF
           </Button>
-          {quote.status === 'accepted' && quote.status !== 'converted' && (
+          {quote.status === 'accepted' && (
             <Button
               onClick={handleConvertToInvoice}
               disabled={converting}

@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json(result.data);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('GET /api/stores error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ store: result.store }, { status: 201 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('POST /api/stores error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

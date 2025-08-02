@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Package, Warehouse, Tag, DollarSign, ImageIcon, Settings } from 'lucide-react';
+import { Package, Warehouse, Tag, DollarSign, Settings } from 'lucide-react';
 import TaxRateSelector from '@/components/ui/TaxRateSelector';
 
 interface ProductFormProps {
@@ -55,7 +55,7 @@ export default function ProductForm({ product, onSubmit, onCancel, loading = fal
     return value.replace(/[^a-zA-Z0-9\-\._]/g, '');
   };
 
-  const handleInputChange = (field: string, value: any) => {
+  const handleInputChange = (field: string, value: unknown) => {
     setFormData(prev => {
       const updated = {
         ...prev,

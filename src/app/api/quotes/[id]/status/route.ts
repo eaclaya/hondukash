@@ -43,7 +43,7 @@ export async function PATCH(
     }
 
     return NextResponse.json({ quote: result.data });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('PATCH /api/quotes/[id]/status error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

@@ -32,8 +32,8 @@ export default function EditClientPage() {
 
       const data = await response.json();
       setClient(data.client);
-    } catch (error: any) {
-      alert(error.message);
+    } catch (error: unknown) {
+      alert(error instanceof Error ? error.message : 'Unknown error');
       router.push('/clients');
     } finally {
       setPageLoading(false);
@@ -56,8 +56,8 @@ export default function EditClientPage() {
 
       // Redirect to clients list
       router.push('/clients');
-    } catch (error: any) {
-      alert(error.message);
+    } catch (error: unknown) {
+      alert(error instanceof Error ? error.message : 'Unknown error');
     } finally {
       setLoading(false);
     }

@@ -29,8 +29,8 @@ export default function CreateInvoicePage() {
       
       // Redirect to invoice detail page
       router.push(`/invoices/${result.invoice.id}`);
-    } catch (error: any) {
-      alert(error.message);
+    } catch (error: unknown) {
+      alert(error instanceof Error ? error.message : 'Unknown error');
     } finally {
       setLoading(false);
     }

@@ -27,8 +27,8 @@ export default function CreateProductPage() {
 
       // Redirect to products list
       router.push('/products');
-    } catch (error: any) {
-      alert(error.message);
+    } catch (error: unknown) {
+      alert(error instanceof Error ? error.message : 'Unknown error');
     } finally {
       setLoading(false);
     }

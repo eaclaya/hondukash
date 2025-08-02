@@ -191,7 +191,7 @@ export class DiscountEngine {
   ): boolean {
     const { conditionType, operator } = condition
 
-    let actualValue: any
+    let actualValue: unknown
 
     switch (conditionType) {
       case 'cart_subtotal':

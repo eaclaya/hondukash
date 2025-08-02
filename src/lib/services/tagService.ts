@@ -398,7 +398,7 @@ export class TagService {
   // MAPPING HELPERS
   // =========================================
 
-  private static mapTag(data: any): Tag {
+  private static mapTag(data: unknown): Tag {
     return {
       id: data.id,
       storeId: data.store_id,
@@ -414,7 +414,7 @@ export class TagService {
     }
   }
 
-  private static mapEntityTag(data: any): EntityTag {
+  private static mapEntityTag(data: unknown): EntityTag {
     return {
       id: data.id,
       tagId: data.tag_id,

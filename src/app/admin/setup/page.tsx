@@ -5,8 +5,8 @@ import { Button } from '@/components/ui/button';
 
 export default function SetupPage() {
   const [isLoading, setIsLoading] = useState(false);
-  const [setupResult, setSetupResult] = useState<any>(null);
-  const [testResult, setTestResult] = useState<any>(null);
+  const [setupResult, setSetupResult] = useState<unknown>(null);
+  const [testResult, setTestResult] = useState<unknown>(null);
 
   const handleSetupDatabase = async () => {
     setIsLoading(true);

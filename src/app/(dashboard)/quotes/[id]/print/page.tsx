@@ -46,8 +46,8 @@ export default function QuotePrintPage() {
           setStore(storeData.store);
         }
       }
-    } catch (error: any) {
-      setError(error.message);
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : 'Unknown error');
     } finally {
       setLoading(false);
     }
@@ -76,8 +76,8 @@ export default function QuotePrintPage() {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-    } catch (error: any) {
-      alert('Error generating PDF: ' + error.message);
+    } catch (error: unknown) {
+      alert('Error generating PDF: ' + (error instanceof Error ? error.message : 'Unknown error'));
     }
   };
 

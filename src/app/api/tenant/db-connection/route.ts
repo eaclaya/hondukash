@@ -28,14 +28,14 @@ export async function POST(request: NextRequest) {
         domain: tenant.domain,
         connectionAvailable: true
       })
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Database connection error:', error)
       return NextResponse.json({ 
         error: 'Failed to establish database connection',
-        details: error.message 
+        details: error instanceof Error ? error.message : 'Unknown error occurred' 
       }, { status: 500 })
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in tenant/db-connection:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }

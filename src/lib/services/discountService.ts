@@ -355,7 +355,7 @@ export class DiscountService {
   // =========================================
 
 
-  private static mapPricingRule(data: any): PricingRule {
+  private static mapPricingRule(data: unknown): PricingRule {
     return {
       id: data.id,
       storeId: data.store_id,
@@ -384,7 +384,7 @@ export class DiscountService {
     }
   }
 
-  private static mapRuleCondition(data: any): RuleCondition {
+  private static mapRuleCondition(data: unknown): RuleCondition {
     return {
       id: data.id,
       pricingRuleId: data.pricing_rule_id,
@@ -401,7 +401,7 @@ export class DiscountService {
     }
   }
 
-  private static mapRuleTarget(data: any): RuleTarget {
+  private static mapRuleTarget(data: unknown): RuleTarget {
     return {
       id: data.id,
       pricingRuleId: data.pricing_rule_id,
@@ -412,7 +412,7 @@ export class DiscountService {
     }
   }
 
-  private static mapQuantityTier(data: any): QuantityPriceTier {
+  private static mapQuantityTier(data: unknown): QuantityPriceTier {
     return {
       id: data.id,
       pricingRuleId: data.pricing_rule_id,
@@ -425,7 +425,7 @@ export class DiscountService {
     }
   }
 
-  private static mapDiscountUsage(data: any): DiscountUsage {
+  private static mapDiscountUsage(data: unknown): DiscountUsage {
     return {
       id: data.id,
       pricingRuleId: data.pricing_rule_id,

@@ -29,7 +29,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     return NextResponse.json({ client: result.data });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('GET /api/clients/[id] error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
@@ -64,7 +64,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     return NextResponse.json({ client: result.data });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('PUT /api/clients/[id] error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
@@ -96,7 +96,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     }
 
     return NextResponse.json({ message: 'Client deleted successfully' });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('DELETE /api/clients/[id] error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

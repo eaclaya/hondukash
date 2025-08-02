@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
       // Tenant not found for this domain
       return NextResponse.json({ error: 'Tenant not found for this domain' }, { status: 404 });
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in tenant/current:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

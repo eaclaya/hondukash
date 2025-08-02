@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { TenantProvisioningService } from '@/lib/services/tenantProvisioningService'
+import { TenantService } from '@/lib/services/tenantService'
 
 export async function GET(
   request: NextRequest,
@@ -15,7 +15,7 @@ export async function GET(
       )
     }
 
-    const status = await TenantProvisioningService.getTenantStatus(tenantId)
+    const status = await TenantService.getTenantStatus(tenantId)
 
     return NextResponse.json({
       tenant: status.tenant,
@@ -27,7 +27,7 @@ export async function GET(
       }
     })
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error getting tenant status:', error)
     return NextResponse.json(
       { error: 'Failed to get tenant status' },

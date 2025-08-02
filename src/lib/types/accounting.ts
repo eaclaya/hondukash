@@ -223,7 +223,7 @@ export interface FinancialReportCache {
   reportType: 'balance_sheet' | 'income_statement' | 'cash_flow' | 'trial_balance'
   periodStart: string
   periodEnd: string
-  reportData: any
+  reportData: unknown
   generatedAt: string
   expiresAt: string
 }

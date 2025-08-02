@@ -36,8 +36,8 @@ export default function EditInvoicePage() {
 
       const data = await response.json();
       setInvoice(data.invoice);
-    } catch (error: any) {
-      alert(error.message);
+    } catch (error: unknown) {
+      alert(error instanceof Error ? error.message : 'Unknown error');
       router.push('/invoices');
     } finally {
       setFetchLoading(false);
@@ -60,8 +60,8 @@ export default function EditInvoicePage() {
 
       // Redirect to invoice detail page
       router.push(`/invoices/${invoiceId}`);
-    } catch (error: any) {
-      alert(error.message);
+    } catch (error: unknown) {
+      alert(error instanceof Error ? error.message : 'Unknown error');
     } finally {
       setLoading(false);
     }

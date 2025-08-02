@@ -141,9 +141,9 @@ export class ProductService {
           }
         }
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('ProductService.getAllProducts error:', error);
-      return { success: false, error: error.message };
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error occurred' };
     }
   }
 
@@ -239,9 +239,9 @@ export class ProductService {
       };
 
       return { success: true, data: transformedProduct };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('ProductService.getProductById error:', error);
-      return { success: false, error: error.message };
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error occurred' };
     }
   }
 
@@ -298,9 +298,9 @@ export class ProductService {
       }
 
       return { success: true, data: productResult.data };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('ProductService.createProduct error:', error);
-      return { success: false, error: error.message };
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error occurred' };
     }
   }
 
@@ -308,7 +308,7 @@ export class ProductService {
     try {
       const db = await getTenantDb(domain);
 
-      const updateData: any = {};
+      const updateData: Record<string, unknown> = {};
 
       // Update product fields
       if (productData.name !== undefined) updateData.name = productData.name;
@@ -348,7 +348,7 @@ export class ProductService {
             productData.storePrice !== undefined ||
             productData.location !== undefined) {
 
-          const inventoryUpdateData: any = {};
+          const inventoryUpdateData: Record<string, unknown> = {};
           if (productData.quantity !== undefined) inventoryUpdateData.quantity = productData.quantity;
           if (productData.storePrice !== undefined) inventoryUpdateData.price = productData.storePrice;
           if (productData.location !== undefined) inventoryUpdateData.location = productData.location;
@@ -383,9 +383,9 @@ export class ProductService {
       }
 
       return { success: true, data: productResult.data };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('ProductService.updateProduct error:', error);
-      return { success: false, error: error.message };
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error occurred' };
     }
   }
 
@@ -400,9 +400,9 @@ export class ProductService {
       await db.delete(products).where(eq(products.id, productId));
 
       return { success: true };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('ProductService.deleteProduct error:', error);
-      return { success: false, error: error.message };
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error occurred' };
     }
   }
 }

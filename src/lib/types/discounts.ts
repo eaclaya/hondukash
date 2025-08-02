@@ -138,7 +138,7 @@ export interface DiscountUsage {
   discountAmount: number
   originalAmount: number
   finalAmount: number
-  appliedItems: any[]
+  appliedItems: unknown[]
   createdAt: string
   
   // Related entities

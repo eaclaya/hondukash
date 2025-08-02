@@ -28,7 +28,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     return NextResponse.json({ stats: result.stats });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('GET /api/stores/[id]/stats error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

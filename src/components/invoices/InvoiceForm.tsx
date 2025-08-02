@@ -203,14 +203,14 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
     }, 100);
   };
 
-  const handleInputChange = (field: string, value: any) => {
+  const handleInputChange = (field: string, value: unknown) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
   };
 
-  const handleItemChange = (index: number, field: keyof InvoiceItemForm, value: any) => {
+  const handleItemChange = (index: number, field: keyof InvoiceItemForm, value: unknown) => {
     const newItems = [...items];
     newItems[index] = { ...newItems[index], [field]: value };
 

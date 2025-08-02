@@ -80,7 +80,7 @@ export default function TenantProfilePage() {
       } else {
         throw new Error('Failed to update profile');
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error updating profile:', error);
       alert('Failed to update profile. Please try again.');
     } finally {

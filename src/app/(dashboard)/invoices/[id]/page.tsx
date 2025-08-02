@@ -7,9 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
 import { Edit, ArrowLeft, Download, Send, DollarSign, Printer } from 'lucide-react';
-import Link from 'next/link';
 
 export default function InvoiceDetailPage() {
   const router = useRouter();
@@ -40,8 +38,8 @@ export default function InvoiceDetailPage() {
 
       const data = await response.json();
       setInvoice(data.invoice);
-    } catch (error: any) {
-      alert(error.message);
+    } catch (error: unknown) {
+      alert(error instanceof Error ? error.message : 'Unknown error');
       router.push('/invoices');
     } finally {
       setLoading(false);
@@ -97,8 +95,8 @@ export default function InvoiceDetailPage() {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-    } catch (error: any) {
-      alert('Error generating PDF: ' + error.message);
+    } catch (error: unknown) {
+      alert('Error generating PDF: ' + (error instanceof Error ? error.message : 'Unknown error'));
     }
   };
 

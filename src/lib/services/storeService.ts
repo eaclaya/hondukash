@@ -8,7 +8,7 @@ export interface StoreServiceResult {
   store?: Store;
   stores?: Store[];
   data?: PaginatedResponse<Store>;
-  stats?: any;
+  stats?: unknown;
   error?: string;
 }
 
@@ -94,11 +94,11 @@ export class StoreService {
           }
         }
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('StoreService.getAllStores error:', error);
       return {
         success: false,
-        error: error.message
+        error: error instanceof Error ? error.message : 'Unknown error'
       };
     }
   }
@@ -154,11 +154,11 @@ export class StoreService {
         success: true,
         store: mappedStore
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('StoreService.getStoreById error:', error);
       return {
         success: false,
-        error: error.message
+        error: error instanceof Error ? error.message : 'Unknown error'
       };
     }
   }
@@ -205,11 +205,11 @@ export class StoreService {
       // Fetch the created store
       const storeResult = await this.getStoreById(domain, newStore[0].id);
       return storeResult;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('StoreService.createStore error:', error);
       return {
         success: false,
-        error: error.message
+        error: error instanceof Error ? error.message : 'Unknown error'
       };
     }
   }
@@ -221,7 +221,7 @@ export class StoreService {
     try {
       const db = await getTenantDb(domain);
 
-      const updateData: any = {};
+      const updateData: Record<string, unknown> = {};
 
       if (storeData.name !== undefined) updateData.name = storeData.name;
       if (storeData.code !== undefined) updateData.code = storeData.code;
@@ -259,11 +259,11 @@ export class StoreService {
       // Fetch the updated store
       const storeResult = await this.getStoreById(domain, storeData.id);
       return storeResult;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('StoreService.updateStore error:', error);
       return {
         success: false,
-        error: error.message
+        error: error instanceof Error ? error.message : 'Unknown error'
       };
     }
   }
@@ -286,11 +286,11 @@ export class StoreService {
       return {
         success: true
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('StoreService.deleteStore error:', error);
       return {
         success: false,
-        error: error.message
+        error: error instanceof Error ? error.message : 'Unknown error'
       };
     }
   }
@@ -323,11 +323,11 @@ export class StoreService {
         success: true,
         stats
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('StoreService.getStoreStats error:', error);
       return {
         success: false,
-        error: error.message
+        error: error instanceof Error ? error.message : 'Unknown error'
       };
     }
   }

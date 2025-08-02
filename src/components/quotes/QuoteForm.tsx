@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Trash2, Calculator } from 'lucide-react';
+import { Trash2, Calculator } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface QuoteFormProps {
@@ -204,14 +204,14 @@ export default function QuoteForm({ quote, onSubmit, onCancel, loading = false }
     }, 100);
   };
 
-  const handleInputChange = (field: string, value: any) => {
+  const handleInputChange = (field: string, value: unknown) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
   };
 
-  const handleItemChange = (index: number, field: keyof QuoteItemForm, value: any) => {
+  const handleItemChange = (index: number, field: keyof QuoteItemForm, value: unknown) => {
     const newItems = [...items];
     newItems[index] = { ...newItems[index], [field]: value };
 

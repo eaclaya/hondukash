@@ -98,9 +98,9 @@ export class ClientService {
           }
         }
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('ClientService.getAllClients error:', error);
-      return { success: false, error: error.message };
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error occurred' };
     }
   }
 
@@ -149,9 +149,9 @@ export class ClientService {
       };
 
       return { success: true, data: mappedClient };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('ClientService.getClientById error:', error);
-      return { success: false, error: error.message };
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error occurred' };
     }
   }
 
@@ -213,9 +213,9 @@ export class ClientService {
       }
 
       return { success: true, data: clientResult.data };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('ClientService.createClient error:', error);
-      return { success: false, error: error.message };
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error occurred' };
     }
   }
 
@@ -223,7 +223,7 @@ export class ClientService {
     try {
       const db = await getTenantDb(domain);
 
-      const updateData: any = {};
+      const updateData: Record<string, unknown> = {};
 
       if (clientData.name !== undefined) updateData.name = clientData.name;
       if (clientData.clientType !== undefined) updateData.clientType = clientData.clientType;
@@ -281,9 +281,9 @@ export class ClientService {
       }
 
       return { success: true, data: clientResult.data };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('ClientService.updateClient error:', error);
-      return { success: false, error: error.message };
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error occurred' };
     }
   }
 
@@ -294,9 +294,9 @@ export class ClientService {
       await db.delete(clients).where(eq(clients.id, clientId));
 
       return { success: true };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('ClientService.deleteClient error:', error);
-      return { success: false, error: error.message };
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error occurred' };
     }
   }
 
@@ -338,9 +338,9 @@ export class ClientService {
       }));
 
       return { success: true, data: mappedContacts };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('ClientService.getClientContacts error:', error);
-      return { success: false, error: error.message };
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error occurred' };
     }
   }
 
@@ -401,9 +401,9 @@ export class ClientService {
       };
 
       return { success: true, data: mappedContact };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('ClientService.createClientContact error:', error);
-      return { success: false, error: error.message };
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error occurred' };
     }
   }
 }

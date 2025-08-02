@@ -34,8 +34,8 @@ export default function EditQuotePage() {
 
       const data = await response.json();
       setQuote(data.quote);
-    } catch (error: any) {
-      setError(error.message);
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : 'Unknown error');
     } finally {
       setFetchLoading(false);
     }
@@ -59,8 +59,8 @@ export default function EditQuotePage() {
       
       // Redirect to quote list
       router.push('/quotes');
-    } catch (error: any) {
-      alert(error.message);
+    } catch (error: unknown) {
+      alert(error instanceof Error ? error.message : 'Unknown error');
     } finally {
       setLoading(false);
     }

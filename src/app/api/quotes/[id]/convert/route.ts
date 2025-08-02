@@ -43,7 +43,7 @@ export async function POST(
     }
 
     return NextResponse.json(result.data, { status: 201 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('POST /api/quotes/[id]/convert error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

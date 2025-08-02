@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase'
 import { readFileSync } from 'fs'
 import { join } from 'path'
 
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     const supabase = createClient()
 
@@ -39,11 +39,11 @@ export async function POST(request: NextRequest) {
       message: 'Database schema setup completed successfully'
     })
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Database setup error:', error)
     return NextResponse.json({ 
       error: 'Database setup failed',
-      message: error.message 
+      message: error instanceof Error ? error.message : 'Unknown error occurred' 
     }, { status: 500 })
   }
 }

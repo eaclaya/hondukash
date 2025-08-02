@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     // In a more sophisticated setup, you might want to:
     // 1. Invalidate the token on the server side
@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
       success: true,
       message: 'Logged out successfully'
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Logout API error:', error);
     return NextResponse.json({ 
       error: 'Internal server error' 

@@ -56,8 +56,8 @@ export default function StoresPage() {
       setStores(data.data || []);
       setTotalPages(data.pagination.totalPages);
       setTotalItems(data.pagination.total);
-    } catch (error: any) {
-      setError(error.message);
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : 'Unknown error');
     } finally {
       setLoading(false);
     }
@@ -81,8 +81,8 @@ export default function StoresPage() {
 
       // Refresh the stores list
       fetchStores();
-    } catch (error: any) {
-      alert(error.message);
+    } catch (error: unknown) {
+      alert(error instanceof Error ? error.message : 'Unknown error');
     }
   };
 

@@ -9,7 +9,7 @@ import * as path from 'path';
 
 export interface TenantServiceResult {
   success: boolean;
-  tenant?: any;
+  tenant?: unknown;
   database?: string;
   error?: string;
 }
@@ -43,11 +43,11 @@ export class TenantService {
         tenant: tenant,
         database: databaseName
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Tenant creation failed:', error);
       return {
         success: false,
-        error: error.message || 'Unknown error occurred during tenant creation'
+        error: error instanceof Error ? error.message : 'Unknown error occurred during tenant creation'
       };
     }
   }
@@ -61,7 +61,7 @@ export class TenantService {
 
       // If no rows returned, domain is available
       return existing.length === 0;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Unexpected error in domain validation:', error);
       throw error;
     }
@@ -101,16 +101,16 @@ export class TenantService {
       }
 
       return tenant[0];
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Detailed error creating tenant record:', error);
-      throw new Error(`Failed to create tenant record: ${error.message}`);
+      throw new Error(`Failed to create tenant record: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
   /**
    * Create a new Turso database for the tenant
    */
-  private static async createTenantDatabase(tenant: any): Promise<void> {
+  private static async createTenantDatabase(tenant: { id: number; name: string; database: string; domain: string }): Promise<void> {
     try {
       const databaseName = tenant.database;
       console.log(`Creating database: ${databaseName} for tenant: ${tenant.name}`);
@@ -157,9 +157,9 @@ export class TenantService {
 
       // Initialize tenant database with required tables
       await this.initializeTenantDatabase(tenant.domain);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Database creation error:', error);
-      throw new Error(`Database creation failed: ${error.message}`);
+      throw new Error(`Database creation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -205,9 +205,9 @@ export class TenantService {
       console.log(`Database ${databaseName} token: ${tokenResult.jwt.substring(0, 20)}...`);
 
       return tokenResult.jwt;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Database token creation error:', error);
-      throw new Error(`Database token creation failed: ${error.message}`);
+      throw new Error(`Database token creation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -242,9 +242,9 @@ export class TenantService {
         .where(eq(tenants.id, tenantId));
 
       console.log(`✅ Tenant ${tenantId} updated with database connection info`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error updating tenant database info:', error);
-      throw new Error(`Failed to update tenant database info: ${error.message}`);
+      throw new Error(`Failed to update tenant database info: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -317,9 +317,9 @@ export class TenantService {
               const tableName = statement.match(/INSERT INTO (\w+)/)?.[1];
               console.log(`✓ Inserted seed data into: ${tableName}`);
             }
-          } catch (error: any) {
+          } catch (error: unknown) {
             console.error(`Failed to execute statement: ${statement.substring(0, 50)}...`);
-            console.error(`Error: ${error.message}`);
+            console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
             throw error;
           }
         }
@@ -331,9 +331,9 @@ export class TenantService {
       await this.createStoreUser(tenantDb, domain);
 
       console.log(`✅ Database schema and seed data initialized for: ${domain}`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Database initialization error:', error);
-      throw new Error(`Database initialization failed: ${error.message}`);
+      throw new Error(`Database initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -417,9 +417,9 @@ export class TenantService {
       console.log(`✓ Created membership linking user ${userId} to store ${storeId}`);
       console.log(`📧 Admin login: ${meta.contact_email} / Pa$$w0rd!`);
       console.log(`✅ Tenant setup completed for: ${domain}`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error creating tenant admin user and store:', error);
-      throw new Error(`Failed to create tenant admin user and store: ${error.message}`);
+      throw new Error(`Failed to create tenant admin user and store: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -435,8 +435,8 @@ export class TenantService {
       }
 
       return tenant[0];
-    } catch (error: any) {
-      throw new Error(`Failed to get tenant: ${error.message}`);
+    } catch (error: unknown) {
+      throw new Error(`Failed to get tenant: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -452,8 +452,8 @@ export class TenantService {
       }
 
       return tenant[0];
-    } catch (error: any) {
-      throw new Error(`Failed to get tenant: ${error.message}`);
+    } catch (error: unknown) {
+      throw new Error(`Failed to get tenant: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -477,8 +477,8 @@ export class TenantService {
       });
 
       return tenantDb;
-    } catch (error: any) {
-      throw new Error(`Failed to connect to tenant database: ${error.message}`);
+    } catch (error: unknown) {
+      throw new Error(`Failed to connect to tenant database: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -501,11 +501,11 @@ export class TenantService {
         success: true,
         tenant: tenant
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Tenant deletion failed:', error);
       return {
         success: false,
-        error: error.message || 'Unknown error occurred during tenant deletion'
+        error: error instanceof Error ? error.message : 'Unknown error occurred during tenant deletion'
       };
     }
   }
@@ -531,8 +531,8 @@ export class TenantService {
       }
 
       return allTenants;
-    } catch (error: any) {
-      throw new Error(`Failed to get tenants: ${error.message}`);
+    } catch (error: unknown) {
+      throw new Error(`Failed to get tenants: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 }

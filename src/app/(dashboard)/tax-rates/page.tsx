@@ -40,7 +40,7 @@ export default function TaxRatesPage() {
       if (result.success && result.data) {
         setTaxRates(result.data);
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error loading tax rates:', error);
     } finally {
       setLoading(false);
@@ -88,7 +88,7 @@ export default function TaxRatesPage() {
           resetForm();
         }
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error saving tax rate:', error);
     }
   };
@@ -119,7 +119,7 @@ export default function TaxRatesPage() {
       if (result.success) {
         await loadTaxRates();
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error deleting tax rate:', error);
     }
   };

@@ -29,7 +29,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     return NextResponse.json({ contacts: result.data });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('GET /api/clients/[id]/contacts error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
 
     return NextResponse.json({ contact: result.data }, { status: 201 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('POST /api/clients/[id]/contacts error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

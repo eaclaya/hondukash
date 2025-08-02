@@ -27,8 +27,8 @@ export default function CreateClientPage() {
 
       // Redirect to clients list
       router.push('/clients');
-    } catch (error: any) {
-      alert(error.message);
+    } catch (error: unknown) {
+      alert(error instanceof Error ? error.message : 'Unknown error');
     } finally {
       setLoading(false);
     }

@@ -127,9 +127,9 @@ export class QuoteService {
           }
         }
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('QuoteService.getAllQuotes error:', error);
-      return { success: false, error: error.message };
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error occurred' };
     }
   }
 
@@ -230,9 +230,9 @@ export class QuoteService {
       };
 
       return { success: true, data: transformedQuote };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('QuoteService.getQuoteById error:', error);
-      return { success: false, error: error.message };
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error occurred' };
     }
   }
 
@@ -307,9 +307,9 @@ export class QuoteService {
       // Fetch the created quote with full data
       const createdQuote = await this.getQuoteById(domain, result.id);
       return createdQuote;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('QuoteService.createQuote error:', error);
-      return { success: false, error: error.message };
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error occurred' };
     }
   }
 
@@ -365,9 +365,9 @@ export class QuoteService {
       // Fetch updated quote
       const updatedQuote = await this.getQuoteById(domain, quoteData.id);
       return updatedQuote;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('QuoteService.updateQuote error:', error);
-      return { success: false, error: error.message };
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error occurred' };
     }
   }
 
@@ -384,9 +384,9 @@ export class QuoteService {
       });
 
       return { success: true };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('QuoteService.deleteQuote error:', error);
-      return { success: false, error: error.message };
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error occurred' };
     }
   }
 
@@ -405,9 +405,9 @@ export class QuoteService {
       // Fetch updated quote
       const updatedQuote = await this.getQuoteById(domain, quoteId);
       return updatedQuote;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('QuoteService.updateQuoteStatus error:', error);
-      return { success: false, error: error.message };
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error occurred' };
     }
   }
 
@@ -415,7 +415,7 @@ export class QuoteService {
   // QUOTE TO INVOICE CONVERSION
   // =====================================================
 
-  static async convertQuoteToInvoice(domain: string, conversionData: ConvertQuoteToInvoiceRequest): Promise<ServiceResult<any>> {
+  static async convertQuoteToInvoice(domain: string, conversionData: ConvertQuoteToInvoiceRequest): Promise<ServiceResult<{ invoiceId: number; invoiceNumber: string; message: string }>> {
     try {
       const db = await getTenantDb(domain);
 
@@ -515,9 +515,9 @@ export class QuoteService {
           message: 'Quote successfully converted to invoice'
         }
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('QuoteService.convertQuoteToInvoice error:', error);
-      return { success: false, error: error.message };
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error occurred' };
     }
   }
 }

@@ -17,10 +17,11 @@ export default function TaxRatesPage() {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingTaxRate, setEditingTaxRate] = useState<TaxRate | null>(null);
-  const [formData, setFormData] = useState<CreateTaxRateRequest>({
+  const [formData, setFormData] = useState<CreateTaxRateRequest & { ratePercent: number }>({
     name: '',
     code: '',
     rate: 0,
+    ratePercent: 0,
     type: 'sales',
     isDefault: false,
     description: ''
@@ -59,9 +60,19 @@ export default function TaxRatesPage() {
     try {
       const domain = window.location.hostname.split('.')[0];
       
+      // Convert percentage to decimal before submitting
+      const submitData = {
+        name: formData.name,
+        code: formData.code,
+        rate: formData.ratePercent / 100,
+        type: formData.type,
+        isDefault: formData.isDefault,
+        description: formData.description
+      };
+      
       if (editingTaxRate) {
         const result = await TaxRateService.updateTaxRate(domain, {
-          ...formData,
+          ...submitData,
           id: editingTaxRate.id
         } as UpdateTaxRateRequest);
         
@@ -70,7 +81,7 @@ export default function TaxRatesPage() {
           resetForm();
         }
       } else {
-        const result = await TaxRateService.createTaxRate(domain, formData);
+        const result = await TaxRateService.createTaxRate(domain, submitData);
         
         if (result.success) {
           await loadTaxRates();
@@ -88,6 +99,7 @@ export default function TaxRatesPage() {
       name: taxRate.name,
       code: taxRate.code,
       rate: taxRate.rate,
+      ratePercent: taxRate.rate * 100,
       type: taxRate.type,
       isDefault: taxRate.isDefault,
       description: taxRate.description || ''
@@ -117,6 +129,7 @@ export default function TaxRatesPage() {
       name: '',
       code: '',
       rate: 0,
+      ratePercent: 0,
       type: 'sales',
       isDefault: false,
       description: ''
@@ -134,7 +147,7 @@ export default function TaxRatesPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Tax Rates</h1>
-          <p className="text-slate-600">Manage tax rates for your products and services</p>
+          <p className="text-slate-600">Manage tax rates for your organization</p>
         </div>
         
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -179,8 +192,8 @@ export default function TaxRatesPage() {
                 <Input
                   id="rate"
                   type="number"
-                  value={(formData.rate * 100).toFixed(2)}
-                  onChange={(e) => handleInputChange('rate', parseFloat(e.target.value) / 100 || 0)}
+                  value={formData.ratePercent}
+                  onChange={(e) => handleInputChange('ratePercent', parseFloat(e.target.value) || 0)}
                   placeholder="15.00"
                   min="0"
                   max="100"

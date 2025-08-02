@@ -9,6 +9,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import Link from 'next/link';
 import StoreSwitcher from '@/components/StoreSwitcher';
+import { useStore } from '@/contexts/StoreContext';
 
 export default function DashboardLayout({
   children,
@@ -17,6 +18,7 @@ export default function DashboardLayout({
 }) {
   const { tenant, isLoading: tenantLoading } = useTenant();
   const { user, isLoading: authLoading, isAuthenticated, logout } = useTenantAuth();
+  const { currentStore } = useStore();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -85,18 +87,26 @@ export default function DashboardLayout({
               {/* Settings Dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className={`px-3 py-2 text-sm font-medium rounded-md hover:bg-muted transition-colors ${pathname === '/settings' || pathname === '/stores' || pathname === '/reports' ? 'bg-muted' : ''}`}>
+                  <Button variant="ghost" className={`px-3 py-2 text-sm font-medium rounded-md hover:bg-muted transition-colors ${pathname.startsWith('/stores/') && pathname.includes('/edit') || pathname === '/tenant-profile' || pathname === '/tax-rates' || pathname === '/stores' || pathname === '/reports' || pathname === '/transfers' ? 'bg-muted' : ''}`}>
                     Settings
                     <ChevronDown className="ml-1 h-3 w-3" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start">
+                  {currentStore && (
+                    <DropdownMenuItem asChild>
+                      <Link href={`/stores/${currentStore.id}/edit`}>Store Settings</Link>
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem asChild>
-                    <Link href="/settings">General Settings</Link>
+                    <Link href="/tenant-profile">Organization Profile</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/tax-rates">Tax Rates</Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
-                    <Link href="/stores">Stores</Link>
+                    <Link href="/stores">All Stores</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link href="/reports">Reports</Link>

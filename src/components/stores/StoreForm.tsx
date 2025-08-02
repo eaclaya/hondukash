@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Store, CreateStoreRequest, UpdateStoreRequest, InvoiceSequence } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -72,13 +72,13 @@ export function StoreForm({ store, onSubmit, onCancel, loading = false }: StoreF
     // Validate invoice sequence fields when feature is enabled
     if (invoiceSequence.enabled) {
       const validCharPattern = /^[a-zA-Z0-9\-._]+$/;
-      
+
       if (!invoiceSequence.hash.trim()) {
         newErrors.sequenceHash = 'Sequence hash is required when using invoice sequence';
       } else if (!validCharPattern.test(invoiceSequence.hash)) {
         newErrors.sequenceHash = 'Hash can only contain letters, numbers, dashes, dots, and underscores';
       }
-      
+
       if (!invoiceSequence.sequence_start.trim()) {
         newErrors.sequenceStart = 'Sequence start is required when using invoice sequence';
       } else if (!validCharPattern.test(invoiceSequence.sequence_start)) {
@@ -86,7 +86,7 @@ export function StoreForm({ store, onSubmit, onCancel, loading = false }: StoreF
       } else if (!/\d+$/.test(invoiceSequence.sequence_start)) {
         newErrors.sequenceStart = 'Sequence start must end with numbers (e.g., INV-001)';
       }
-      
+
       if (!invoiceSequence.sequence_end.trim()) {
         newErrors.sequenceEnd = 'Sequence end is required when using invoice sequence';
       } else if (!validCharPattern.test(invoiceSequence.sequence_end)) {
@@ -94,7 +94,7 @@ export function StoreForm({ store, onSubmit, onCancel, loading = false }: StoreF
       } else if (!/\d+$/.test(invoiceSequence.sequence_end)) {
         newErrors.sequenceEnd = 'Sequence end must end with numbers (e.g., INV-999)';
       }
-      
+
       // Validate that start and end have same prefix pattern
       if (invoiceSequence.sequence_start && invoiceSequence.sequence_end) {
         const startPrefix = invoiceSequence.sequence_start.replace(/\d+$/, '');
@@ -102,7 +102,7 @@ export function StoreForm({ store, onSubmit, onCancel, loading = false }: StoreF
         if (startPrefix !== endPrefix) {
           newErrors.sequenceEnd = 'Sequence start and end must have the same prefix pattern';
         }
-        
+
         const startMatch = invoiceSequence.sequence_start.match(/(\d+)$/);
         const endMatch = invoiceSequence.sequence_end.match(/(\d+)$/);
         if (startMatch && endMatch) {
@@ -113,13 +113,13 @@ export function StoreForm({ store, onSubmit, onCancel, loading = false }: StoreF
           }
         }
       }
-      
+
       if (invoiceSequence.limit_date) {
         const limitDate = new Date(invoiceSequence.limit_date);
         const currentDate = new Date();
         currentDate.setHours(0, 0, 0, 0);
         limitDate.setHours(0, 0, 0, 0);
-        
+
         if (limitDate <= currentDate) {
           newErrors.sequenceLimitDate = 'Sequence limit date must be in the future';
         }
@@ -138,8 +138,8 @@ export function StoreForm({ store, onSubmit, onCancel, loading = false }: StoreF
     }
 
     try {
-      const submitData = store ? ({ 
-        ...formData, 
+      const submitData = store ? ({
+        ...formData,
         id: store.id,
         invoiceSequence: invoiceSequence.enabled ? invoiceSequence : undefined
       } as UpdateStoreRequest) : ({

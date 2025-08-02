@@ -18,8 +18,6 @@ export async function middleware(request: NextRequest) {
 
   // Extract subdomain name
   const subdomain = isSubdomain ? hostWithoutPort.split('.')[0] : null;
-  console.log('Subdomain:', subdomain);
-  const db = await getTenantDb('mpv.hondukash.test');
 
   if (isNakedDomain) {
     // Handle admin routes with authentication

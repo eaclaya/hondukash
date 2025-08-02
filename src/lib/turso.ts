@@ -15,27 +15,25 @@ export const db = drizzle(turso, { schema: landlordSchema });
 // Function to get tenant database connection
 export async function getTenantDb(domain: string) {
   // First get tenant info from landlord database
-  // const tenant = await db.query.tenants.findFirst({
-  //   where: (tenants, { eq }) => eq(tenants.domain, domain)
-  // });
+  const tenant = await db.query.tenants.findFirst({
+    where: (tenants, { eq }) => eq(tenants.domain, domain)
+  });
 
-  // if (!tenant) {
-  //   throw new Error('Tenant not found');
-  // }
+  if (!tenant) {
+    throw new Error('Tenant not found');
+  }
 
-  // // Parse meta to get database connection info
-  // const meta = JSON.parse(tenant.meta || '{}');
+  // Parse meta to get database connection info
+  const meta = JSON.parse(tenant.meta || '{}');
 
-  // if (!meta.database_url || !meta.database_auth_token) {
-  //   throw new Error('Tenant database connection info not found');
-  // }
+  if (!meta.database_url || !meta.database_auth_token) {
+    throw new Error('Tenant database connection info not found');
+  }
 
   // Create tenant-specific Turso client
   const tenantTurso = createClient({
-    // url: meta.database_url,
-    // authToken: meta.database_auth_token,
-    url: 'libsql://tenant-mpv-eaclaya.turso.io',
-    authToken: 'eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE3NTM0Nzc0NTgsInAiOnsicm9hIjp7Im5zIjpbIjgyZjNmZDkwLTMxMGYtNDYwZC05ZTdlLTgyN2RhYmZlMDhkMCJdfSwicnciOnsibnMiOlsiODJmM2ZkOTAtMzEwZi00NjBkLTllN2UtODI3ZGFiZmUwOGQwIl19fSwicmlkIjoiMmUzYTBiNGYtNzY5ZS00N2I1LThiZWItZTE5MGJjOTQwMGYyIn0.FIBykfAzP_A7Ihv0q3PNpJNCrU--rkGfTi7_sy68ChesKvmvbRUrMUbNWR5_v0u09Eh0aASmKskHBx9lNVFsAg'
+    url: meta.database_url,
+    authToken: meta.database_auth_token
   });
 
   // Create Drizzle instance for tenant database with tenant schema

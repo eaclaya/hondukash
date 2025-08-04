@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState('')
@@ -78,6 +79,13 @@ export default function AdminLoginPage() {
           >
             {isLoading ? 'Signing in...' : 'Sign In'}
           </button>
+
+          <div className="text-center text-sm">
+            <span className="text-muted-foreground">Don't have an account? </span>
+            <Link href="/admin/signup" className="text-blue-600 hover:underline">
+              Sign up
+            </Link>
+          </div>
         </form>
       </div>
     </div>

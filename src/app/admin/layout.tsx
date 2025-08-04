@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import { getAdminSession } from '@/lib/auth'
 import Link from 'next/link'
-import { Button } from '@/components/ui/button'
+import LogoutButton from '@/components/admin/LogoutButton'
 
 export default async function AdminLayout({
   children,
@@ -30,9 +30,7 @@ export default async function AdminLayout({
                 <span className="text-sm text-muted-foreground">
                   {session.user?.email}
                 </span>
-                <Button variant="outline" size="sm">
-                  Logout
-                </Button>
+                <LogoutButton />
               </div>
             )}
           </div>

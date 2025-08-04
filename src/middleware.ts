@@ -25,8 +25,8 @@ export async function middleware(request: NextRequest) {
   if (isNakedDomain) {
     // Handle admin routes with authentication
     if (url.pathname.startsWith('/admin')) {
-      // Check if user is trying to access login page
-      if (url.pathname === '/admin/login') {
+      // Check if user is trying to access login or signup page
+      if (url.pathname === '/admin/login' || url.pathname === '/admin/signup') {
         return NextResponse.next();
       }
 

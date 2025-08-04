@@ -199,10 +199,6 @@ INSERT INTO subscription_plans (name, slug, description, price_monthly, price_ye
 ('Professional', 'professional', 'For growing businesses', 99.00, 990.00, 25, 5, 10, '{"invoicing": true, "inventory": true, "reports": "advanced", "api_access": true, "integrations": true}'),
 ('Enterprise', 'enterprise', 'For large organizations', 299.00, 2990.00, 100, 20, 100, '{"invoicing": true, "inventory": true, "reports": "premium", "api_access": true, "integrations": true, "white_label": true, "priority_support": true}');
 
--- Insert default admin user (password: 'password' - change in production!)
--- Note: Password should be hashed with bcrypt in application code
-INSERT INTO users (email, password, name, role) VALUES
-('admin@hondukash.test', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'System Administrator', 'super_admin');
 
 -- Insert system settings
 INSERT INTO system_settings (key, value, description, data_type, is_public) VALUES

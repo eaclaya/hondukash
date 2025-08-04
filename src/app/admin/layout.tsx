@@ -1,4 +1,3 @@
-import { redirect } from 'next/navigation'
 import { getAdminSession } from '@/lib/auth'
 import Link from 'next/link'
 import LogoutButton from '@/components/admin/LogoutButton'

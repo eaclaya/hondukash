@@ -45,15 +45,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to create admin user' }, { status: 500 });
     }
 
-    // Set session cookie
-    const sessionCookie = setAdminSession();
+    // Set session cookie with JWT token
+    const sessionCookie = setAdminSession({
+      id: newUser[0].id,
+      email: newUser[0].email,
+      name: newUser[0].name,
+      role: newUser[0].role
+    });
 
     const response = NextResponse.json({ 
       success: true, 
       user: { 
         id: newUser[0].id, 
         email: newUser[0].email, 
-        name: newUser[0].name 
+        name: newUser[0].name,
+        role: newUser[0].role
       } 
     });
     

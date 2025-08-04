@@ -11,12 +11,9 @@ export default function TenantsPage() {
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
 
-  useEffect(() => {
-    fetchTenants();
-  }, []);
-
-  const fetchTenants = async (search?: string) => {
+  const fetchTenants = async (search = '') => {
     try {
       const searchParams = search ? `?search=${encodeURIComponent(search)}` : '';
       const response = await fetch(`/api/admin/tenants${searchParams}`);
@@ -31,18 +28,20 @@ export default function TenantsPage() {
     }
   };
 
-  // Debounced search effect
+  // Debounce search input
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      fetchTenants(searchTerm);
+      setDebouncedSearch(searchTerm);
     }, 300);
-    
+
     return () => clearTimeout(timeoutId);
   }, [searchTerm]);
 
-  const handleSearch = (value: string) => {
-    setSearchTerm(value);
-  };
+  // Fetch tenants when debouncedSearch changes
+  useEffect(() => {
+    console.log('Fetching tenants with search:', debouncedSearch);
+    fetchTenants(debouncedSearch);
+  }, [debouncedSearch]);
 
   if (isLoading) {
     return (
@@ -71,7 +70,7 @@ export default function TenantsPage() {
           type="text"
           placeholder="Search tenants..."
           value={searchTerm}
-          onChange={(e) => handleSearch(e.target.value)}
+          onChange={(e) => setSearchTerm(e.target.value)}
           className="flex-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
         <Button variant="outline">Filter</Button>

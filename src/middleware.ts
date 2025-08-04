@@ -12,12 +12,15 @@ export async function middleware(request: NextRequest) {
   const isNakedDomain = hostWithoutPort === appDomain || hostWithoutPort === `www.${appDomain}`;
 
   // Check if this is a tenant subdomain (e.g., avoca.hondukash.test) - excluding www
-  const isSubdomain = hostWithoutPort.endsWith(`.${appDomain}`) && 
-                      hostWithoutPort !== appDomain && 
+  const isSubdomain = hostWithoutPort.endsWith(`.${appDomain}`) &&
+                      hostWithoutPort !== appDomain &&
                       hostWithoutPort !== `www.${appDomain}`;
 
   // Extract subdomain name
   const subdomain = isSubdomain ? hostWithoutPort.split('.')[0] : null;
+
+  console.log('isSubdomain', isSubdomain);
+  console.log('subdomain', subdomain);
 
   if (isNakedDomain) {
     // Handle admin routes with authentication

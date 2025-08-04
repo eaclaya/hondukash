@@ -21,7 +21,6 @@ export default async function AdminLayout({
                 <nav className="flex space-x-4">
                   <Link href="/admin" className="text-sm hover:text-blue-600">Dashboard</Link>
                   <Link href="/admin/tenants" className="text-sm hover:text-blue-600">Tenants</Link>
-                  <Link href="/admin/setup" className="text-sm hover:text-blue-600">Setup</Link>
                 </nav>
               )}
             </div>

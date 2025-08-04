@@ -12,14 +12,9 @@ export default function AdminDashboardPage() {
               Create Tenant
             </Link>
           </Button>
-          <Button variant="outline" asChild>
-            <Link href="/admin/setup">
-              Setup
-            </Link>
-          </Button>
         </div>
       </div>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="p-6 border rounded-lg bg-card">
           <h3 className="text-lg font-semibold mb-2">Total Tenants</h3>
@@ -53,14 +48,9 @@ export default function AdminDashboardPage() {
                 Create New Tenant
               </Link>
             </Button>
-            <Button className="w-full justify-start" variant="outline" asChild>
-              <Link href="/admin/setup">
-                Database Setup
-              </Link>
-            </Button>
           </div>
         </div>
-        
+
         <div className="p-6 border rounded-lg bg-card">
           <h3 className="text-lg font-semibold mb-4">Recent Activity</h3>
           <p className="text-sm text-muted-foreground">No recent activity</p>

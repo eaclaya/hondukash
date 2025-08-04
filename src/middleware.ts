@@ -5,15 +5,16 @@ export async function middleware(request: NextRequest) {
   const hostname = request.headers.get('host') || '';
   const url = request.nextUrl.clone();
 
-  // Handle hostname with port (e.g., hondukash.test:3000)
   const hostWithoutPort = hostname.split(':')[0];
-  const appDomain = process.env.NEXT_PUBLIC_APP_DOMAIN || 'hondukash.test';
+  const appDomain = process.env.NEXT_PUBLIC_APP_DOMAIN ;
 
-  // Check if this is the naked domain (hondukash.test)
-  const isNakedDomain = hostWithoutPort === appDomain;
+  // Check if this is the naked domain (hondukash.test) or www subdomain
+  const isNakedDomain = hostWithoutPort === appDomain || hostWithoutPort === `www.${appDomain}`;
 
-  // Check if this is a subdomain (e.g., avoca.hondukash.test)
-  const isSubdomain = hostWithoutPort.endsWith(`.${appDomain}`) && hostWithoutPort !== appDomain;
+  // Check if this is a tenant subdomain (e.g., avoca.hondukash.test) - excluding www
+  const isSubdomain = hostWithoutPort.endsWith(`.${appDomain}`) && 
+                      hostWithoutPort !== appDomain && 
+                      hostWithoutPort !== `www.${appDomain}`;
 
   // Extract subdomain name
   const subdomain = isSubdomain ? hostWithoutPort.split('.')[0] : null;
@@ -43,7 +44,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Tenant access (tenant.hondukash.test or custom domain)
-  if (isSubdomain && subdomain && subdomain !== 'www') {
+  if (isSubdomain && subdomain) {
     // Store tenant info in headers for the app to use
     const requestHeaders = new Headers(request.headers);
     requestHeaders.set('X-TENANT-SUBDOMAIN', subdomain);

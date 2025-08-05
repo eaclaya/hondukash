@@ -2,6 +2,7 @@ import { Invoice, InvoiceItem, CreateInvoiceRequest, UpdateInvoiceRequest, Pagin
 import { getTenantDb } from '@/lib/turso';
 import { invoices, invoiceItems, clients, products, stores, inventory, inventoryMovements } from '@/lib/db/schema/tenant';
 import { eq, and, desc, like, or, count, sql, inArray } from 'drizzle-orm';
+import { InvoiceNumberService } from './invoiceNumberService';
 
 interface ServiceResult<T> {
   success: boolean;
@@ -335,7 +336,8 @@ static async createInvoice(domain: string, invoiceData: CreateInvoiceRequest): P
         // Get store configuration
         db.select({
           invoicePrefix: stores.invoicePrefix,
-          invoiceCounter: stores.invoiceCounter
+          invoiceCounter: stores.invoiceCounter,
+          invoiceSequence: stores.invoiceSequence
         })
         .from(stores)
         .where(eq(stores.id, invoiceData.storeId))
@@ -377,9 +379,17 @@ static async createInvoice(domain: string, invoiceData: CreateInvoiceRequest): P
         }
       }
 
-      // Generate invoice number (simplified for performance)
-      const { invoicePrefix, invoiceCounter } = storeResult[0];
-      const invoiceNumber = `${invoicePrefix || 'INV'}${(invoiceCounter || 0).toString().padStart(6, '0')}`;
+      // Generate invoice number using the dedicated service
+      const invoiceNumberResult = InvoiceNumberService.generateNextInvoiceNumber(
+        storeResult[0]
+      );
+
+      if (!invoiceNumberResult.success) {
+        return { success: false, error: invoiceNumberResult.error };
+      }
+
+      const invoiceNumber = invoiceNumberResult.invoiceNumber!;
+      const isSequenceEnabled = InvoiceNumberService.isSequenceEnabled(storeResult[0].invoiceSequence);
 
       // Create stock quantity map for movements
       const currentStockQuantities = new Map(inventoryResult.map(item => [item.productId, item.quantity]));
@@ -469,12 +479,14 @@ static async createInvoice(domain: string, invoiceData: CreateInvoiceRequest): P
           operations.push(tx.insert(inventoryMovements).values(movementRecords));
         }
 
-        // Update store counter
-        operations.push(
-          tx.update(stores)
-            .set({ invoiceCounter: (invoiceCounter || 0) + 1 })
-            .where(eq(stores.id, invoiceData.storeId))
-        );
+        // Update store counter (only for traditional prefix-based invoices)
+        if (!isSequenceEnabled) {
+          operations.push(
+            tx.update(stores)
+              .set({ invoiceCounter: (storeResult[0].invoiceCounter || 0) + 1 })
+              .where(eq(stores.id, invoiceData.storeId))
+          );
+        }
 
         // Execute all operations in parallel
         await Promise.all(operations);

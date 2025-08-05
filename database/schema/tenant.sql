@@ -247,7 +247,7 @@ CREATE TABLE invoices (
     user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
 
     -- Invoice details
-    invoice_number TEXT NOT NULL UNIQUE,
+    invoice_number TEXT NOT NULL INDEX,
     invoice_date TEXT NOT NULL DEFAULT (date('now')),
     due_date TEXT,
 

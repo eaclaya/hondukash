@@ -46,6 +46,7 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
 
   const [formData, setFormData] = useState({
     clientId: invoice?.clientId ? parseInt(invoice.clientId) : null,
+    clientName: invoice?.clientName || '',
     invoiceDate: invoice?.invoiceDate || new Date().toISOString().split('T')[0],
     dueDate: invoice?.dueDate || '',
     notes: invoice?.notes || '',
@@ -304,6 +305,7 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
     const submitData = {
       ...(invoice?.id && { id: parseInt(invoice.id) }),
       clientId: formData.clientId,
+      clientName: selectedClient?.name,
       invoiceDate: formData.invoiceDate,
       dueDate: formData.dueDate || undefined,
       notes: formData.notes || undefined,

@@ -377,7 +377,7 @@ export interface InvoiceItem {
 export interface CreateInvoiceRequest {
   clientId: number;
   storeId: number;
-  clientName?: string;
+  clientName: string;
   items: CreateInvoiceItemRequest[];
   subtotal: number;
   tax: number;

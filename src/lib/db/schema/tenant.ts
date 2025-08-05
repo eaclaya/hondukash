@@ -148,27 +148,27 @@ export const inventoryMovements = sqliteTable('inventory_movements', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   productId: integer('product_id').notNull().references(() => products.id, { onDelete: 'cascade' }),
   storeId: integer('store_id').notNull().references(() => stores.id, { onDelete: 'cascade' }),
-  
+
   // Movement details
-  movementType: text('movement_type', { 
-    enum: ['in', 'out', 'adjustment', 'transfer_in', 'transfer_out'] 
+  movementType: text('movement_type', {
+    enum: ['in', 'out', 'adjustment', 'transfer_in', 'transfer_out']
   }).notNull(),
   quantity: real('quantity').notNull(), // Positive for in, negative for out
   previousQuantity: real('previous_quantity').notNull(),
   newQuantity: real('new_quantity').notNull(),
-  
+
   // Reference information
   referenceType: text('reference_type', {
     enum: ['invoice', 'purchase', 'adjustment', 'transfer', 'initial', 'return']
   }),
   referenceId: integer('reference_id'), // ID of invoice, purchase, etc.
   referenceNumber: text('reference_number'), // Invoice number, PO number, etc.
-  
+
   // Additional details
   unitCost: real('unit_cost').default(0), // Cost per unit at time of movement
   totalValue: real('total_value').default(0), // quantity * unitCost
   notes: text('notes'),
-  
+
   // Metadata
   userId: integer('user_id').references(() => users.id, { onDelete: 'set null' }),
   createdAt: text('created_at').notNull().$defaultFn(() => new Date().toISOString())
@@ -269,7 +269,7 @@ export const invoices = sqliteTable('invoices', {
   userId: integer('user_id').references(() => users.id, { onDelete: 'set null' }),
 
   // Invoice details
-  invoiceNumber: text('invoice_number').notNull().unique(),
+  invoiceNumber: text('invoice_number').notNull(),
   invoiceDate: text('invoice_date').notNull().$defaultFn(() => new Date().toISOString().split('T')[0]),
   dueDate: text('due_date'),
 

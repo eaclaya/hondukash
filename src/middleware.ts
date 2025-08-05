@@ -48,6 +48,12 @@ export async function middleware(request: NextRequest) {
 
   // Tenant access (tenant.hondukash.test or custom domain)
   if (isSubdomain && subdomain) {
+    // Block admin routes on subdomains - redirect to tenant login
+    if (url.pathname.startsWith('/admin')) {
+      url.pathname = '/login';
+      return NextResponse.redirect(url);
+    }
+
     // Store tenant info in headers for the app to use
     const requestHeaders = new Headers(request.headers);
     requestHeaders.set('X-TENANT-SUBDOMAIN', subdomain);

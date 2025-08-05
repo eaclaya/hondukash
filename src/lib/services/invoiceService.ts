@@ -12,99 +12,6 @@ interface ServiceResult<T> {
 
 export class InvoiceService {
   // =====================================================
-  // HELPER METHODS
-  // =====================================================
-
-  /**
-   * Validates stock availability for invoice items (optimized single query)
-   */
-  private static async validateStockAvailability(
-    db: unknown,
-    items: { productId: number; quantity: number }[],
-    storeId: number
-  ): Promise<{ success: boolean; error?: string }> {
-    // Get all product IDs for the query
-    const productIds = items.map(item => item.productId);
-
-    // Single query to get all inventory data
-    const inventoryResult = await db
-      .select({
-        productId: inventory.productId,
-        quantity: inventory.quantity,
-        productName: products.name
-      })
-      .from(inventory)
-      .innerJoin(products, eq(products.id, inventory.productId))
-      .where(
-        and(
-          inArray(inventory.productId, productIds),
-          eq(inventory.storeId, storeId)
-        )
-      );
-
-    // Create a map for quick lookup
-    const stockMap = new Map<number, { quantity: number; name: string }>(
-      inventoryResult.map(item => [item.productId, { quantity: item.quantity, name: item.productName }])
-    );
-
-    // Check each item against the stock data
-    for (const item of items) {
-      const stockData = stockMap.get(item.productId);
-
-      if (!stockData) {
-        return { success: false, error: `Product with ID ${item.productId} not found in inventory` };
-      }
-
-      if (stockData.quantity < item.quantity) {
-        return {
-          success: false,
-          error: `Insufficient stock for ${stockData.name}. Available: ${stockData.quantity}, Required: ${item.quantity}`
-        };
-      }
-    }
-
-    return { success: true };
-  }
-
-  /**
-   * Creates inventory movement records for invoice items
-   */
-  private static async createInventoryMovements(
-    tx: unknown,
-    invoiceId: number,
-    invoiceNumber: string,
-    items: { productId: number; quantity: number; unitPrice: number }[],
-    storeId: number,
-    currentStock: Map<number, number>,
-    userId?: number
-  ): Promise<void> {
-    const movementRecords = items.map(item => {
-      const previousQty = currentStock.get(item.productId) || 0;
-      const newQty = previousQty - item.quantity;
-
-      return {
-        productId: item.productId,
-        storeId,
-        movementType: 'out' as const,
-        quantity: -item.quantity, // Negative for outbound
-        previousQuantity: previousQty,
-        newQuantity: newQty,
-        referenceType: 'invoice' as const,
-        referenceId: invoiceId,
-        referenceNumber: invoiceNumber,
-        unitCost: item.unitPrice,
-        totalValue: -item.quantity * item.unitPrice, // Negative for outbound value
-        notes: `Invoice sale - ${invoiceNumber}`,
-        userId: userId || null
-      };
-    });
-
-    if (movementRecords.length > 0) {
-      await tx.insert(inventoryMovements).values(movementRecords);
-    }
-  }
-
-  // =====================================================
   // INVOICE CRUD OPERATIONS
   // =====================================================
 
@@ -230,7 +137,7 @@ export class InvoiceService {
       const db = await getTenantDb(domain);
 
       // Get invoice with client data
-      const invoiceResult = await db
+      const [invoice] = await db
         .select({
           id: invoices.id,
           invoiceNumber: invoices.invoiceNumber,
@@ -247,17 +154,17 @@ export class InvoiceService {
           createdAt: invoices.createdAt,
           updatedAt: invoices.updatedAt,
           clientId: invoices.clientId,
-          storeId: invoices.storeId,
+          clientName: clients.name,
+          storeId: invoices.storeId
         })
         .from(invoices)
+        .leftJoin(clients, eq(clients.id, invoices.clientId))
         .where(eq(invoices.id, invoiceId))
         .limit(1);
 
-      if (!invoiceResult[0]) {
+      if (!invoice) {
         return { success: false, error: 'Invoice not found' };
       }
-
-      const invoice = invoiceResult[0];
 
       // Get invoice items
       const itemsResult = await db
@@ -393,7 +300,22 @@ static async createInvoice(domain: string, invoiceData: CreateInvoiceRequest): P
 
       // Create stock quantity map for movements
       const currentStockQuantities = new Map(inventoryResult.map(item => [item.productId, item.quantity]));
-
+      console.log({
+        storeId: invoiceData.storeId,
+        clientId: invoiceData.clientId,
+        invoiceNumber,
+        clientName: invoiceData.clientName,
+        invoiceDate: invoiceData.invoiceDate,
+        dueDate: invoiceData.dueDate || null,
+        subtotal: invoiceData.subtotal,
+        taxAmount: invoiceData.tax,
+        discountAmount: invoiceData.discount,
+        totalAmount: invoiceData.total,
+        paidAmount: 0,
+        status: invoiceData.status || 'draft',
+        notes: invoiceData.notes || null,
+        terms: invoiceData.terms || null
+      })
       // Single transaction with all operations
       const newInvoice = await db.transaction(async (tx) => {
         // Create invoice
@@ -403,7 +325,7 @@ static async createInvoice(domain: string, invoiceData: CreateInvoiceRequest): P
             storeId: invoiceData.storeId,
             clientId: invoiceData.clientId,
             invoiceNumber,
-            clientName: invoiceData.clientName || '',
+            clientName: invoiceData.clientName,
             invoiceDate: invoiceData.invoiceDate,
             dueDate: invoiceData.dueDate || null,
             subtotal: invoiceData.subtotal,
@@ -499,6 +421,7 @@ static async createInvoice(domain: string, invoiceData: CreateInvoiceRequest): P
         id: newInvoice.id.toString(),
         number: invoiceNumber,
         clientId: invoiceData.clientId.toString(),
+        clientName: invoiceData.clientName,
         storeId: invoiceData.storeId.toString(),
         items: invoiceData.items.map((item, index) => ({
           id: (newInvoice.id * 1000 + index).toString(), // Generate predictable item ID

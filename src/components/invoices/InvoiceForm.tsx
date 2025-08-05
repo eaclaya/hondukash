@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Invoice, CreateInvoiceRequest, UpdateInvoiceRequest, Client, ProductWithInventory } from '@/lib/types';
+import { Invoice, CreateInvoiceRequest, UpdateInvoiceRequest, Client, ProductWithInventory, TaxRate } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { NumericInput } from '@/components/ui/numeric-input';
@@ -26,6 +26,10 @@ interface InvoiceItemForm {
   productName: string;
   quantity: number;
   unitPrice: number;
+  taxRateId?: number;
+  taxRate: number;
+  taxAmount: number;
+  lineTotal: number;
   total: number;
 }
 
@@ -56,8 +60,9 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
   });
 
   const [items, setItems] = useState<InvoiceItemForm[]>([]);
-
-  const [taxRate, setTaxRate] = useState(0.15); // 15% default tax rate
+  const [taxRates, setTaxRates] = useState<TaxRate[]>([]);
+  const [defaultTaxRate, setDefaultTaxRate] = useState<TaxRate | null>(null);
+  const [globalTaxRate, setGlobalTaxRate] = useState(0.15); // 15% default global tax rate
 
   useEffect(() => {
     // Auto-focus client search on component mount
@@ -65,7 +70,45 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
     if (clientInput) {
       clientInput.focus();
     }
+    
+    // Fetch tax rates
+    fetchTaxRates();
   }, []);
+
+  const fetchTaxRates = async () => {
+    try {
+      const response = await fetch('/api/tenant/tax-rates', {
+        headers: await getAuthHeaders()
+      });
+      if (response.ok) {
+        const taxRatesData = await response.json();
+        setTaxRates(taxRatesData);
+        const defaultRate = taxRatesData.find((rate: TaxRate) => rate.isDefault);
+        if (defaultRate) {
+          setDefaultTaxRate(defaultRate);
+          setGlobalTaxRate(defaultRate.rate / 100);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch tax rates:', error);
+    }
+  };
+
+  // Helper function to calculate tax for an item
+  const calculateItemTotals = (quantity: number, unitPrice: number, taxRate: number) => {
+    const lineTotal = quantity * unitPrice;
+    const taxAmount = lineTotal * taxRate;
+    const total = lineTotal + taxAmount;
+    return { lineTotal, taxAmount, total };
+  };
+
+  // Helper function to get default tax rate for a product
+  const getProductTaxRate = (product: ProductWithInventory): number => {
+    if (product.taxRate !== undefined) {
+      return product.taxRate / 100; // Convert percentage to decimal
+    }
+    return globalTaxRate; // Use global rate as fallback
+  };
 
   // Set initial selected client if editing
   useEffect(() => {
@@ -216,18 +259,39 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
     const newItems = [...items];
     newItems[index] = { ...newItems[index], [field]: value };
 
-    // Auto-calculate total when quantity or unit price changes
-    if (field === 'quantity' || field === 'unitPrice') {
-      newItems[index].total = newItems[index].quantity * newItems[index].unitPrice;
+    // Auto-calculate totals when quantity, unit price, or tax rate changes
+    if (field === 'quantity' || field === 'unitPrice' || field === 'taxRate') {
+      const item = newItems[index];
+      const { lineTotal, taxAmount, total } = calculateItemTotals(
+        item.quantity,
+        item.unitPrice,
+        item.taxRate
+      );
+      
+      newItems[index].lineTotal = lineTotal;
+      newItems[index].taxAmount = taxAmount;
+      newItems[index].total = total;
     }
 
     // Auto-fill product details when product is selected
     if (field === 'productId' && value) {
-      const product = products.find(p => p.id === parseInt(value));
+      const product = products.find(p => p.id === parseInt(value as string));
       if (product) {
+        const unitPrice = product.inventory?.price || product.price;
+        const taxRate = getProductTaxRate(product);
+        const { lineTotal, taxAmount, total } = calculateItemTotals(
+          newItems[index].quantity,
+          unitPrice,
+          taxRate
+        );
+        
         newItems[index].productName = product.name;
-        newItems[index].unitPrice = product.inventory?.price || product.price;
-        newItems[index].total = newItems[index].quantity * newItems[index].unitPrice;
+        newItems[index].unitPrice = unitPrice;
+        newItems[index].taxRateId = product.taxRateId;
+        newItems[index].taxRate = taxRate;
+        newItems[index].taxAmount = taxAmount;
+        newItems[index].lineTotal = lineTotal;
+        newItems[index].total = total;
       }
     }
 
@@ -238,13 +302,21 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
     const product = productResults.find(p => p.id === productId);
     if (!product) return;
 
+    const unitPrice = product.inventory?.price || product.price;
+    const taxRate = getProductTaxRate(product);
+    const { lineTotal, taxAmount, total } = calculateItemTotals(quantity, unitPrice, taxRate);
+
     const newItem: InvoiceItemForm = {
       productId: product.id,
       sku: product.sku,
       productName: product.name,
       quantity: quantity,
-      unitPrice: product.inventory?.price || product.price,
-      total: quantity * (product.inventory?.price || product.price)
+      unitPrice: unitPrice,
+      taxRateId: product.taxRateId,
+      taxRate: taxRate,
+      taxAmount: taxAmount,
+      lineTotal: lineTotal,
+      total: total
     };
 
     // Check if product already exists in items
@@ -266,7 +338,19 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
   };
 
   const addItem = () => {
-    setItems([...items, { productId: null, sku: '', productName: '', quantity: 1, unitPrice: 0, total: 0 }]);
+    const emptyItem: InvoiceItemForm = {
+      productId: null,
+      sku: '',
+      productName: '',
+      quantity: 1,
+      unitPrice: 0,
+      taxRateId: defaultTaxRate?.id,
+      taxRate: globalTaxRate,
+      taxAmount: 0,
+      lineTotal: 0,
+      total: 0
+    };
+    setItems([...items, emptyItem]);
   };
 
   const removeItem = (index: number) => {
@@ -276,8 +360,8 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
   };
 
   const calculateTotals = () => {
-    const subtotal = items.reduce((sum, item) => sum + item.total, 0);
-    const tax = subtotal * taxRate;
+    const subtotal = items.reduce((sum, item) => sum + item.lineTotal, 0);
+    const tax = items.reduce((sum, item) => sum + item.taxAmount, 0);
     const total = subtotal + tax;
 
     return {
@@ -462,6 +546,8 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
                     <TableHead>Product</TableHead>
                     <TableHead>Quantity</TableHead>
                     <TableHead>Unit Price</TableHead>
+                    <TableHead>Tax Rate</TableHead>
+                    <TableHead>Tax Amount</TableHead>
                     <TableHead>Total</TableHead>
                     <TableHead></TableHead>
                   </TableRow>
@@ -498,6 +584,23 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
                           allowNegative={false}
                           className="w-24"
                         />
+                      </TableCell>
+                      <TableCell>
+                        <NumericInput
+                          value={(item.taxRate * 100).toString()}
+                          onValueChange={(value) => handleItemChange(index, 'taxRate', (value || 0) / 100)}
+                          allowDecimals={true}
+                          maxDecimals={2}
+                          allowNegative={false}
+                          className="w-20"
+                          placeholder="0.00"
+                        />
+                        <span className="text-xs text-muted-foreground ml-1">%</span>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm text-muted-foreground">
+                          {formatCurrency(item.taxAmount)}
+                        </div>
                       </TableCell>
                       <TableCell>
                         <div className="font-medium">
@@ -538,16 +641,17 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="taxRate">Tax Rate (%)</Label>
+                  <Label htmlFor="globalTaxRate">Global Tax Rate (%)</Label>
                   <NumericInput
-                    id="taxRate"
-                    value={(taxRate * 100).toString()}
-                    onValueChange={(value) => setTaxRate((value || 0) / 100)}
+                    id="globalTaxRate"
+                    value={(globalTaxRate * 100).toString()}
+                    onValueChange={(value) => setGlobalTaxRate((value || 0) / 100)}
                     allowDecimals={true}
                     maxDecimals={2}
                     allowNegative={false}
                     className="w-24"
                   />
+                  <p className="text-xs text-muted-foreground">Applied to new items by default</p>
                 </div>
               </div>
 
@@ -558,7 +662,7 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
                     <span>{formatCurrency(totals.subtotal)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span>Tax ({(taxRate * 100).toFixed(1)}%):</span>
+                    <span>Tax (per item):</span>
                     <span>{formatCurrency(totals.tax)}</span>
                   </div>
                   <div className="flex justify-between text-sm">

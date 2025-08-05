@@ -371,7 +371,11 @@ export interface InvoiceItem {
   productName?: string;
   quantity: number;
   unitPrice: number;
+  taxRateId?: number;
+  taxRate: number;
+  taxAmount: number;
   lineTotal: number;
+  total: number; // lineTotal + taxAmount
 }
 
 export interface CreateInvoiceRequest {
@@ -395,6 +399,10 @@ export interface CreateInvoiceItemRequest {
   quantity: number;
   unitPrice: number;
   description: string;
+  taxRateId?: number;
+  taxRate: number;
+  taxAmount: number;
+  lineTotal: number;
   total: number;
 }
 

@@ -22,7 +22,7 @@ export const tenants = sqliteTable('tenants', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   name: text('name').notNull(),
   domain: text('domain').notNull().unique(),
-  database: text('database').notNull().unique(),
+  database: text('database').notNull(),
   meta: text('meta'), // JSON string containing TenantMeta
   isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
   createdAt: text('created_at').notNull().$defaultFn(() => new Date().toISOString())
@@ -39,15 +39,15 @@ export const subscriptionPlans = sqliteTable('subscription_plans', {
   priceMonthly: integer('price_monthly').notNull(),
   priceYearly: integer('price_yearly'),
   currency: text('currency').notNull().default('USD'),
-  
+
   // Limits
   maxUsers: integer('max_users').notNull().default(5),
   maxStores: integer('max_stores').notNull().default(1),
   storageLimitGb: integer('storage_limit_gb').notNull().default(1),
-  
+
   // Features (JSON field for flexibility)
   features: text('features').notNull().default('{}'),
-  
+
   // Metadata
   isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
   sortOrder: integer('sort_order').notNull().default(0),

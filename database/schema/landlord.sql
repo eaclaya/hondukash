@@ -25,7 +25,7 @@ CREATE TABLE tenants (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     domain TEXT NOT NULL UNIQUE,
-    database TEXT NOT NULL UNIQUE,
+    database TEXT NOT NULL,
     meta TEXT,
     is_active INTEGER NOT NULL DEFAULT 1 CHECK (is_active IN (0, 1)),
     created_at TEXT NOT NULL DEFAULT (datetime('now', 'utc'))

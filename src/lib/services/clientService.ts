@@ -31,13 +31,7 @@ export class ClientService {
           like(clients.name, `%${search}%`),
           like(clients.primaryContactName, `%${search}%`),
           like(clients.email, `%${search}%`),
-          like(clients.phone, `%${search}%`),
-          like(clients.mobile, `%${search}%`),
-          like(clients.city, `%${search}%`),
-          like(clients.state, `%${search}%`),
-          like(clients.country, `%${search}%`),
-          like(clients.industry, `%${search}%`),
-          like(clients.clientType, `%${search}%`)
+          like(clients.phone, `%${search}%`)
         );
         queryConditions.push(searchConditions);
       }
@@ -73,10 +67,6 @@ export class ClientService {
         industry: client.industry || undefined,
         website: client.website || undefined,
         address: client.address || undefined,
-        city: client.city || undefined,
-        state: client.state || undefined,
-        country: client.country,
-        postalCode: client.postalCode || undefined,
         creditLimit: client.creditLimit,
         paymentTerms: client.paymentTerms,
         discountPercentage: client.discountPercentage,

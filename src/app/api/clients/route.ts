@@ -6,10 +6,11 @@ import { CreateClientRequest } from '@/lib/types';
 // GET /api/clients - Get all clients
 export async function GET(request: NextRequest) {
   try {
-    const requestHeaders = headers();
+
+    const requestHeaders = await headers();
     const host = requestHeaders.get('host');
     const storeIdHeader = requestHeaders.get('X-Store-ID');
-    console.log(host, storeIdHeader);
+
     if (!host) {
       return NextResponse.json({ error: 'Host header is required' }, { status: 400 });
     }
@@ -21,7 +22,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const storeIdParam = searchParams.get('storeId');
     const storeId = storeIdHeader ? parseInt(storeIdHeader) : storeIdParam ? parseInt(storeIdParam) : undefined;
-    
+
     // Get pagination and search parameters
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
@@ -47,7 +48,7 @@ export async function GET(request: NextRequest) {
 // POST /api/clients - Create a new client
 export async function POST(request: NextRequest) {
   try {
-    const requestHeaders = headers();
+    const requestHeaders = await headers();
     const host = requestHeaders.get('host');
 
     if (!host) {

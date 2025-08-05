@@ -11,7 +11,7 @@ export async function middleware(request: NextRequest) {
   // Check if this is the naked domain (hondukash.test) or www subdomain
   const isNakedDomain = hostWithoutPort === appDomain || hostWithoutPort === `www.${appDomain}`;
 
-  // Check if this is a tenant subdomain (e.g., avoca.hondukash.test) - excluding www
+  // Check if this is a tenant subdomain (e.g., mpv.hondukash.test) - excluding www
   const isSubdomain = hostWithoutPort.endsWith(`.${appDomain}`) &&
                       hostWithoutPort !== appDomain &&
                       hostWithoutPort !== `www.${appDomain}`;

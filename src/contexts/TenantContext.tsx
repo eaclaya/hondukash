@@ -1,5 +1,6 @@
 'use client';
 
+import { abort } from 'process';
 import { createContext, useContext, useEffect, useState } from 'react';
 
 interface TenantDatabaseContext {
@@ -60,26 +61,54 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Get tenant from headers or local detection
     const detectTenant = async () => {
-      try {
-        // Only detect tenant if we're on a subdomain, not on main domain
-        const hostname = window.location.hostname;
-        const isSubdomain = hostname.split('.').length > 2 || (!hostname.includes('localhost') && !hostname.includes('127.0.0.1'));
+      const startTime = Date.now();
+      const minLoadingTime = 500; // Minimum 500ms loading time
 
-        // Skip tenant detection for main domain/admin
-        if (!isSubdomain || window.location.pathname.startsWith('/admin')) {
-          setIsLoading(false);
+      try {
+        // Only detect tenant if we're on a subdomain, not on main domain or www
+        const hostname = window.location.hostname;
+        const appDomain = process.env.NEXT_PUBLIC_APP_DOMAIN;
+        
+        // Check if this is the naked domain or www subdomain
+        const isMainDomain = hostname === appDomain || hostname === `www.${appDomain}` || 
+                           hostname.includes('localhost') || hostname.includes('127.0.0.1');
+
+        // Check if this is a tenant subdomain (excluding www)
+        const isTenantSubdomain = hostname.endsWith(`.${appDomain}`) && 
+                                 hostname !== appDomain && 
+                                 hostname !== `www.${appDomain}`;
+
+        // Skip tenant detection for specific routes
+        const skipTenantRoutes = ['/not-found', '/admin'];
+        const shouldSkipTenant = isMainDomain || 
+                                !isTenantSubdomain || 
+                                skipTenantRoutes.some(route => window.location.pathname.startsWith(route));
+
+        if (shouldSkipTenant) {
+          const elapsed = Date.now() - startTime;
+          const remainingTime = Math.max(0, minLoadingTime - elapsed);
+          setTimeout(() => setIsLoading(false), remainingTime);
           return;
         }
 
         const response = await fetch('/api/tenant/current');
+
         if (response.ok) {
           const tenantData = await response.json();
           setTenant(tenantData);
+        } else {
+          // window.location.href = '/not-found';
         }
       } catch (error) {
         console.error('Failed to detect tenant:', error);
       } finally {
-        setIsLoading(false);
+        // Ensure minimum loading time has passed
+        const elapsed = Date.now() - startTime;
+        const remainingTime = Math.max(0, minLoadingTime - elapsed);
+
+        setTimeout(() => {
+          setIsLoading(false);
+        }, remainingTime);
       }
     };
 

@@ -1,6 +1,5 @@
 'use client';
 
-import { useTenant } from '@/contexts/TenantContext';
 import { useTenantAuth } from '@/hooks/useTenantAuth';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -16,7 +15,6 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
-  const { tenant, isLoading: tenantLoading } = useTenant();
   const { user, isLoading: authLoading, isAuthenticated, logout } = useTenantAuth();
   const { currentStore } = useStore();
   const router = useRouter();
@@ -28,28 +26,6 @@ export default function DashboardLayout({
       router.push('/login');
     }
   }, [authLoading, isAuthenticated, router]);
-
-  // Show loading while checking authentication or tenant info
-  if (tenantLoading || authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg">Loading...</div>
-      </div>
-    );
-  }
-
-  // Check tenant and authentication
-  if (!tenant) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Tenant Not Found</h1>
-          <p className="text-muted-foreground mb-4">Unable to load tenant information for this domain.</p>
-          <Button onClick={() => window.location.href = '/'}>Go to Main Site</Button>
-        </div>
-      </div>
-    );
-  }
 
   if (!isAuthenticated) {
     return (

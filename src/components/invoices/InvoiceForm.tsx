@@ -624,7 +624,6 @@ function QuickProductEntry({ products, loading, onProductAdd, onSearchChange, se
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (products.length === 0) return;
-    console.log(products)
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault();

@@ -19,7 +19,6 @@ export default function StoreSwitcher() {
   const [stores, setStores] = useState<Store[]>([]);
 
   useEffect(() => {
-    console.log('user', user)
     if (user?.stores) {
       setStores(user.stores);
 

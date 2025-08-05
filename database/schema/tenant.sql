@@ -247,7 +247,7 @@ CREATE TABLE invoices (
     user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
 
     -- Invoice details
-    invoice_number TEXT NOT NULL INDEX,
+    invoice_number TEXT NOT NULL,
     invoice_date TEXT NOT NULL DEFAULT (date('now')),
     due_date TEXT,
 
@@ -732,6 +732,7 @@ CREATE INDEX idx_invoices_store_id ON invoices(store_id);
 CREATE INDEX idx_invoices_client_id ON invoices(client_id);
 CREATE INDEX idx_invoices_status ON invoices(status);
 CREATE INDEX idx_invoices_invoice_date ON invoices(invoice_date);
+CREATE INDEX idx_invoices_invoice_number ON invoices(invoice_number);
 CREATE INDEX idx_invoice_items_invoice_id ON invoice_items(invoice_id);
 CREATE INDEX idx_invoice_items_product_id ON invoice_items(product_id);
 

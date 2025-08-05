@@ -39,7 +39,6 @@ export default function TenantsPage() {
 
   // Fetch tenants when debouncedSearch changes
   useEffect(() => {
-    console.log('Fetching tenants with search:', debouncedSearch);
     fetchTenants(debouncedSearch);
   }, [debouncedSearch]);
 

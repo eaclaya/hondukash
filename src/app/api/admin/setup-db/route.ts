@@ -11,16 +11,14 @@ export async function POST(_request: NextRequest) {
     const schemaPath = join(process.cwd(), 'database', 'schema', 'public_schema.sql')
     const schemaSql = readFileSync(schemaPath, 'utf8')
 
-    console.log('Setting up public schema...')
-
     // Execute the schema creation SQL
     const { error } = await supabase.rpc('exec_sql', { sql: schemaSql })
 
     if (error) {
       console.error('Error setting up public schema:', error)
-      return NextResponse.json({ 
+      return NextResponse.json({
         error: 'Failed to setup public schema',
-        details: error 
+        details: error
       }, { status: 500 })
     }
 
@@ -41,9 +39,9 @@ export async function POST(_request: NextRequest) {
 
   } catch (error: unknown) {
     console.error('Database setup error:', error)
-    return NextResponse.json({ 
+    return NextResponse.json({
       error: 'Database setup failed',
-      message: error instanceof Error ? error.message : 'Unknown error occurred' 
+      message: error instanceof Error ? error.message : 'Unknown error occurred'
     }, { status: 500 })
   }
 }

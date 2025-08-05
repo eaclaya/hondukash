@@ -9,7 +9,7 @@ export async function middleware(request: NextRequest) {
   const appDomain = process.env.NEXT_PUBLIC_APP_DOMAIN ;
 
   // Check if this is the naked domain (hondukash.test) or www subdomain
-  const isNakedDomain = hostWithoutPort === appDomain || hostWithoutPort === `www.${appDomain}`;
+  const isMainSite = hostWithoutPort === appDomain || hostWithoutPort === `www.${appDomain}`;
 
   // Check if this is a tenant subdomain (e.g., mpv.hondukash.test) - excluding www
   const isSubdomain = hostWithoutPort.endsWith(`.${appDomain}`) &&
@@ -19,10 +19,7 @@ export async function middleware(request: NextRequest) {
   // Extract subdomain name
   const subdomain = isSubdomain ? hostWithoutPort.split('.')[0] : null;
 
-  console.log('isSubdomain', isSubdomain);
-  console.log('subdomain', subdomain);
-
-  if (isNakedDomain) {
+  if (isMainSite) {
     // Handle admin routes with authentication
     if (url.pathname.startsWith('/admin')) {
       // Check if user is trying to access login or signup page

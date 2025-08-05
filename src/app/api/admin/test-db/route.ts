@@ -5,28 +5,23 @@ export async function GET(_request: NextRequest) {
   try {
     const supabase = createClient()
 
-    // Test basic connection
-    console.log('Testing database connection...')
-
     // Check if tenants table exists
     const { data: tables, error: tablesError } = await supabase.rpc('exec_sql', {
       sql: `
-        SELECT table_name 
-        FROM information_schema.tables 
-        WHERE table_schema = 'public' 
+        SELECT table_name
+        FROM information_schema.tables
+        WHERE table_schema = 'public'
         AND table_name = 'tenants';
       `
     })
 
     if (tablesError) {
       console.error('Error checking tables:', tablesError)
-      return NextResponse.json({ 
+      return NextResponse.json({
         error: 'Database connection failed',
-        details: tablesError 
+        details: tablesError
       }, { status: 500 })
     }
-
-    console.log('Tables check result:', tables)
 
     // Try to query tenants table
     const { data: tenants, error: tenantsError } = await supabase
@@ -44,9 +39,9 @@ export async function GET(_request: NextRequest) {
 
   } catch (error: unknown) {
     console.error('Database test error:', error)
-    return NextResponse.json({ 
+    return NextResponse.json({
       error: 'Database test failed',
-      message: error instanceof Error ? error.message : 'Unknown error occurred' 
+      message: error instanceof Error ? error.message : 'Unknown error occurred'
     }, { status: 500 })
   }
 }

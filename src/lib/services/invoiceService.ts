@@ -300,22 +300,7 @@ static async createInvoice(domain: string, invoiceData: CreateInvoiceRequest): P
 
       // Create stock quantity map for movements
       const currentStockQuantities = new Map(inventoryResult.map(item => [item.productId, item.quantity]));
-      console.log({
-        storeId: invoiceData.storeId,
-        clientId: invoiceData.clientId,
-        invoiceNumber,
-        clientName: invoiceData.clientName,
-        invoiceDate: invoiceData.invoiceDate,
-        dueDate: invoiceData.dueDate || null,
-        subtotal: invoiceData.subtotal,
-        taxAmount: invoiceData.tax,
-        discountAmount: invoiceData.discount,
-        totalAmount: invoiceData.total,
-        paidAmount: 0,
-        status: invoiceData.status || 'draft',
-        notes: invoiceData.notes || null,
-        terms: invoiceData.terms || null
-      })
+
       // Single transaction with all operations
       const newInvoice = await db.transaction(async (tx) => {
         // Create invoice

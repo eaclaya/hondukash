@@ -80,7 +80,7 @@ export class InvoiceService {
     const movementRecords = items.map(item => {
       const previousQty = currentStock.get(item.productId) || 0;
       const newQty = previousQty - item.quantity;
-      
+
       return {
         productId: item.productId,
         storeId,
@@ -323,29 +323,26 @@ export class InvoiceService {
     }
   }
 
-  static async createInvoice(domain: string, invoiceData: CreateInvoiceRequest): Promise<ServiceResult<Invoice>> {
+static async createInvoice(domain: string, invoiceData: CreateInvoiceRequest): Promise<ServiceResult<Invoice>> {
     try {
+
       const db = await getTenantDb(domain);
 
-      // Generate invoice number (check for sequence or use prefix)
-      const storeResult = await db
-        .select({
+      // Single optimized query to get store data and client name if needed
+      const productIds = invoiceData.items.map(item => item.productId);
+
+      const [storeResult, inventoryResult] = await Promise.all([
+        // Get store configuration
+        db.select({
           invoicePrefix: stores.invoicePrefix,
-          invoiceCounter: stores.invoiceCounter,
-          invoiceSequence: stores.invoiceSequence
+          invoiceCounter: stores.invoiceCounter
         })
         .from(stores)
         .where(eq(stores.id, invoiceData.storeId))
-        .limit(1);
+        .limit(1),
 
-      if (!storeResult[0]) {
-        return { success: false, error: 'Store not found' };
-      }
-
-      // Check stock availability and get current stock levels for movement tracking
-      const productIds = invoiceData.items.map(item => item.productId);
-      const currentStockResult = await db
-        .select({
+        // Get inventory data for validation
+        db.select({
           productId: inventory.productId,
           quantity: inventory.quantity,
           productName: products.name
@@ -357,125 +354,48 @@ export class InvoiceService {
             inArray(inventory.productId, productIds),
             eq(inventory.storeId, invoiceData.storeId)
           )
-        );
+        ),
 
-      // Create stock map for validation and movement tracking
-      const currentStockMap = new Map<number, { quantity: number; name: string }>(
-        currentStockResult.map(item => [item.productId, { quantity: item.quantity, name: item.productName }])
-      );
+      ]);
+
+      if (!storeResult[0]) {
+        return { success: false, error: 'Store not found' };
+      }
 
       // Validate stock availability
+      const stockMap = new Map(inventoryResult.map(item => [item.productId, item]));
       for (const item of invoiceData.items) {
-        const stockData = currentStockMap.get(item.productId);
-
+        const stockData = stockMap.get(item.productId);
         if (!stockData) {
           return { success: false, error: `Product with ID ${item.productId} not found in inventory` };
         }
-
         if (stockData.quantity < item.quantity) {
           return {
             success: false,
-            error: `Insufficient stock for ${stockData.name}. Available: ${stockData.quantity}, Required: ${item.quantity}`
+            error: `Insufficient stock for ${stockData.productName}. Available: ${stockData.quantity}, Required: ${item.quantity}`
           };
         }
       }
 
-      // Create simple map for movement tracking
-      const currentStockQuantities = new Map<number, number>(
-        currentStockResult.map(item => [item.productId, item.quantity])
-      );
+      // Generate invoice number (simplified for performance)
+      const { invoicePrefix, invoiceCounter } = storeResult[0];
+      const invoiceNumber = `${invoicePrefix || 'INV'}${(invoiceCounter || 0).toString().padStart(6, '0')}`;
 
-      const { invoicePrefix, invoiceCounter, invoiceSequence } = storeResult[0];
+      // Create stock quantity map for movements
+      const currentStockQuantities = new Map(inventoryResult.map(item => [item.productId, item.quantity]));
 
-      let invoiceNumber: string;
-      let sequenceData = null;
-      const defaultPrefix = invoicePrefix || '';
-
-      // Check if invoice sequence is enabled
-      if (invoiceSequence) {
-        try {
-          sequenceData = JSON.parse(invoiceSequence);
-
-          if (sequenceData?.enabled) {
-            // Check if sequence has expired
-            if (sequenceData.limit_date) {
-              const limitDate = new Date(sequenceData.limit_date);
-              const currentDate = new Date();
-              currentDate.setHours(0, 0, 0, 0);
-              limitDate.setHours(0, 0, 0, 0);
-
-              if (currentDate >= limitDate) {
-                return { success: false, error: 'Invoice sequence has expired. Please update the sequence configuration.' };
-              }
-            }
-
-            // Extract start and end numbers from patterns
-            const startMatch = sequenceData.sequence_start.match(/(\d+)$/);
-            const endMatch = sequenceData.sequence_end.match(/(\d+)$/);
-
-            if (!startMatch || !endMatch) {
-              return { success: false, error: 'Invalid sequence pattern. Sequence start and end must contain numbers at the end.' };
-            }
-
-            const startNum = parseInt(startMatch[1]);
-            const endNum = parseInt(endMatch[1]);
-
-            // Get current counter from existing invoices or start from beginning
-            const lastInvoiceResult = await db
-              .select({ invoiceNumber: invoices.invoiceNumber })
-              .from(invoices)
-              .where(eq(invoices.storeId, invoiceData.storeId))
-              .orderBy(desc(invoices.id))
-              .limit(1);
-
-            let currentNum = startNum;
-            if (lastInvoiceResult.length > 0) {
-              const lastInvoiceNumber = lastInvoiceResult[0].invoiceNumber;
-              // Check if last invoice uses sequence pattern
-              const sequencePrefix = sequenceData.sequence_start.replace(/\d+$/, '');
-              if (lastInvoiceNumber.startsWith(sequencePrefix)) {
-                const lastNumMatch = lastInvoiceNumber.match(/(\d+)$/);
-                if (lastNumMatch) {
-                  currentNum = parseInt(lastNumMatch[1]) + 1;
-                }
-              }
-            }
-
-            // Check if we've reached the sequence end
-            if (currentNum > endNum) {
-              return { success: false, error: `Invoice sequence has reached its maximum number (${endNum}). Please configure a new sequence.` };
-            }
-
-            // Generate sequence-based number
-            const sequencePrefix = sequenceData.sequence_start.replace(/\d+$/, '');
-            const numberPadding = startMatch[1].length;
-            invoiceNumber = sequencePrefix + currentNum.toString().padStart(numberPadding, '0');
-
-          } else {
-            // Use traditional prefix + counter
-            invoiceNumber = `${defaultPrefix}${invoiceCounter?.toString().padStart(6, '0')}`;
-          }
-        } catch (error) {
-          // If JSON parsing fails, fall back to prefix + counter
-          invoiceNumber = `${defaultPrefix}${invoiceCounter?.toString().padStart(6, '0')}`;
-        }
-      } else {
-        // Use traditional prefix + counter
-        invoiceNumber = `${defaultPrefix}${invoiceCounter?.toString().padStart(6, '0')}`;
-      }
-
-      // Start transaction
-      const result = await db.transaction(async (tx) => {
+      // Single transaction with all operations
+      const newInvoice = await db.transaction(async (tx) => {
         // Create invoice
-        const [newInvoice] = await tx
+        const [invoice] = await tx
           .insert(invoices)
           .values({
             storeId: invoiceData.storeId,
             clientId: invoiceData.clientId,
             invoiceNumber,
+            clientName: invoiceData.clientName || '',
             invoiceDate: invoiceData.invoiceDate,
             dueDate: invoiceData.dueDate || null,
-            clientName: invoiceData.clientName || null,
             subtotal: invoiceData.subtotal,
             taxAmount: invoiceData.tax,
             discountAmount: invoiceData.discount,
@@ -487,71 +407,124 @@ export class InvoiceService {
           })
           .returning();
 
-        // Create invoice items
+        // Create invoice items, update inventory, and movements in parallel
+        const operations = [];
+
         if (invoiceData.items.length > 0) {
-          await tx.insert(invoiceItems).values(
-            invoiceData.items.map(item => ({
-              invoiceId: newInvoice.id,
-              productId: item.productId,
-              description: item.description,
-              quantity: item.quantity,
-              unitPrice: item.unitPrice,
-              lineTotal: item.total,
-              taxRate: 0,
-              taxAmount: 0
-            }))
+          // Insert invoice items
+          operations.push(
+            tx.insert(invoiceItems).values(
+              invoiceData.items.map(item => ({
+                invoiceId: invoice.id,
+                productId: item.productId,
+                description: item.description,
+                quantity: item.quantity,
+                unitPrice: item.unitPrice,
+                lineTotal: item.total,
+                taxRate: 0,
+                taxAmount: 0
+              }))
+            )
           );
 
-          // Update inventory quantities (deduct stock) - optimized single query
-          const productIds = invoiceData.items.map(item => item.productId);
-          
-          // Build CASE statement for quantity updates
-          const caseConditions = invoiceData.items.map(item => 
+          // Update inventory quantities
+          const caseConditions = invoiceData.items.map(item =>
             `WHEN product_id = ${item.productId} THEN quantity - ${item.quantity}`
           ).join(' ');
-          
-          await tx
-            .update(inventory)
-            .set({
-              quantity: sql.raw(`CASE ${caseConditions} ELSE quantity END`),
-              updatedAt: new Date().toISOString()
-            })
-            .where(
-              and(
-                inArray(inventory.productId, productIds),
-                eq(inventory.storeId, invoiceData.storeId)
+
+          operations.push(
+            tx.update(inventory)
+              .set({
+                quantity: sql.raw(`CASE ${caseConditions} ELSE quantity END`),
+                updatedAt: new Date().toISOString()
+              })
+              .where(
+                and(
+                  inArray(inventory.productId, productIds),
+                  eq(inventory.storeId, invoiceData.storeId)
+                )
               )
-            );
-
-          // Create inventory movement records
-          await this.createInventoryMovements(
-            tx,
-            newInvoice.id,
-            invoiceNumber,
-            invoiceData.items,
-            invoiceData.storeId,
-            currentStockQuantities,
-            undefined // TODO: Pass userId when available in request context
           );
+
+          // Create inventory movements
+          const movementRecords = invoiceData.items.map(item => {
+            const previousQty = currentStockQuantities.get(item.productId) || 0;
+            return {
+              productId: item.productId,
+              storeId: invoiceData.storeId,
+              movementType: 'out' as const,
+              quantity: -item.quantity,
+              previousQuantity: previousQty,
+              newQuantity: previousQty - item.quantity,
+              referenceType: 'invoice' as const,
+              referenceId: invoice.id,
+              referenceNumber: invoiceNumber,
+              unitCost: item.unitPrice,
+              totalValue: -item.quantity * item.unitPrice,
+              notes: `Invoice sale - ${invoiceNumber}`,
+              userId: null
+            };
+          });
+
+          operations.push(tx.insert(inventoryMovements).values(movementRecords));
         }
 
-        // Update store counter (only for traditional prefix-based invoices)
-        if (!sequenceData?.enabled) {
-          // Update traditional invoice counter
-          await tx
-            .update(stores)
+        // Update store counter
+        operations.push(
+          tx.update(stores)
             .set({ invoiceCounter: (invoiceCounter || 0) + 1 })
-            .where(eq(stores.id, invoiceData.storeId));
-        }
-        // Note: For sequence-based invoices, counter is derived from existing invoice numbers
+            .where(eq(stores.id, invoiceData.storeId))
+        );
 
-        return newInvoice;
+        // Execute all operations in parallel
+        await Promise.all(operations);
+
+        return invoice;
       });
 
-      // Fetch the created invoice with full data
-      const createdInvoice = await this.getInvoiceById(domain, result.id);
-      console.log('CREATED INVOICE', createdInvoice)
-      return createdInvoice;
+      // Return created invoice data directly without additional queries
+      const transformedInvoice: Invoice = {
+        id: newInvoice.id.toString(),
+        number: invoiceNumber,
+        clientId: invoiceData.clientId.toString(),
+        storeId: invoiceData.storeId.toString(),
+        items: invoiceData.items.map((item, index) => ({
+          id: (newInvoice.id * 1000 + index).toString(), // Generate predictable item ID
+          productId: item.productId.toString(),
+          description: item.description,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          lineTotal: item.total
+        })),
+        subtotal: invoiceData.subtotal,
+        tax: invoiceData.tax,
+        discount: invoiceData.discount,
+        total: invoiceData.total,
+        status: (invoiceData.status || 'draft') as 'draft' | 'sent' | 'paid' | 'partial' | 'overdue' | 'cancelled',
+        paidAmount: 0,
+        balanceDue: invoiceData.total,
+        invoiceDate: invoiceData.invoiceDate,
+        dueDate: invoiceData.dueDate,
+        notes: invoiceData.notes,
+        terms: invoiceData.terms,
+        createdAt: newInvoice.createdAt,
+        updatedAt: newInvoice.updatedAt,
+        client: invoiceData.clientName ? {
+          id: invoiceData.clientId,
+          name: invoiceData.clientName,
+          storeId: invoiceData.storeId,
+          clientType: 'individual' as const,
+          country: 'Honduras',
+          creditLimit: 0,
+          paymentTerms: 30,
+          discountPercentage: 0,
+          isActive: true,
+          createdAt: newInvoice.createdAt,
+          updatedAt: newInvoice.updatedAt
+        } : undefined
+      };
+
+      return { success: true, data: transformedInvoice };
     } catch (error: unknown) {
       console.error('InvoiceService.createInvoice error:', error);
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error occurred' };

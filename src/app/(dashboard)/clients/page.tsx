@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Pagination } from '@/components/ui/pagination';
 import { Plus, Edit, Trash2, Building, User, Phone, Mail, MapPin, Users, Search } from 'lucide-react';
+import LoaderSpinner from '@/components/shared/loader-spinner';
 
 // Simple debounce function
 function debounce<T extends (...args: unknown[]) => void>(func: T, delay: number): T {
@@ -22,7 +23,7 @@ function debounce<T extends (...args: unknown[]) => void>(func: T, delay: number
 export default function ClientsPage() {
   const router = useRouter();
   const [clientsData, setClientsData] = useState<PaginatedResponse<Client> | null>(null);
-  const [, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -102,6 +103,19 @@ export default function ClientsPage() {
         </div>
         <div className="flex items-center justify-center py-12">
           <div className="text-red-600">Error: {error}</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (loading && !clientsData) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold">Clients</h1>
+        </div>
+        <div className="flex items-center justify-center py-12">
+          <LoaderSpinner />
         </div>
       </div>
     );

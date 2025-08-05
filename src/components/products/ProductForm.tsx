@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { ProductWithInventory, CreateProductRequest, UpdateProductRequest } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { NumericInput } from '@/components/ui/numeric-input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -232,55 +233,57 @@ export default function ProductForm({ product, onSubmit, onCancel, loading = fal
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="baseCost">Base Cost (L)</Label>
-                  <Input
+                  <NumericInput
                     id="baseCost"
-                    type="number"
-                    value={formData.baseCost}
-                    onChange={(e) => handleInputChange('baseCost', parseFloat(e.target.value) || 0)}
+                    value={formData.baseCost.toString()}
+                    onValueChange={(value) => handleInputChange('baseCost', value || 0)}
                     placeholder="0.00"
-                    min="0"
-                    step="0.01"
+                    allowDecimals={true}
+                    maxDecimals={2}
+                    allowNegative={false}
                   />
                   <p className="text-xs text-muted-foreground">Original purchase/manufacturing cost</p>
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="cost">Current Cost (L)</Label>
-                  <Input
+                  <NumericInput
                     id="cost"
-                    type="number"
-                    value={formData.cost}
-                    onChange={(e) => handleInputChange('cost', parseFloat(e.target.value) || 0)}
+                    value={formData.cost.toString()}
+                    onValueChange={(value) => handleInputChange('cost', value || 0)}
                     placeholder="0.00"
-                    min="0"
-                    step="0.01"
+                    allowDecimals={true}
+                    maxDecimals={2}
+                    allowNegative={false}
                   />
                   <p className="text-xs text-muted-foreground">Current replacement cost</p>
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="basePrice">Base Price (L)</Label>
-                  <Input
+                  <NumericInput
                     id="basePrice"
-                    type="number"
-                    value={formData.basePrice}
-                    onChange={(e) => handleInputChange('basePrice', parseFloat(e.target.value) || 0)}
+                    value={formData.basePrice.toString()}
+                    onValueChange={(value) => handleInputChange('basePrice', value || 0)}
                     placeholder="0.00"
-                    min="0"
-                    step="0.01"
+                    allowDecimals={true}
+                    maxDecimals={2}
+                    allowNegative={false}
                   />
                   <p className="text-xs text-muted-foreground">Suggested retail price</p>
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="price">Selling Price (L) *</Label>
-                  <Input
+                  <NumericInput
                     id="price"
-                    type="number"
                     value={(formData.price || 0).toFixed(2)}
                     disabled
                     placeholder="0.00"
                     className="bg-muted"
+                    allowDecimals={true}
+                    maxDecimals={2}
+                    allowNegative={false}
                   />
                   <p className="text-xs text-muted-foreground">
                     {formData.isTaxable 
@@ -292,14 +295,14 @@ export default function ProductForm({ product, onSubmit, onCancel, loading = fal
 
                 <div className="space-y-2">
                   <Label htmlFor="minPrice">Minimum Price (L)</Label>
-                  <Input
+                  <NumericInput
                     id="minPrice"
-                    type="number"
-                    value={formData.minPrice}
-                    onChange={(e) => handleInputChange('minPrice', parseFloat(e.target.value) || 0)}
+                    value={formData.minPrice.toString()}
+                    onValueChange={(value) => handleInputChange('minPrice', value || 0)}
                     placeholder="0.00"
-                    min="0"
-                    step="0.01"
+                    allowDecimals={true}
+                    maxDecimals={2}
+                    allowNegative={false}
                   />
                   <p className="text-xs text-muted-foreground">Minimum selling price allowed</p>
                 </div>
@@ -426,14 +429,14 @@ export default function ProductForm({ product, onSubmit, onCancel, loading = fal
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
                   <div className="space-y-2">
                     <Label htmlFor="quantity">Current Stock Quantity</Label>
-                    <Input
+                    <NumericInput
                       id="quantity"
-                      type="number"
-                      value={formData.quantity}
-                      onChange={(e) => handleInputChange('quantity', parseFloat(e.target.value) || 0)}
+                      value={formData.quantity.toString()}
+                      onValueChange={(value) => handleInputChange('quantity', value || 0)}
                       placeholder="0"
-                      min="0"
-                      step="0.01"
+                      allowDecimals={true}
+                      maxDecimals={2}
+                      allowNegative={false}
                     />
                   </div>
 
@@ -462,14 +465,14 @@ export default function ProductForm({ product, onSubmit, onCancel, loading = fal
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="storePrice">Store Price Override (L)</Label>
-                  <Input
+                  <NumericInput
                     id="storePrice"
-                    type="number"
-                    value={formData.storePrice}
-                    onChange={(e) => handleInputChange('storePrice', parseFloat(e.target.value) || 0)}
+                    value={formData.storePrice.toString()}
+                    onValueChange={(value) => handleInputChange('storePrice', value || 0)}
                     placeholder={formatCurrency(formData.price || 0)}
-                    min="0"
-                    step="0.01"
+                    allowDecimals={true}
+                    maxDecimals={2}
+                    allowNegative={false}
                   />
                   <p className="text-xs text-muted-foreground">
                     Leave empty to use the default selling price ({formatCurrency(formData.price || 0)})

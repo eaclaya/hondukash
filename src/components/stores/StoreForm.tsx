@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Store, CreateStoreRequest, UpdateStoreRequest, InvoiceSequence } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { NumericInput } from '@/components/ui/numeric-input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -442,15 +443,14 @@ export function StoreForm({ store, onSubmit, onCancel, loading = false }: StoreF
 
                   <div className="space-y-2">
                     <Label htmlFor="taxRate">Tax Rate</Label>
-                    <Input
+                    <NumericInput
                       id="taxRate"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      max="1"
-                      value={formData.taxRate}
-                      onChange={(e) => handleChange('taxRate', parseFloat(e.target.value) || 0)}
+                      value={formData.taxRate.toString()}
+                      onValueChange={(value) => handleChange('taxRate', value || 0)}
                       placeholder="0.15"
+                      allowDecimals={true}
+                      maxDecimals={2}
+                      allowNegative={false}
                       className={errors.taxRate ? 'border-red-500' : ''}
                     />
                     {errors.taxRate && <p className="text-red-500 text-sm mt-1">{errors.taxRate}</p>}

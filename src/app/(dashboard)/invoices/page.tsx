@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Pagination } from '@/components/ui/pagination';
 import { Plus, Edit, Trash2, FileText, Search, Eye } from 'lucide-react';
+import LoaderSpinner from '@/components/shared/loader-spinner';
 
 // Simple debounce function
 function debounce<T extends (...args: unknown[]) => void>(func: T, delay: number): T {
@@ -132,7 +133,7 @@ export default function InvoicesPage() {
           <h1 className="text-3xl font-bold">Invoices</h1>
         </div>
         <div className="flex items-center justify-center py-12">
-          <div className="text-lg">Loading invoices...</div>
+          <LoaderSpinner />
         </div>
       </div>
     );
@@ -264,15 +265,15 @@ export default function InvoicesPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end space-x-2" onClick={(e) => e.stopPropagation()}>
-                        <Button 
-                          variant="ghost" 
+                        <Button
+                          variant="ghost"
                           size="sm"
                           onClick={() => router.push(`/invoices/${invoice.id}`)}
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Button 
-                          variant="ghost" 
+                        <Button
+                          variant="ghost"
                           size="sm"
                           onClick={() => router.push(`/invoices/${invoice.id}/edit`)}
                         >
@@ -299,7 +300,7 @@ export default function InvoicesPage() {
             {invoicesData?.data.map((invoice) => (
               <div key={invoice.id} className="border rounded-lg p-4 space-y-3 hover:shadow-md transition-shadow cursor-pointer">
                 <div className="flex justify-between items-start">
-                  <div 
+                  <div
                     className="flex items-start space-x-3 flex-1"
                     onClick={() => router.push(`/invoices/${invoice.id}`)}
                   >
@@ -315,15 +316,15 @@ export default function InvoicesPage() {
                     </div>
                   </div>
                   <div className="flex space-x-1 flex-shrink-0">
-                    <Button 
-                      variant="ghost" 
+                    <Button
+                      variant="ghost"
                       size="sm"
                       onClick={() => router.push(`/invoices/${invoice.id}`)}
                     >
                       <Eye className="h-4 w-4" />
                     </Button>
-                    <Button 
-                      variant="ghost" 
+                    <Button
+                      variant="ghost"
                       size="sm"
                       onClick={() => router.push(`/invoices/${invoice.id}/edit`)}
                     >

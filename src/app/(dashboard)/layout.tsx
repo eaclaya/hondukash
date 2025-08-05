@@ -63,7 +63,7 @@ export default function DashboardLayout({
               {/* Settings Dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className={`px-3 py-2 text-sm font-medium rounded-md hover:bg-muted transition-colors ${pathname.startsWith('/stores/') && pathname.includes('/edit') || pathname === '/tenant-profile' || pathname === '/tax-rates' || pathname === '/stores' || pathname === '/reports' || pathname === '/transfers' ? 'bg-muted' : ''}`}>
+                  <Button variant="ghost" className={`px-3 py-2 text-sm font-medium rounded-md hover:bg-muted transition-colors ${pathname.startsWith('/stores/') && pathname.includes('/edit') || pathname === '/tax-rates' || pathname === '/stores' || pathname === '/reports' || pathname === '/transfers' ? 'bg-muted' : ''}`}>
                     Settings
                     <ChevronDown className="ml-1 h-3 w-3" />
                   </Button>
@@ -71,12 +71,9 @@ export default function DashboardLayout({
                 <DropdownMenuContent align="start">
                   {currentStore && (
                     <DropdownMenuItem asChild>
-                      <Link href={`/stores/${currentStore.id}/edit`}>Store Settings</Link>
+                      <Link href={`/stores/${currentStore.id}/edit`}>Settings</Link>
                     </DropdownMenuItem>
                   )}
-                  <DropdownMenuItem asChild>
-                    <Link href="/tenant-profile">Organization Profile</Link>
-                  </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link href="/tax-rates">Tax Rates</Link>
                   </DropdownMenuItem>
@@ -131,7 +128,7 @@ export default function DashboardLayout({
         </div>
       </header>
 
-      <main className="p-6">
+      <main className="p-6 flex flex-col">
         {children}
       </main>
     </div>

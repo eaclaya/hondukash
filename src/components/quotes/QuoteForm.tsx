@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Quote, CreateQuoteRequest, UpdateQuoteRequest, Client, ProductWithInventory } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { NumericInput } from '@/components/ui/numeric-input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -487,22 +488,22 @@ export default function QuoteForm({ quote, onSubmit, onCancel, loading = false }
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Input
-                          type="number"
-                          value={item.quantity}
-                          onChange={(e) => handleItemChange(index, 'quantity', parseFloat(e.target.value) || 0)}
-                          min="0"
-                          step="0.01"
+                        <NumericInput
+                          value={item.quantity.toString()}
+                          onValueChange={(value) => handleItemChange(index, 'quantity', value || 0)}
+                          allowDecimals={true}
+                          maxDecimals={2}
+                          allowNegative={false}
                           className="w-20"
                         />
                       </TableCell>
                       <TableCell>
-                        <Input
-                          type="number"
-                          value={item.unitPrice}
-                          onChange={(e) => handleItemChange(index, 'unitPrice', parseFloat(e.target.value) || 0)}
-                          min="0"
-                          step="0.01"
+                        <NumericInput
+                          value={item.unitPrice.toString()}
+                          onValueChange={(value) => handleItemChange(index, 'unitPrice', value || 0)}
+                          allowDecimals={true}
+                          maxDecimals={2}
+                          allowNegative={false}
                           className="w-24"
                         />
                       </TableCell>
@@ -546,14 +547,13 @@ export default function QuoteForm({ quote, onSubmit, onCancel, loading = false }
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="taxRate">Tax Rate (%)</Label>
-                  <Input
+                  <NumericInput
                     id="taxRate"
-                    type="number"
-                    value={taxRate * 100}
-                    onChange={(e) => setTaxRate((parseFloat(e.target.value) || 0) / 100)}
-                    min="0"
-                    max="100"
-                    step="0.01"
+                    value={(taxRate * 100).toString()}
+                    onValueChange={(value) => setTaxRate((value || 0) / 100)}
+                    allowDecimals={true}
+                    maxDecimals={2}
+                    allowNegative={false}
                     className="w-24"
                   />
                 </div>
@@ -697,12 +697,12 @@ function QuickProductEntry({ products, loading, onProductAdd, onSearchChange, se
           />
         </div>
         <div className="w-24">
-          <Input
-            type="number"
+          <NumericInput
             placeholder="Qty"
-            value={quantity}
-            onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
-            min="1"
+            value={quantity.toString()}
+            onValueChange={(value) => setQuantity(Math.floor(value || 1))}
+            allowDecimals={false}
+            allowNegative={false}
             onKeyDown={handleKeyDown}
           />
         </div>

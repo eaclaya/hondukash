@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { NumericInput } from '@/components/ui/numeric-input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -47,7 +48,7 @@ export default function TaxRatesPage() {
     }
   };
 
-  const handleInputChange = (field: string, value: string | number) => {
+  const handleInputChange = (field: string, value: string | number | boolean) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -189,15 +190,14 @@ export default function TaxRatesPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="rate">Rate (%) *</Label>
-                <Input
+                <NumericInput
                   id="rate"
-                  type="number"
-                  value={formData.ratePercent}
-                  onChange={(e) => handleInputChange('ratePercent', parseFloat(e.target.value) || 0)}
+                  value={formData.ratePercent.toString()}
+                  onValueChange={(value) => handleInputChange('ratePercent', value || 0)}
                   placeholder="15.00"
-                  min="0"
-                  max="100"
-                  step="0.01"
+                  allowDecimals={true}
+                  maxDecimals={2}
+                  allowNegative={false}
                   required
                 />
               </div>

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Client, CreateClientRequest, UpdateClientRequest } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { NumericInput } from '@/components/ui/numeric-input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -332,40 +333,39 @@ export default function ClientForm({ client, onSubmit, onCancel, loading = false
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="creditLimit">Credit Limit (L)</Label>
-                  <Input
+                  <NumericInput
                     id="creditLimit"
-                    type="number"
-                    value={formData.creditLimit}
-                    onChange={(e) => handleInputChange('creditLimit', parseFloat(e.target.value) || 0)}
+                    value={formData.creditLimit.toString()}
+                    onValueChange={(value) => handleInputChange('creditLimit', value || 0)}
                     placeholder="0.00"
-                    min="0"
-                    step="0.01"
+                    allowDecimals={true}
+                    maxDecimals={2}
+                    allowNegative={false}
                   />
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="paymentTerms">Payment Terms (days)</Label>
-                  <Input
+                  <NumericInput
                     id="paymentTerms"
-                    type="number"
-                    value={formData.paymentTerms}
-                    onChange={(e) => handleInputChange('paymentTerms', parseInt(e.target.value) || 30)}
+                    value={formData.paymentTerms.toString()}
+                    onValueChange={(value) => handleInputChange('paymentTerms', Math.floor(value || 0))}
                     placeholder="30"
-                    min="0"
+                    allowDecimals={false}
+                    allowNegative={false}
                   />
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="discountPercentage">Default Discount (%)</Label>
-                  <Input
+                  <NumericInput
                     id="discountPercentage"
-                    type="number"
-                    value={formData.discountPercentage * 100}
-                    onChange={(e) => handleInputChange('discountPercentage', (parseFloat(e.target.value) || 0) / 100)}
+                    value={(formData.discountPercentage * 100).toString()}
+                    onValueChange={(value) => handleInputChange('discountPercentage', (value || 0) / 100)}
                     placeholder="0"
-                    min="0"
-                    max="100"
-                    step="0.1"
+                    allowDecimals={true}
+                    maxDecimals={1}
+                    allowNegative={false}
                   />
                 </div>
               </div>
@@ -766,14 +766,14 @@ function ContactForm({ contact, onSave, onCancel, isPrimary = false }: ContactFo
           {formData.canMakePurchases && (
             <div className="space-y-2">
               <Label htmlFor="purchaseLimit">Purchase Limit (L)</Label>
-              <Input
+              <NumericInput
                 id="purchaseLimit"
-                type="number"
-                value={formData.purchaseLimit}
-                onChange={(e) => handleInputChange('purchaseLimit', parseFloat(e.target.value) || 0)}
+                value={formData.purchaseLimit.toString()}
+                onValueChange={(value) => handleInputChange('purchaseLimit', value || 0)}
                 placeholder="0.00"
-                min="0"
-                step="0.01"
+                allowDecimals={true}
+                maxDecimals={2}
+                allowNegative={false}
               />
             </div>
           )}

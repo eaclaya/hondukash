@@ -5,7 +5,7 @@ import { QuoteService } from '@/lib/services/quoteService';
 // POST /api/quotes/[id]/convert - Convert a quote to an invoice
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const requestHeaders = await headers();
@@ -18,7 +18,8 @@ export async function POST(
 
     // Extract domain from host (remove port if present)
     const domain = host.split(':')[0];
-    const quoteId = parseInt(params.id);
+    const { id } = await params;
+    const quoteId = parseInt(id);
 
     if (isNaN(quoteId)) {
       return NextResponse.json({ error: 'Invalid quote ID' }, { status: 400 });

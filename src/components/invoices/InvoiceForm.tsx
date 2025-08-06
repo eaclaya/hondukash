@@ -9,8 +9,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Trash2, Calculator } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface InvoiceFormProps {
@@ -63,6 +64,7 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
   const [taxRates, setTaxRates] = useState<TaxRate[]>([]);
   const [defaultTaxRate, setDefaultTaxRate] = useState<TaxRate | null>(null);
   const [globalTaxRate, setGlobalTaxRate] = useState(0.15); // 15% default global tax rate
+  const [useGlobalTax, setUseGlobalTax] = useState(false); // Enable/disable global tax
 
   useEffect(() => {
     // Auto-focus client search on component mount
@@ -104,10 +106,76 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
 
   // Helper function to get default tax rate for a product
   const getProductTaxRate = (product: ProductWithInventory): number => {
+    if (useGlobalTax) {
+      return globalTaxRate;
+    }
     if (product.taxRate !== undefined) {
       return product.taxRate / 100; // Convert percentage to decimal
     }
     return globalTaxRate; // Use global rate as fallback
+  };
+
+  // Function to update all item taxes when global tax changes
+  const updateAllItemTaxes = (newGlobalTax: number) => {
+    if (!useGlobalTax) return;
+
+    const updatedItems = items.map(item => {
+      const { lineTotal, taxAmount, total } = calculateItemTotals(
+        item.quantity,
+        item.unitPrice,
+        newGlobalTax
+      );
+
+      return {
+        ...item,
+        taxRate: newGlobalTax,
+        taxAmount,
+        lineTotal,
+        total
+      };
+    });
+
+    setItems(updatedItems);
+  };
+
+  // Function to toggle global tax and update all items
+  const handleGlobalTaxToggle = (enabled: boolean) => {
+    setUseGlobalTax(enabled);
+
+    if (enabled) {
+      // Apply global tax to all items
+      updateAllItemTaxes(globalTaxRate);
+    } else {
+      // Revert to individual product tax rates
+      const updatedItems = items.map(item => {
+        const product = products.find(p => p.id === item.productId);
+        const taxRate = product?.taxRate !== undefined ? product.taxRate / 100 : (defaultTaxRate?.rate ? defaultTaxRate.rate / 100 : globalTaxRate);
+
+        const { lineTotal, taxAmount, total } = calculateItemTotals(
+          item.quantity,
+          item.unitPrice,
+          taxRate
+        );
+
+        return {
+          ...item,
+          taxRate,
+          taxAmount,
+          lineTotal,
+          total
+        };
+      });
+
+      setItems(updatedItems);
+    }
+  };
+
+  // Function to handle global tax rate change
+  const handleGlobalTaxChange = (newRate: number) => {
+    setGlobalTaxRate(newRate);
+    if (useGlobalTax) {
+      updateAllItemTaxes(newRate);
+    }
   };
 
   // Set initial selected client if editing
@@ -345,7 +413,7 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
       quantity: 1,
       unitPrice: 0,
       taxRateId: defaultTaxRate?.id,
-      taxRate: globalTaxRate,
+      taxRate: useGlobalTax ? globalTaxRate : (defaultTaxRate?.rate ? defaultTaxRate.rate / 100 : globalTaxRate),
       taxAmount: 0,
       lineTotal: 0,
       total: 0
@@ -435,9 +503,9 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
         {/* Basic Information */}
-        <Card>
+        <Card className="col-span-2">
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2 relative">
@@ -517,17 +585,31 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
               </div>
 
               <div className="space-y-2">
-                  <Label htmlFor="globalTaxRate">Global Tax(%)</Label>
+                <div className="flex items-center space-x-2 mb-2">
+                  <Checkbox
+                    id="useGlobalTax"
+                    checked={useGlobalTax}
+                    onCheckedChange={handleGlobalTaxToggle}
+                  />
+                  <Label htmlFor="useGlobalTax" className="text-sm font-medium">
+                    Global tax
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  {/* <Label htmlFor="globalTaxRate" className="text-sm">Global Tax (%):</Label> */}
                   <NumericInput
                     id="globalTaxRate"
                     value={(globalTaxRate * 100).toString()}
-                    onValueChange={(value) => setGlobalTaxRate((value || 0) / 100)}
+                    onValueChange={(value) => handleGlobalTaxChange((value || 0) / 100)}
                     allowDecimals={true}
                     maxDecimals={2}
                     allowNegative={false}
-                    className="w-24"
+                    className="w-20"
+                    disabled={!useGlobalTax}
                   />
+                  <span>%</span>
                 </div>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -562,7 +644,7 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
         </Card>
 
         {/* Quick Product Entry */}
-        <Card className="col-span-2 gap-3">
+        <Card className="col-span-3 gap-3">
           <CardHeader>
             <QuickProductEntry
               products={productResults}
@@ -648,13 +730,24 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
                 </TableBody>
               </Table>
             </div>
+            <div className="pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={addItem}
+                className="flex items-center gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Add Item
+              </Button>
+            </div>
           </CardContent>
 
         </Card>
 
 
         {/* Notes and Terms */}
-        <Card className="col-span-2">
+        <Card className="col-span-3">
           <CardHeader>
             <CardTitle>Additional Information</CardTitle>
           </CardHeader>

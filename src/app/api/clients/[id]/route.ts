@@ -7,9 +7,9 @@ import { UpdateClientRequest } from '@/lib/types';
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    const requestHeaders = headers();
+    const requestHeaders = await headers();
     const host = requestHeaders.get('host');
-    
+
     if (!host) {
       return NextResponse.json({ error: 'Host header is required' }, { status: 400 });
     }
@@ -17,13 +17,13 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     // Extract domain from host (remove port if present)
     const domain = host.split(':')[0];
     const clientId = parseInt(id);
-    
+
     if (isNaN(clientId)) {
       return NextResponse.json({ error: 'Invalid client ID' }, { status: 400 });
     }
-    
+
     const result = await ClientService.getClientById(domain, clientId);
-    
+
     if (!result.success) {
       return NextResponse.json({ error: result.error }, { status: 404 });
     }
@@ -39,9 +39,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    const requestHeaders = headers();
+    const requestHeaders = await headers();
     const host = requestHeaders.get('host');
-    
+
     if (!host) {
       return NextResponse.json({ error: 'Host header is required' }, { status: 400 });
     }
@@ -49,16 +49,16 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     // Extract domain from host (remove port if present)
     const domain = host.split(':')[0];
     const clientId = parseInt(id);
-    
+
     if (isNaN(clientId)) {
       return NextResponse.json({ error: 'Invalid client ID' }, { status: 400 });
     }
-    
+
     const body = await request.json();
     const updateData: UpdateClientRequest = { ...body, id: clientId };
 
     const result = await ClientService.updateClient(domain, updateData);
-    
+
     if (!result.success) {
       return NextResponse.json({ error: result.error }, { status: 400 });
     }
@@ -74,9 +74,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    const requestHeaders = headers();
+    const requestHeaders = await headers();
     const host = requestHeaders.get('host');
-    
+
     if (!host) {
       return NextResponse.json({ error: 'Host header is required' }, { status: 400 });
     }
@@ -84,13 +84,13 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     // Extract domain from host (remove port if present)
     const domain = host.split(':')[0];
     const clientId = parseInt(id);
-    
+
     if (isNaN(clientId)) {
       return NextResponse.json({ error: 'Invalid client ID' }, { status: 400 });
     }
-    
+
     const result = await ClientService.deleteClient(domain, clientId);
-    
+
     if (!result.success) {
       return NextResponse.json({ error: result.error }, { status: 400 });
     }

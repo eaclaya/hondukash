@@ -5,7 +5,7 @@ import { QuoteService } from '@/lib/services/quoteService';
 // GET /api/quotes/[id] - Get a specific quote
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const requestHeaders = await headers();
@@ -17,7 +17,8 @@ export async function GET(
 
     // Extract domain from host (remove port if present)
     const domain = host.split(':')[0];
-    const quoteId = parseInt(params.id);
+    const { id } = await params;
+    const quoteId = parseInt(id);
 
     if (isNaN(quoteId)) {
       return NextResponse.json({ error: 'Invalid quote ID' }, { status: 400 });
@@ -39,7 +40,7 @@ export async function GET(
 // PUT /api/quotes/[id] - Update a specific quote
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const requestHeaders = await headers();
@@ -52,7 +53,8 @@ export async function PUT(
 
     // Extract domain from host (remove port if present)
     const domain = host.split(':')[0];
-    const quoteId = parseInt(params.id);
+    const { id } = await params;
+    const quoteId = parseInt(id);
 
     if (isNaN(quoteId)) {
       return NextResponse.json({ error: 'Invalid quote ID' }, { status: 400 });
@@ -95,7 +97,7 @@ export async function PUT(
 // DELETE /api/quotes/[id] - Delete a specific quote
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const requestHeaders = await headers();
@@ -107,7 +109,8 @@ export async function DELETE(
 
     // Extract domain from host (remove port if present)
     const domain = host.split(':')[0];
-    const quoteId = parseInt(params.id);
+    const { id } = await params;
+    const quoteId = parseInt(id);
 
     if (isNaN(quoteId)) {
       return NextResponse.json({ error: 'Invalid quote ID' }, { status: 400 });

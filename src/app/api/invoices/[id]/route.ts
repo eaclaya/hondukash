@@ -3,7 +3,7 @@ import { headers } from 'next/headers';
 import { InvoiceService } from '@/lib/services/invoiceService';
 
 // GET /api/invoices/[id] - Get a single invoice
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const requestHeaders = await headers();
     const host = requestHeaders.get('host');
@@ -15,7 +15,8 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     // Extract domain from host (remove port if present)
     const domain = host.split(':')[0];
 
-    const invoiceId = parseInt(params.id);
+    const { id } = await params;
+    const invoiceId = parseInt(id);
     if (isNaN(invoiceId)) {
       return NextResponse.json({ error: 'Invalid invoice ID' }, { status: 400 });
     }
@@ -34,7 +35,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 }
 
 // PUT /api/invoices/[id] - Update an invoice
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const requestHeaders = await headers();
     const host = requestHeaders.get('host');
@@ -46,7 +47,8 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     // Extract domain from host (remove port if present)
     const domain = host.split(':')[0];
 
-    const invoiceId = parseInt(params.id);
+    const { id } = await params;
+    const invoiceId = parseInt(id);
     if (isNaN(invoiceId)) {
       return NextResponse.json({ error: 'Invalid invoice ID' }, { status: 400 });
     }
@@ -68,7 +70,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 }
 
 // DELETE /api/invoices/[id] - Delete an invoice
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const requestHeaders = await headers();
     const host = requestHeaders.get('host');
@@ -80,7 +82,8 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     // Extract domain from host (remove port if present)
     const domain = host.split(':')[0];
 
-    const invoiceId = parseInt(params.id);
+    const { id } = await params;
+    const invoiceId = parseInt(id);
     if (isNaN(invoiceId)) {
       return NextResponse.json({ error: 'Invalid invoice ID' }, { status: 400 });
     }
@@ -99,7 +102,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
 }
 
 // PATCH /api/invoices/[id] - Update invoice status
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const requestHeaders = await headers();
     const host = requestHeaders.get('host');
@@ -111,7 +114,8 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     // Extract domain from host (remove port if present)
     const domain = host.split(':')[0];
 
-    const invoiceId = parseInt(params.id);
+    const { id } = await params;
+    const invoiceId = parseInt(id);
     if (isNaN(invoiceId)) {
       return NextResponse.json({ error: 'Invalid invoice ID' }, { status: 400 });
     }

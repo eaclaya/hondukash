@@ -6,13 +6,14 @@ import { createInvoicePDF } from '@/components/pdf/InvoicePDF';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Verify authentication
     const session = requireTenantAuth(request);
 
-    const invoiceId = parseInt(params.id);
+    const { id } = await params;
+    const invoiceId = parseInt(id);
     if (isNaN(invoiceId)) {
       return NextResponse.json({ error: 'Invalid invoice ID' }, { status: 400 });
     }

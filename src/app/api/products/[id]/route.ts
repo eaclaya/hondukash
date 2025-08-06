@@ -3,7 +3,7 @@ import { headers } from 'next/headers';
 import { ProductService } from '@/lib/services/productService';
 
 // GET /api/products/[id] - Get a single product with inventory
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const requestHeaders = await headers();
     const host = requestHeaders.get('host');
@@ -25,7 +25,8 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ error: 'Store ID is required' }, { status: 400 });
     }
 
-    const productId = parseInt(params.id);
+    const { id } = await params;
+    const productId = parseInt(id);
     if (isNaN(productId)) {
       return NextResponse.json({ error: 'Invalid product ID' }, { status: 400 });
     }
@@ -44,7 +45,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 }
 
 // PUT /api/products/[id] - Update a product
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const requestHeaders = await headers();
     const host = requestHeaders.get('host');
@@ -62,7 +63,8 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ error: 'Store ID is required' }, { status: 400 });
     }
 
-    const productId = parseInt(params.id);
+    const { id } = await params;
+    const productId = parseInt(id);
     if (isNaN(productId)) {
       return NextResponse.json({ error: 'Invalid product ID' }, { status: 400 });
     }
@@ -84,7 +86,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 }
 
 // DELETE /api/products/[id] - Delete a product
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const requestHeaders = await headers();
     const host = requestHeaders.get('host');
@@ -96,7 +98,8 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     // Extract domain from host (remove port if present)
     const domain = host.split(':')[0];
 
-    const productId = parseInt(params.id);
+    const { id } = await params;
+    const productId = parseInt(id);
     if (isNaN(productId)) {
       return NextResponse.json({ error: 'Invalid product ID' }, { status: 400 });
     }

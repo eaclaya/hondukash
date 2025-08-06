@@ -6,13 +6,14 @@ import { createQuotePDF } from '@/components/pdf/QuotePDF';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Verify authentication
     const session = requireTenantAuth(request);
 
-    const quoteId = parseInt(params.id);
+    const { id } = await params;
+    const quoteId = parseInt(id);
     if (isNaN(quoteId)) {
       return NextResponse.json({ error: 'Invalid quote ID' }, { status: 400 });
     }

@@ -63,7 +63,6 @@ export class ClientService {
         phone: client.phone || undefined,
         mobile: client.mobile || undefined,
         companyRegistrationNumber: client.companyRegistrationNumber || undefined,
-        taxId: client.taxId || undefined,
         industry: client.industry || undefined,
         website: client.website || undefined,
         address: client.address || undefined,
@@ -120,7 +119,6 @@ export class ClientService {
         phone: client.phone || undefined,
         mobile: client.mobile || undefined,
         companyRegistrationNumber: client.companyRegistrationNumber || undefined,
-        taxId: client.taxId || undefined,
         industry: client.industry || undefined,
         website: client.website || undefined,
         address: client.address || undefined,
@@ -160,7 +158,6 @@ export class ClientService {
           phone: clientData.phone || null,
           mobile: clientData.mobile || null,
           companyRegistrationNumber: clientData.companyRegistrationNumber || null,
-          taxId: clientData.taxId || null,
           industry: clientData.industry || null,
           website: clientData.website || null,
           address: clientData.address || null,
@@ -222,7 +219,6 @@ export class ClientService {
       if (clientData.phone !== undefined) updateData.phone = clientData.phone;
       if (clientData.mobile !== undefined) updateData.mobile = clientData.mobile;
       if (clientData.companyRegistrationNumber !== undefined) updateData.companyRegistrationNumber = clientData.companyRegistrationNumber;
-      if (clientData.taxId !== undefined) updateData.taxId = clientData.taxId;
       if (clientData.industry !== undefined) updateData.industry = clientData.industry;
       if (clientData.website !== undefined) updateData.website = clientData.website;
       if (clientData.address !== undefined) updateData.address = clientData.address;

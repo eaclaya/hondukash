@@ -126,7 +126,7 @@ export interface CreateClientRequest {
   phone?: string;
   mobile?: string;
   companyRegistrationNumber?: string;
-  taxId?: string;
+  taxRateId?: number;
   industry?: string;
   website?: string;
   address?: string;
@@ -193,7 +193,6 @@ export interface Client {
 
   // Company-specific
   companyRegistrationNumber?: string;
-  taxId?: string;
   industry?: string;
   website?: string;
 

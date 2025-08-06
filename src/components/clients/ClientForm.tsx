@@ -49,7 +49,6 @@ export default function ClientForm({ client, onSubmit, onCancel, loading = false
     phone: client?.phone || '',
     mobile: client?.mobile || '',
     companyRegistrationNumber: client?.companyRegistrationNumber || '',
-    taxId: client?.taxId || '',
     industry: client?.industry || '',
     website: client?.website || '',
     address: client?.address || '',
@@ -95,7 +94,7 @@ export default function ClientForm({ client, onSubmit, onCancel, loading = false
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Convert local contact data to the format expected by the API
     const contactsData = contacts.map(contact => ({
       contactName: contact.contactName,
@@ -406,16 +405,6 @@ export default function ClientForm({ client, onSubmit, onCancel, loading = false
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="taxId">Tax ID</Label>
-                    <Input
-                      id="taxId"
-                      value={formData.taxId}
-                      onChange={(e) => handleInputChange('taxId', e.target.value)}
-                      placeholder="Enter tax ID"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
                     <Label htmlFor="industry">Industry</Label>
                     <Input
                       id="industry"
@@ -507,7 +496,7 @@ export default function ClientForm({ client, onSubmit, onCancel, loading = false
                           </Button>
                         </div>
                       </div>
-                      
+
                       <div className="grid grid-cols-2 gap-4 text-sm text-slate-600">
                         {contact.email && (
                           <div className="flex items-center space-x-2">

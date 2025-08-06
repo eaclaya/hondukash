@@ -1,13 +1,13 @@
 -- =========================================
--- HonduKash ERP - Tenant Schema (SQLite/Turso)
+-- HonduKash ERP - Tenant Schema (PostgreSQL/Neon)
 -- =========================================
--- This schema will be created for each tenant in their own Turso database
+-- This schema will be created for each tenant in their own Neon database
 
 -- =========================================
 -- STORES TABLE
 -- =========================================
 CREATE TABLE stores (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     name TEXT NOT NULL,
     code TEXT UNIQUE,
     description TEXT,
@@ -23,7 +23,7 @@ CREATE TABLE stores (
 
     -- Settings
     currency TEXT DEFAULT 'HNL',
-    tax_rate REAL DEFAULT 0.15, -- 15% default tax rate
+    tax_rate DECIMAL(5,4) DEFAULT 0.15, -- 15% default tax rate
     invoice_prefix TEXT DEFAULT 'F',
     invoice_counter INTEGER DEFAULT 1,
     quote_prefix TEXT DEFAULT 'C',
@@ -33,16 +33,16 @@ CREATE TABLE stores (
     invoice_sequence TEXT, -- JSON: {hash, sequence_start, sequence_end, limit_date, enabled}
 
     -- Metadata
-    is_active INTEGER NOT NULL DEFAULT 1 CHECK (is_active IN (0, 1)),
-    created_at TEXT NOT NULL DEFAULT (datetime('now', 'utc')),
-    updated_at TEXT NOT NULL DEFAULT (datetime('now', 'utc'))
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
 -- =========================================
 -- USERS TABLE (Store-level users)
 -- =========================================
 CREATE TABLE users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     email TEXT NOT NULL UNIQUE,
     password TEXT NOT NULL,
     name TEXT NOT NULL,
@@ -54,38 +54,38 @@ CREATE TABLE users (
     timezone TEXT DEFAULT 'America/Tegucigalpa',
 
     -- Metadata
-    is_active INTEGER NOT NULL DEFAULT 1 CHECK (is_active IN (0, 1)),
-    last_login_at TEXT,
-    created_at TEXT NOT NULL DEFAULT (datetime('now', 'utc')),
-    updated_at TEXT NOT NULL DEFAULT (datetime('now', 'utc'))
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    last_login_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
 -- =========================================
 -- MEMBERSHIPS TABLE
 -- =========================================
 CREATE TABLE memberships (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     store_id INTEGER NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
 
     role TEXT NOT NULL DEFAULT 'user',
 
-    created_at TEXT NOT NULL DEFAULT (datetime('now', 'utc')),
-    updated_at TEXT NOT NULL DEFAULT (datetime('now', 'utc'))
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
 -- =========================================
 -- CATEGORIES TABLE
 -- =========================================
 CREATE TABLE categories (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     name TEXT NOT NULL,
     description TEXT,
     parent_id INTEGER REFERENCES categories(id) ON DELETE SET NULL,
     sort_order INTEGER DEFAULT 0,
-    is_active INTEGER NOT NULL DEFAULT 1 CHECK (is_active IN (0, 1)),
-    created_at TEXT NOT NULL DEFAULT (datetime('now', 'utc')),
-    updated_at TEXT NOT NULL DEFAULT (datetime('now', 'utc'))
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
 
@@ -93,22 +93,22 @@ CREATE TABLE categories (
 -- TAX RATES
 -- =========================================
 CREATE TABLE tax_rates (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
 
     -- Tax details
     name TEXT NOT NULL,
     code TEXT NOT NULL,
-    rate REAL NOT NULL,
+    rate DECIMAL(5,4) NOT NULL,
     type TEXT NOT NULL CHECK (type IN ('sales', 'purchase', 'both')),
 
     -- Settings
-    is_default INTEGER DEFAULT 0 CHECK (is_default IN (0, 1)),
-    is_active INTEGER NOT NULL DEFAULT 1 CHECK (is_active IN (0, 1)),
+    is_default BOOLEAN DEFAULT FALSE,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
 
     -- Metadata
     description TEXT,
-    created_at TEXT NOT NULL DEFAULT (datetime('now', 'utc')),
-    updated_at TEXT NOT NULL DEFAULT (datetime('now', 'utc'))
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
 
@@ -116,7 +116,7 @@ CREATE TABLE tax_rates (
 -- PRODUCTS TABLE
 -- =========================================
 CREATE TABLE products (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     name TEXT NOT NULL,
     description TEXT,
     sku TEXT UNIQUE,
@@ -124,49 +124,49 @@ CREATE TABLE products (
     category_id INTEGER REFERENCES categories(id) ON DELETE SET NULL,
 
     -- Pricing and Costing
-    base_cost REAL DEFAULT 0,              -- Original purchase/manufacturing cost
-    cost REAL DEFAULT 0,                   -- Current replacement cost (for inventory valuation)
-    base_price REAL DEFAULT 0,             -- Suggested retail price (before discounts)
-    price REAL NOT NULL,                   -- Current selling price (what customer pays)
-    min_price REAL DEFAULT 0,              -- Minimum selling price allowed
+    base_cost DECIMAL(10,2) DEFAULT 0,              -- Original purchase/manufacturing cost
+    cost DECIMAL(10,2) DEFAULT 0,                   -- Current replacement cost (for inventory valuation)
+    base_price DECIMAL(10,2) DEFAULT 0,             -- Suggested retail price (before discounts)
+    price DECIMAL(10,2) NOT NULL,                   -- Current selling price (what customer pays)
+    min_price DECIMAL(10,2) DEFAULT 0,              -- Minimum selling price allowed
 
     -- Inventory
-    track_inventory INTEGER NOT NULL DEFAULT 1 CHECK (track_inventory IN (0, 1)),
+    track_inventory BOOLEAN NOT NULL DEFAULT TRUE,
     unit TEXT DEFAULT 'unit',
 
     -- Tax configuration
-    is_taxable INTEGER NOT NULL DEFAULT 1 CHECK (is_taxable IN (0, 1)),
+    is_taxable BOOLEAN NOT NULL DEFAULT TRUE,
     tax_rate_id INTEGER REFERENCES tax_rates(id),
-    tax_rate REAL, -- Kept for backward compatibility, but use tax_rate_id
+    tax_rate DECIMAL(5,4), -- Kept for backward compatibility, but use tax_rate_id
 
     -- Images and files
     image_url TEXT,
     images TEXT DEFAULT '[]',
 
     -- Metadata
-    is_active INTEGER NOT NULL DEFAULT 1 CHECK (is_active IN (0, 1)),
-    created_at TEXT NOT NULL DEFAULT (datetime('now', 'utc')),
-    updated_at TEXT NOT NULL DEFAULT (datetime('now', 'utc'))
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
 -- =========================================
 -- INVENTORY TABLE
 -- =========================================
 CREATE TABLE inventory (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
     store_id INTEGER NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
 
     -- Stock levels
-    quantity REAL NOT NULL DEFAULT 0,
-    price REAL NOT NULL DEFAULT 0,
+    quantity DECIMAL(10,2) NOT NULL DEFAULT 0,
+    price DECIMAL(10,2) NOT NULL DEFAULT 0,
 
     -- Location
     location TEXT, -- Aisle, bin, etc.
 
     -- Metadata
-    created_at TEXT NOT NULL DEFAULT (datetime('now', 'utc')),
-    updated_at TEXT NOT NULL DEFAULT (datetime('now', 'utc')),
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
 
     UNIQUE(product_id, store_id)
 );
@@ -175,7 +175,7 @@ CREATE TABLE inventory (
 -- CLIENTS TABLE
 -- =========================================
 CREATE TABLE clients (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     store_id INTEGER NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
 
     -- Basic info
@@ -201,22 +201,22 @@ CREATE TABLE clients (
     postal_code TEXT,
 
     -- Business settings
-    credit_limit REAL DEFAULT 0,
+    credit_limit DECIMAL(10,2) DEFAULT 0,
     payment_terms INTEGER DEFAULT 30, -- days
-    discount_percentage REAL DEFAULT 0, -- Default discount for this client
+    discount_percentage DECIMAL(5,2) DEFAULT 0, -- Default discount for this client
 
     -- Metadata
     notes TEXT,
-    is_active INTEGER NOT NULL DEFAULT 1 CHECK (is_active IN (0, 1)),
-    created_at TEXT NOT NULL DEFAULT (datetime('now', 'utc')),
-    updated_at TEXT NOT NULL DEFAULT (datetime('now', 'utc'))
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
 -- =========================================
 -- CLIENT CONTACTS TABLE
 -- =========================================
 CREATE TABLE client_contacts (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     client_id INTEGER NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
 
     -- Contact details
@@ -242,9 +242,9 @@ CREATE TABLE client_contacts (
     )),
 
     -- Purchase permissions
-    can_make_purchases INTEGER DEFAULT 1 CHECK (can_make_purchases IN (0, 1)),
-    purchase_limit REAL, -- Maximum amount this contact can authorize
-    requires_approval INTEGER DEFAULT 0 CHECK (requires_approval IN (0, 1)), -- Does this contact need approval for purchases?
+    can_make_purchases BOOLEAN DEFAULT TRUE,
+    purchase_limit DECIMAL(10,2), -- Maximum amount this contact can authorize
+    requires_approval BOOLEAN DEFAULT FALSE, -- Does this contact need approval for purchases?
 
     -- Contact preferences
     preferred_contact_method TEXT DEFAULT 'email' CHECK (preferred_contact_method IN ('email', 'phone', 'mobile')),
@@ -252,159 +252,159 @@ CREATE TABLE client_contacts (
     timezone TEXT DEFAULT 'America/Tegucigalpa',
 
     -- Status
-    is_primary INTEGER DEFAULT 0 CHECK (is_primary IN (0, 1)), -- Is this the primary contact?
-    is_active INTEGER NOT NULL DEFAULT 1 CHECK (is_active IN (0, 1)),
+    is_primary BOOLEAN DEFAULT FALSE, -- Is this the primary contact?
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
 
     -- Metadata
     notes TEXT,
-    created_at TEXT NOT NULL DEFAULT (datetime('now', 'utc')),
-    updated_at TEXT NOT NULL DEFAULT (datetime('now', 'utc'))
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
 -- =========================================
 -- INVOICES TABLE
 -- =========================================
 CREATE TABLE invoices (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     store_id INTEGER NOT NULL REFERENCES stores(id) ON DELETE RESTRICT,
     client_id INTEGER NOT NULL REFERENCES clients(id) ON DELETE RESTRICT,
     user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
 
     -- Invoice details
     invoice_number TEXT NOT NULL,
-    invoice_date TEXT NOT NULL DEFAULT (date('now')),
-    due_date TEXT,
+    invoice_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    due_date DATE,
 
     -- Contact info at time of invoice (for historical record)
     client_name TEXT, -- Name of client who made purchase
 
     -- Amounts
-    subtotal REAL NOT NULL DEFAULT 0,
-    tax_amount REAL NOT NULL DEFAULT 0,
-    discount_amount REAL NOT NULL DEFAULT 0,
-    total_amount REAL NOT NULL DEFAULT 0,
+    subtotal DECIMAL(10,2) NOT NULL DEFAULT 0,
+    tax_amount DECIMAL(10,2) NOT NULL DEFAULT 0,
+    discount_amount DECIMAL(10,2) NOT NULL DEFAULT 0,
+    total_amount DECIMAL(10,2) NOT NULL DEFAULT 0,
 
     -- Status
     status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'sent', 'paid', 'partial', 'overdue', 'cancelled')),
 
     -- Payment
-    paid_amount REAL NOT NULL DEFAULT 0,
-    balance_due REAL GENERATED ALWAYS AS (total_amount - paid_amount) STORED,
+    paid_amount DECIMAL(10,2) NOT NULL DEFAULT 0,
+    balance_due DECIMAL(10,2) GENERATED ALWAYS AS (total_amount - paid_amount) STORED,
 
     -- Additional info
     notes TEXT,
     terms TEXT,
 
     -- Metadata
-    created_at TEXT NOT NULL DEFAULT (datetime('now', 'utc')),
-    updated_at TEXT NOT NULL DEFAULT (datetime('now', 'utc'))
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
 -- =========================================
 -- INVOICE ITEMS TABLE
 -- =========================================
 CREATE TABLE invoice_items (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     invoice_id INTEGER NOT NULL REFERENCES invoices(id) ON DELETE CASCADE,
     product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE RESTRICT,
 
     -- Item details
     description TEXT NOT NULL,
-    quantity REAL NOT NULL,
-    unit_price REAL NOT NULL,
+    quantity DECIMAL(10,2) NOT NULL,
+    unit_price DECIMAL(10,2) NOT NULL,
 
     -- Calculated fields
-    line_total REAL NOT NULL,
+    line_total DECIMAL(10,2) NOT NULL,
 
     -- Tax
-    tax_rate REAL DEFAULT 0,
-    tax_amount REAL NOT NULL,
+    tax_rate DECIMAL(5,4) DEFAULT 0,
+    tax_amount DECIMAL(10,2) NOT NULL,
 
     -- Metadata
     sort_order INTEGER DEFAULT 0,
-    created_at TEXT NOT NULL DEFAULT (datetime('now', 'utc'))
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
 -- =========================================
 -- QUOTES TABLE
 -- =========================================
 CREATE TABLE quotes (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     store_id INTEGER NOT NULL REFERENCES stores(id) ON DELETE RESTRICT,
     client_id INTEGER NOT NULL REFERENCES clients(id) ON DELETE RESTRICT,
     user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
 
     -- Quote details
     quote_number TEXT NOT NULL UNIQUE,
-    quote_date TEXT NOT NULL DEFAULT (date('now')),
-    valid_until TEXT,
+    quote_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    valid_until DATE,
 
     -- Contact info at time of quote (for historical record)
     client_name TEXT, -- Name of client who requested quote
 
     -- Amounts
-    subtotal REAL NOT NULL DEFAULT 0,
-    tax_amount REAL NOT NULL DEFAULT 0,
-    discount_amount REAL NOT NULL DEFAULT 0,
-    total_amount REAL NOT NULL DEFAULT 0,
+    subtotal DECIMAL(10,2) NOT NULL DEFAULT 0,
+    tax_amount DECIMAL(10,2) NOT NULL DEFAULT 0,
+    discount_amount DECIMAL(10,2) NOT NULL DEFAULT 0,
+    total_amount DECIMAL(10,2) NOT NULL DEFAULT 0,
 
     -- Status
     status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'sent', 'accepted', 'declined', 'expired', 'converted')),
 
     -- Conversion tracking
     converted_to_invoice_id INTEGER REFERENCES invoices(id) ON DELETE SET NULL,
-    converted_at TEXT,
+    converted_at TIMESTAMP WITH TIME ZONE,
 
     -- Additional info
     notes TEXT,
     terms TEXT,
 
     -- Metadata
-    created_at TEXT NOT NULL DEFAULT (datetime('now', 'utc')),
-    updated_at TEXT NOT NULL DEFAULT (datetime('now', 'utc'))
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
 -- =========================================
 -- QUOTE ITEMS TABLE
 -- =========================================
 CREATE TABLE quote_items (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     quote_id INTEGER NOT NULL REFERENCES quotes(id) ON DELETE CASCADE,
     product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE RESTRICT,
 
     -- Item details
     description TEXT NOT NULL,
-    quantity REAL NOT NULL,
-    unit_price REAL NOT NULL,
+    quantity DECIMAL(10,2) NOT NULL,
+    unit_price DECIMAL(10,2) NOT NULL,
 
     -- Calculated fields
-    line_total REAL NOT NULL,
+    line_total DECIMAL(10,2) NOT NULL,
 
     -- Tax
-    tax_rate REAL DEFAULT 0,
-    tax_amount REAL DEFAULT 0,
+    tax_rate DECIMAL(5,4) DEFAULT 0,
+    tax_amount DECIMAL(10,2) DEFAULT 0,
 
     -- Metadata
     sort_order INTEGER DEFAULT 0,
-    created_at TEXT NOT NULL DEFAULT (datetime('now', 'utc'))
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
 -- =========================================
 -- INVENTORY MOVEMENTS TABLE
 -- =========================================
 CREATE TABLE inventory_movements (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
     store_id INTEGER NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
     user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
 
     -- Movement details
     movement_type TEXT NOT NULL CHECK (movement_type IN ('in', 'out', 'adjustment', 'transfer')),
-    quantity REAL NOT NULL,
-    previous_quantity REAL NOT NULL,
-    new_quantity REAL NOT NULL,
-    unit_cost REAL,
-    total_value REAL,
+    quantity DECIMAL(10,2) NOT NULL,
+    previous_quantity DECIMAL(10,2) NOT NULL,
+    new_quantity DECIMAL(10,2) NOT NULL,
+    unit_cost DECIMAL(10,2),
+    total_value DECIMAL(10,2),
     notes TEXT,
 
     -- References
@@ -417,23 +417,23 @@ CREATE TABLE inventory_movements (
     to_store_id INTEGER REFERENCES stores(id) ON DELETE SET NULL,
 
     -- Metadata
-    created_at TEXT NOT NULL DEFAULT (datetime('now', 'utc')),
-    updated_at TEXT NOT NULL DEFAULT (datetime('now', 'utc'))
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
 -- =========================================
 -- TRANSFERS TABLE
 -- =========================================
 CREATE TABLE transfers (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     from_store_id INTEGER NOT NULL REFERENCES stores(id) ON DELETE RESTRICT,
     to_store_id INTEGER NOT NULL REFERENCES stores(id) ON DELETE RESTRICT,
     user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
 
     -- Transfer details
     transfer_number TEXT NOT NULL UNIQUE,
-    transfer_date TEXT NOT NULL DEFAULT (date('now')),
-    expected_date TEXT,
+    transfer_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    expected_date DATE,
 
     -- Status
     status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'in_transit', 'completed', 'cancelled')),
@@ -442,40 +442,40 @@ CREATE TABLE transfers (
     notes TEXT,
 
     -- Metadata
-    created_at TEXT NOT NULL DEFAULT (datetime('now', 'utc')),
-    updated_at TEXT NOT NULL DEFAULT (datetime('now', 'utc'))
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
 -- =========================================
 -- TRANSFER ITEMS TABLE
 -- =========================================
 CREATE TABLE transfer_items (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     transfer_id INTEGER NOT NULL REFERENCES transfers(id) ON DELETE CASCADE,
     product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE RESTRICT,
 
     -- Quantities
-    requested_quantity REAL NOT NULL,
-    sent_quantity REAL DEFAULT 0,
-    received_quantity REAL DEFAULT 0,
+    requested_quantity DECIMAL(10,2) NOT NULL,
+    sent_quantity DECIMAL(10,2) DEFAULT 0,
+    received_quantity DECIMAL(10,2) DEFAULT 0,
 
     -- Metadata
-    created_at TEXT NOT NULL DEFAULT (datetime('now', 'utc')),
-    updated_at TEXT NOT NULL DEFAULT (datetime('now', 'utc'))
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
 -- =========================================
 -- PAYMENTS TABLE
 -- =========================================
 CREATE TABLE payments (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     invoice_id INTEGER NOT NULL REFERENCES invoices(id) ON DELETE RESTRICT,
     store_id INTEGER NOT NULL REFERENCES stores(id) ON DELETE RESTRICT,
     user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
 
     -- Payment details
-    payment_date TEXT NOT NULL DEFAULT (date('now')),
-    amount REAL NOT NULL,
+    payment_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    amount DECIMAL(10,2) NOT NULL,
     payment_method TEXT NOT NULL DEFAULT 'cash',
     reference_number TEXT,
 
@@ -483,7 +483,7 @@ CREATE TABLE payments (
     notes TEXT,
 
     -- Metadata
-    created_at TEXT NOT NULL DEFAULT (datetime('now', 'utc'))
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
 -- =========================================
@@ -492,7 +492,7 @@ CREATE TABLE payments (
 -- Flexible tagging system for entities (clients, products, etc.)
 
 CREATE TABLE tags (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     store_id INTEGER NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
 
     -- Tag details
@@ -511,19 +511,19 @@ CREATE TABLE tags (
     )),
 
     -- Tag settings
-    is_active INTEGER NOT NULL DEFAULT 1 CHECK (is_active IN (0, 1)),
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
     sort_order INTEGER DEFAULT 0,
 
     -- Metadata
-    created_at TEXT NOT NULL DEFAULT (datetime('now', 'utc')),
-    updated_at TEXT NOT NULL DEFAULT (datetime('now', 'utc')),
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
 
     UNIQUE(name)
 );
 
 -- Entity Tags (Polymorphic Relationship)
 CREATE TABLE taggable (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     tag_id INTEGER NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
 
     -- Polymorphic relationship
@@ -539,11 +539,11 @@ CREATE TABLE taggable (
     entity_id INTEGER NOT NULL,
 
     -- Assignment details
-    assigned_at TEXT NOT NULL DEFAULT (datetime('now', 'utc')),
+    assigned_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     assigned_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
 
     -- Metadata
-    created_at TEXT NOT NULL DEFAULT (datetime('now', 'utc')),
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
 
     UNIQUE(tag_id, entity_type, entity_id)
 );
@@ -553,7 +553,7 @@ CREATE TABLE taggable (
 -- =========================================
 
 CREATE TABLE pricing_rules (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     store_id INTEGER NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
 
     -- Rule identification
@@ -572,19 +572,19 @@ CREATE TABLE pricing_rules (
     priority INTEGER NOT NULL DEFAULT 0, -- Higher number = higher priority
 
     -- Discount values
-    discount_percentage REAL DEFAULT 0,     -- 15.50 = 15.5%
-    discount_amount REAL DEFAULT 0,        -- Fixed amount off
-    fixed_price REAL DEFAULT 0,            -- Set specific price
+    discount_percentage DECIMAL(5,2) DEFAULT 0,     -- 15.50 = 15.5%
+    discount_amount DECIMAL(10,2) DEFAULT 0,        -- Fixed amount off
+    fixed_price DECIMAL(10,2) DEFAULT 0,            -- Set specific price
 
     -- Buy X Get Y settings
     buy_quantity INTEGER DEFAULT 0,                 -- Buy X items
     get_quantity INTEGER DEFAULT 0,                 -- Get Y items free/discounted
-    get_discount_percentage REAL DEFAULT 0, -- Discount on Y items
+    get_discount_percentage DECIMAL(5,2) DEFAULT 0, -- Discount on Y items
 
     -- Rule status and dates
-    is_active INTEGER NOT NULL DEFAULT 1 CHECK (is_active IN (0, 1)),
-    start_date TEXT,
-    end_date TEXT,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    start_date DATE,
+    end_date DATE,
 
     -- Usage limits
     usage_limit INTEGER, -- Total times rule can be used
@@ -592,15 +592,15 @@ CREATE TABLE pricing_rules (
     usage_limit_per_customer INTEGER, -- Per customer limit
 
     -- Metadata
-    created_at TEXT NOT NULL DEFAULT (datetime('now', 'utc')),
-    updated_at TEXT NOT NULL DEFAULT (datetime('now', 'utc')),
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
 
     UNIQUE(store_id, rule_code)
 );
 
 -- Rule Conditions
 CREATE TABLE rule_conditions (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     pricing_rule_id INTEGER NOT NULL REFERENCES pricing_rules(id) ON DELETE CASCADE,
 
     -- Condition details
@@ -629,22 +629,22 @@ CREATE TABLE rule_conditions (
 
     -- Condition values
     value_text TEXT,        -- For text comparisons
-    value_number REAL,     -- For numeric comparisons
+    value_number DECIMAL(10,2),     -- For numeric comparisons
     value_array TEXT,      -- For IN/NOT IN operations (tag slugs, etc.) - JSON array
-    value_start REAL,      -- For BETWEEN operations
-    value_end REAL,        -- For BETWEEN operations
+    value_start DECIMAL(10,2),      -- For BETWEEN operations
+    value_end DECIMAL(10,2),        -- For BETWEEN operations
 
     -- Logical operators
     logical_operator TEXT DEFAULT 'AND' CHECK (logical_operator IN ('AND', 'OR')),
     condition_group INTEGER DEFAULT 1, -- Group conditions together
 
     -- Metadata
-    created_at TEXT NOT NULL DEFAULT (datetime('now', 'utc'))
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
 -- Rule Targets
 CREATE TABLE rule_targets (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     pricing_rule_id INTEGER NOT NULL REFERENCES pricing_rules(id) ON DELETE CASCADE,
 
     -- Target type
@@ -663,44 +663,44 @@ CREATE TABLE rule_targets (
     target_tags TEXT,             -- JSON array of tag slugs for tag-based targeting
 
     -- Metadata
-    created_at TEXT NOT NULL DEFAULT (datetime('now', 'utc'))
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
 -- Discount Usage Tracking
 CREATE TABLE discount_usage (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     pricing_rule_id INTEGER NOT NULL REFERENCES pricing_rules(id) ON DELETE CASCADE,
     invoice_id INTEGER NOT NULL REFERENCES invoices(id) ON DELETE CASCADE,
     client_id INTEGER REFERENCES clients(id) ON DELETE SET NULL,
 
     -- Usage details
-    discount_amount REAL NOT NULL,
-    original_amount REAL NOT NULL,
-    final_amount REAL NOT NULL,
+    discount_amount DECIMAL(10,2) NOT NULL,
+    original_amount DECIMAL(10,2) NOT NULL,
+    final_amount DECIMAL(10,2) NOT NULL,
 
     -- Applied items
     applied_items TEXT, -- JSON details of which items got the discount
 
     -- Metadata
-    created_at TEXT NOT NULL DEFAULT (datetime('now', 'utc'))
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
 -- Quantity Price Tiers
 CREATE TABLE quantity_price_tiers (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     pricing_rule_id INTEGER NOT NULL REFERENCES pricing_rules(id) ON DELETE CASCADE,
 
     -- Tier definition
-    min_quantity REAL NOT NULL,
-    max_quantity REAL, -- NULL = no upper limit
+    min_quantity DECIMAL(10,2) NOT NULL,
+    max_quantity DECIMAL(10,2), -- NULL = no upper limit
 
     -- Pricing
-    tier_price REAL,           -- Fixed price per unit
-    tier_discount_percentage REAL, -- Percentage discount
-    tier_discount_amount REAL,    -- Fixed amount discount per unit
+    tier_price DECIMAL(10,2),           -- Fixed price per unit
+    tier_discount_percentage DECIMAL(5,2), -- Percentage discount
+    tier_discount_amount DECIMAL(10,2),    -- Fixed amount discount per unit
 
     -- Metadata
-    created_at TEXT NOT NULL DEFAULT (datetime('now', 'utc'))
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
 -- =========================================

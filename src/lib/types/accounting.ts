@@ -89,7 +89,7 @@ export interface Supplier {
   state?: string
   country: string
   postalCode?: string
-  taxId?: string
+  taxRateId?: number
   registrationNumber?: string
   paymentTerms: number
   creditLimit: number
@@ -311,7 +311,7 @@ export interface CreateSupplierRequest {
   address?: string
   city?: string
   country?: string
-  taxId?: string
+  taxRateId?: number
   paymentTerms?: number
   creditLimit?: number
 }

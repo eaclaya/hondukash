@@ -7,16 +7,16 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  ArrowLeft, 
-  Edit, 
-  Trash2, 
-  Building, 
-  User, 
-  Mail, 
-  Phone, 
-  MapPin, 
-  CreditCard, 
+import {
+  ArrowLeft,
+  Edit,
+  Trash2,
+  Building,
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  CreditCard,
   Calendar,
   Globe,
   FileText,
@@ -315,12 +315,6 @@ export default function ClientDetailsPage() {
                     <div>
                       <p className="text-sm text-slate-600 mb-1">Registration Number</p>
                       <p className="font-medium text-slate-900">{client.companyRegistrationNumber}</p>
-                    </div>
-                  )}
-                  {client.taxId && (
-                    <div>
-                      <p className="text-sm text-slate-600 mb-1">Tax ID</p>
-                      <p className="font-medium text-slate-900">{client.taxId}</p>
                     </div>
                   )}
                   {client.industry && (

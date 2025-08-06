@@ -193,7 +193,6 @@ export const clients = sqliteTable('clients', {
 
   // Company-specific information
   companyRegistrationNumber: text('company_registration_number'), // For companies
-  taxId: text('tax_id'),
   industry: text('industry'),
   website: text('website'),
 

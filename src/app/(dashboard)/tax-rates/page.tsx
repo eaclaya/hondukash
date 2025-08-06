@@ -11,9 +11,11 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Plus, Edit, Trash2, Percent } from 'lucide-react';
-import { TaxRate, TaxRateService, CreateTaxRateRequest, UpdateTaxRateRequest } from '@/lib/services/taxRateService';
+import { TaxRate, CreateTaxRateRequest, UpdateTaxRateRequest } from '@/lib/services/taxRateService';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function TaxRatesPage() {
+  const { getAuthHeaders } = useAuth();
   const [taxRates, setTaxRates] = useState<TaxRate[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -35,11 +37,15 @@ export default function TaxRatesPage() {
   const loadTaxRates = async () => {
     try {
       setLoading(true);
-      const domain = window.location.hostname.split('.')[0];
-      const result = await TaxRateService.getAllTaxRates(domain);
-      
-      if (result.success && result.data) {
-        setTaxRates(result.data);
+      const response = await fetch('/api/tenant/tax-rates', {
+        headers: await getAuthHeaders()
+      });
+
+      if (response.ok) {
+        const taxRatesData = await response.json();
+        setTaxRates(taxRatesData);
+      } else {
+        console.error('Failed to fetch tax rates:', response.statusText);
       }
     } catch (error: unknown) {
       console.error('Error loading tax rates:', error);
@@ -57,10 +63,8 @@ export default function TaxRatesPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
-      const domain = window.location.hostname.split('.')[0];
-      
       // Convert percentage to decimal before submitting
       const submitData = {
         name: formData.name,
@@ -70,23 +74,38 @@ export default function TaxRatesPage() {
         isDefault: formData.isDefault,
         description: formData.description
       };
-      
+
       if (editingTaxRate) {
-        const result = await TaxRateService.updateTaxRate(domain, {
-          ...submitData,
-          id: editingTaxRate.id
-        } as UpdateTaxRateRequest);
-        
-        if (result.success) {
+        const response = await fetch(`/api/tenant/tax-rates/${editingTaxRate.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(await getAuthHeaders())
+          },
+          body: JSON.stringify(submitData)
+        });
+
+        if (response.ok) {
           await loadTaxRates();
           resetForm();
+        } else {
+          console.error('Failed to update tax rate:', response.statusText);
         }
       } else {
-        const result = await TaxRateService.createTaxRate(domain, submitData);
-        
-        if (result.success) {
+        const response = await fetch('/api/tenant/tax-rates', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(await getAuthHeaders())
+          },
+          body: JSON.stringify(submitData)
+        });
+
+        if (response.ok) {
           await loadTaxRates();
           resetForm();
+        } else {
+          console.error('Failed to create tax rate:', response.statusText);
         }
       }
     } catch (error: unknown) {
@@ -114,11 +133,15 @@ export default function TaxRatesPage() {
     }
 
     try {
-      const domain = window.location.hostname.split('.')[0];
-      const result = await TaxRateService.deleteTaxRate(domain, taxRateId);
-      
-      if (result.success) {
+      const response = await fetch(`/api/tenant/tax-rates/${taxRateId}`, {
+        method: 'DELETE',
+        headers: await getAuthHeaders()
+      });
+
+      if (response.ok) {
         await loadTaxRates();
+      } else {
+        console.error('Failed to delete tax rate:', response.statusText);
       }
     } catch (error: unknown) {
       console.error('Error deleting tax rate:', error);
@@ -144,13 +167,13 @@ export default function TaxRatesPage() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-6">
+    <div className="max-w-2xl mx-auto w-full p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Tax Rates</h1>
           <p className="text-slate-600">Manage tax rates for your organization</p>
         </div>
-        
+
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button onClick={() => resetForm()} className="btn-primary-modern">
@@ -164,7 +187,7 @@ export default function TaxRatesPage() {
                 {editingTaxRate ? 'Edit Tax Rate' : 'Create New Tax Rate'}
               </DialogTitle>
             </DialogHeader>
-            
+
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Name *</Label>
@@ -295,7 +318,7 @@ export default function TaxRatesPage() {
                         )}
                       </div>
                     </div>
-                    
+
                     <div className="flex items-center space-x-2">
                       <Button
                         variant="outline"

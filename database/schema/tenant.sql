@@ -684,7 +684,6 @@ CREATE TABLE quantity_price_tiers (
 -- =========================================
 CREATE TABLE tax_rates (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    store_id INTEGER NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
 
     -- Tax details
     name TEXT NOT NULL,
@@ -699,9 +698,7 @@ CREATE TABLE tax_rates (
     -- Metadata
     description TEXT,
     created_at TEXT NOT NULL DEFAULT (datetime('now', 'utc')),
-    updated_at TEXT NOT NULL DEFAULT (datetime('now', 'utc')),
-
-    UNIQUE(store_id, code)
+    updated_at TEXT NOT NULL DEFAULT (datetime('now', 'utc'))
 );
 
 -- =========================================

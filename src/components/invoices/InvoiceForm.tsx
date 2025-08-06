@@ -70,7 +70,7 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
     if (clientInput) {
       clientInput.focus();
     }
-    
+
     // Fetch tax rates
     fetchTaxRates();
   }, []);
@@ -267,7 +267,7 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
         item.unitPrice,
         item.taxRate
       );
-      
+
       newItems[index].lineTotal = lineTotal;
       newItems[index].taxAmount = taxAmount;
       newItems[index].total = total;
@@ -284,7 +284,7 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
           unitPrice,
           taxRate
         );
-        
+
         newItems[index].productName = product.name;
         newItems[index].unitPrice = unitPrice;
         newItems[index].taxRateId = product.taxRateId;
@@ -423,16 +423,8 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-slate-900">
-            {invoice ? 'Edit Invoice' : 'Create New Invoice'}
-          </h1>
-          <p className="text-slate-600">
-            {invoice ? 'Update invoice details and line items' : 'Create a new invoice for your client'}
-          </p>
-        </div>
+    <div className="max-w-6xl mx-auto relative pb-16">
+      <div className="flex items-center justify-end fixed bottom-0 left-0 right-0 bg-white p-4 z-50 shadow-inner">
         <div className="flex space-x-3">
           <Button variant="outline" onClick={onCancel} disabled={loading}>
             Cancel
@@ -443,7 +435,7 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {/* Basic Information */}
         <Card>
           <CardContent className="space-y-4">
@@ -497,6 +489,7 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
                 <Select
                   value={formData.status}
                   onValueChange={(value) => handleInputChange('status', value)}
+                  disabled
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select status" />
@@ -519,15 +512,57 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
                   type="date"
                   value={formData.invoiceDate}
                   onChange={(e) => handleInputChange('invoiceDate', e.target.value)}
-                  required
+                  disabled
                 />
+              </div>
+
+              <div className="space-y-2">
+                  <Label htmlFor="globalTaxRate">Global Tax(%)</Label>
+                  <NumericInput
+                    id="globalTaxRate"
+                    value={(globalTaxRate * 100).toString()}
+                    onValueChange={(value) => setGlobalTaxRate((value || 0) / 100)}
+                    allowDecimals={true}
+                    maxDecimals={2}
+                    allowNegative={false}
+                    className="w-24"
+                  />
+                </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Totals */}
+        <Card className='py-4 gap-2'>
+
+          <CardContent>
+            <div className="space-y-4">
+              <div className="pt-4">
+                <div className="space-y-3">
+                  <div className="flex justify-between text-sm">
+                    <span>Subtotal:</span>
+                    <span>{formatCurrency(totals.subtotal)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>Tax (per item):</span>
+                    <span>{formatCurrency(totals.tax)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>Discount:</span>
+                    <span>{formatCurrency(totals.discount)}</span>
+                  </div>
+                  <div className="flex justify-between text-lg font-bold border-t pt-3">
+                    <span>Total:</span>
+                    <span>{formatCurrency(totals.total)}</span>
+                  </div>
+                </div>
               </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Quick Product Entry */}
-        <Card>
+        <Card className="col-span-2 gap-3">
           <CardHeader>
             <QuickProductEntry
               products={productResults}
@@ -546,7 +581,6 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
                     <TableHead>Product</TableHead>
                     <TableHead>Quantity</TableHead>
                     <TableHead>Unit Price</TableHead>
-                    <TableHead>Tax Rate</TableHead>
                     <TableHead>Tax Amount</TableHead>
                     <TableHead>Total</TableHead>
                     <TableHead></TableHead>
@@ -582,23 +616,12 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
                           allowDecimals={true}
                           maxDecimals={2}
                           allowNegative={false}
-                          className="w-24"
+                          className="w-24 disabled:opacity-100"
+                          disabled
                         />
                       </TableCell>
                       <TableCell>
-                        <NumericInput
-                          value={(item.taxRate * 100).toString()}
-                          onValueChange={(value) => handleItemChange(index, 'taxRate', (value || 0) / 100)}
-                          allowDecimals={true}
-                          maxDecimals={2}
-                          allowNegative={false}
-                          className="w-20"
-                          placeholder="0.00"
-                        />
-                        <span className="text-xs text-muted-foreground ml-1">%</span>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm text-muted-foreground">
+                        <div className="text-sm ">
                           {formatCurrency(item.taxAmount)}
                         </div>
                       </TableCell>
@@ -629,58 +652,9 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
 
         </Card>
 
-        {/* Totals */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Calculator className="h-5 w-5" />
-              <span>Invoice Summary</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="globalTaxRate">Global Tax Rate (%)</Label>
-                  <NumericInput
-                    id="globalTaxRate"
-                    value={(globalTaxRate * 100).toString()}
-                    onValueChange={(value) => setGlobalTaxRate((value || 0) / 100)}
-                    allowDecimals={true}
-                    maxDecimals={2}
-                    allowNegative={false}
-                    className="w-24"
-                  />
-                  <p className="text-xs text-muted-foreground">Applied to new items by default</p>
-                </div>
-              </div>
-
-              <div className="border-t pt-4">
-                <div className="space-y-3">
-                  <div className="flex justify-between text-sm">
-                    <span>Subtotal:</span>
-                    <span>{formatCurrency(totals.subtotal)}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>Tax (per item):</span>
-                    <span>{formatCurrency(totals.tax)}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>Discount:</span>
-                    <span>{formatCurrency(totals.discount)}</span>
-                  </div>
-                  <div className="flex justify-between text-lg font-bold border-t pt-3">
-                    <span>Total:</span>
-                    <span>{formatCurrency(totals.total)}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
 
         {/* Notes and Terms */}
-        <Card>
+        <Card className="col-span-2">
           <CardHeader>
             <CardTitle>Additional Information</CardTitle>
           </CardHeader>
@@ -861,10 +835,6 @@ function QuickProductEntry({ products, loading, onProductAdd, onSearchChange, se
           )}
         </div>
       )}
-
-      <div className="text-sm text-muted-foreground">
-        💡 Tip: Search for a product, use arrow keys to navigate, enter quantity, and press Enter to add to invoice
-      </div>
     </div>
   );
 }

@@ -386,14 +386,13 @@ static async createInvoice(domain: string, invoiceData: CreateInvoiceRequest): P
           operations.push(tx.insert(inventoryMovements).values(movementRecords));
         }
 
-        // Update store counter (only for traditional prefix-based invoices)
-        if (!isSequenceEnabled) {
-          operations.push(
-            tx.update(stores)
-              .set({ invoiceCounter: (storeResult[0].invoiceCounter || 0) + 1 })
-              .where(eq(stores.id, invoiceData.storeId))
-          );
-        }
+        // Update store counter (for both traditional and sequence-based invoices)
+        // Even sequence-based invoices need the counter to track position in sequence
+        operations.push(
+          tx.update(stores)
+            .set({ invoiceCounter: (storeResult[0].invoiceCounter || 0) + 1 })
+            .where(eq(stores.id, invoiceData.storeId))
+        );
 
         // Execute all operations in parallel
         await Promise.all(operations);

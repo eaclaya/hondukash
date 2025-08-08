@@ -733,10 +733,6 @@ export const quoteItemsRelations = relations(quoteItems, ({ one }) => ({
 }));
 
 export const pricingRulesRelations = relations(pricingRules, ({ one, many }) => ({
-  store: one(stores, {
-    fields: [pricingRules.storeId],
-    references: [stores.id]
-  }),
   conditions: many(ruleConditions),
   targets: many(ruleTargets),
   usage: many(discountUsage),

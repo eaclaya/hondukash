@@ -512,7 +512,10 @@ CREATE TABLE tags (
         'product',      -- Product-specific tags (featured, clearance, etc.)
         'invoice',     -- Invoice-specific tags
         'quote',    -- Quote-specific tags
-        'custom'        -- Custom business logic
+        'expense',        -- Expense-specific tags
+        'payment',        -- Payment-specific tags
+        'transfer',        -- Transfer-specific tags
+        'purchase'        -- Purchase-specific tags
     )),
 
     -- Tag settings
@@ -521,9 +524,7 @@ CREATE TABLE tags (
 
     -- Metadata
     created_at TEXT NOT NULL DEFAULT (datetime('now', 'utc')),
-    updated_at TEXT NOT NULL DEFAULT (datetime('now', 'utc')),
-
-    UNIQUE(name)
+    updated_at TEXT NOT NULL DEFAULT (datetime('now', 'utc'))
 );
 
 -- =========================================
@@ -571,7 +572,6 @@ CREATE TABLE pricing_rules (
     -- Metadata
     created_at TEXT NOT NULL DEFAULT (datetime('now', 'utc')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now', 'utc')),
-
     UNIQUE(rule_code)
 );
 

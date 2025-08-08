@@ -35,7 +35,6 @@ interface EntityTagManagerProps {
   entityType: 'client' | 'product' | 'invoice' | 'quote';
   entityId: number;
   entityName?: string;
-  storeId: number;
   tags?: string[]; // Existing tag names from the entity
   onTagsChanged?: (tagNames: string[]) => void;
 }
@@ -67,7 +66,6 @@ export default function EntityTagManager({
   entityType,
   entityId,
   entityName,
-  storeId,
   tags = [],
   onTagsChanged
 }: EntityTagManagerProps) {
@@ -75,7 +73,6 @@ export default function EntityTagManager({
   const [availableTags, setAvailableTags] = useState<Tag[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [isLoading, setIsLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isCreateTagOpen, setIsCreateTagOpen] = useState(false);
 
@@ -90,48 +87,22 @@ export default function EntityTagManager({
 
   // Load entity tags and available tags on mount
   useEffect(() => {
-    loadEntityTags();
     loadAvailableTags();
-  }, [entityType, entityId, storeId]);
+  }, [entityType, entityId]);
 
   // Refresh data when dialog is opened (in case tags were modified elsewhere)
   useEffect(() => {
     if (isDialogOpen) {
-      loadEntityTags();
       loadAvailableTags();
     }
   }, [isDialogOpen]);
 
-  const loadEntityTags = async () => {
-    try {
-      setIsLoading(true);
-      const response = await fetch(`/api/tags/entity?entityType=${entityType}&entityId=${entityId}`, {
-        headers: {
-          'X-Store-ID': storeId.toString()
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to load entity tags');
-      }
-
-      const result = await response.json();
-      const tagNames = result.tags || [];
-      setEntityTagNames(tagNames);
-      onTagsChanged?.(tagNames);
-    } catch (error) {
-      console.error('Error loading entity tags:', error);
-      toast.error('Failed to load tags');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const loadAvailableTags = async () => {
     try {
       const response = await fetch('/api/tags', {
         headers: {
-          'X-Store-ID': storeId.toString()
+          'X-Store-ID': '1'
         }
       });
 
@@ -154,7 +125,7 @@ export default function EntityTagManager({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Store-ID': storeId.toString()
+          'X-Store-ID': '1'
         },
         body: JSON.stringify({
           entityType,
@@ -185,7 +156,7 @@ export default function EntityTagManager({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Store-ID': storeId.toString()
+          'X-Store-ID': '1'
         },
         body: JSON.stringify({
           entityType,
@@ -220,7 +191,7 @@ export default function EntityTagManager({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Store-ID': storeId.toString()
+          'X-Store-ID': '1'
         },
         body: JSON.stringify(newTag)
       });

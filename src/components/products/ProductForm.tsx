@@ -571,7 +571,6 @@ export default function ProductForm({ product, onSubmit, onCancel, loading = fal
                   entityType="product"
                   entityId={product.id}
                   entityName={formData.name}
-                  storeId={1} // TODO: Get actual store ID from context/props
                   tags={product.tags}
                 />
               ) : (

@@ -179,6 +179,8 @@ export class ProductService {
           isActive: products.isActive,
           createdAt: products.createdAt,
           updatedAt: products.updatedAt,
+          tags: products.tags,
+
           // Inventory fields (store-specific)
           inventoryId: inventory.id,
           quantity: sql<number>`COALESCE(${inventory.quantity}, 0)`.as('quantity'),
@@ -222,6 +224,7 @@ export class ProductService {
         unit: product.unit || 'unit',
         imageUrl: product.imageUrl || undefined,
         images: product.images && product.images !== 'null' ? JSON.parse(product.images) : [],
+        tags: product.tags ? JSON.parse(product.tags) : [],
         isActive: product.isActive,
         createdAt: product.createdAt,
         updatedAt: product.updatedAt,

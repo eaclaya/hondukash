@@ -4,6 +4,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { ProductWithInventory, UpdateProductRequest } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 import ProductForm from '@/components/products/ProductForm';
 
 export default function EditProductPage() {
@@ -37,7 +38,7 @@ export default function EditProductPage() {
       const data = await response.json();
       setProduct(data.product);
     } catch (error: unknown) {
-      alert(error instanceof Error ? error.message : 'Unknown error');
+      toast.error(error instanceof Error ? error.message : 'Failed to fetch product');
       router.push('/products');
     } finally {
       setFetchLoading(false);
@@ -61,7 +62,7 @@ export default function EditProductPage() {
       // Redirect to products list
       router.push('/products');
     } catch (error: unknown) {
-      alert(error instanceof Error ? error.message : 'Unknown error');
+      toast.error(error instanceof Error ? error.message : 'Failed to update product');
     } finally {
       setLoading(false);
     }

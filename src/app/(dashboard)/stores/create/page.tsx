@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { CreateStoreRequest } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 import { StoreForm } from '@/components/stores/StoreForm';
 
 export default function CreateStorePage() {
@@ -30,7 +31,7 @@ export default function CreateStorePage() {
       // Redirect to store list
       router.push('/stores');
     } catch (error: unknown) {
-      alert(error instanceof Error ? error.message : 'Unknown error');
+      toast.error(error instanceof Error ? error.message : 'Failed to create store');
     } finally {
       setLoading(false);
     }

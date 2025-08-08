@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Edit, ArrowLeft, Download, Send, DollarSign, Printer } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function InvoiceDetailPage() {
   const router = useRouter();
@@ -39,7 +40,7 @@ export default function InvoiceDetailPage() {
       const data = await response.json();
       setInvoice(data.invoice);
     } catch (error: unknown) {
-      alert(error instanceof Error ? error.message : 'Unknown error');
+      toast.error(error instanceof Error ? error.message : 'Failed to fetch invoice');
       router.push('/invoices');
     } finally {
       setLoading(false);
@@ -96,7 +97,7 @@ export default function InvoiceDetailPage() {
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
     } catch (error: unknown) {
-      alert('Error generating PDF: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      toast.error('Error generating PDF: ' + (error instanceof Error ? error.message : 'Unknown error'));
     }
   };
 

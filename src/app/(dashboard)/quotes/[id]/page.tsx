@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Separator } from '@/components/ui/separator';
 import { Edit, ArrowRight, FileText, Calendar, DollarSign, User, Building, Printer, Download } from 'lucide-react';
+import { toast } from 'sonner';
 import Link from 'next/link';
 
 export default function QuoteDetailPage() {
@@ -69,12 +70,12 @@ export default function QuoteDetailPage() {
       }
 
       const result = await response.json();
-      alert(`Quote successfully converted to invoice ${result.invoiceNumber}`);
+      toast.success(`Quote successfully converted to invoice ${result.invoiceNumber}`);
       
       // Refresh the quote to show updated status
       fetchQuote();
     } catch (error: unknown) {
-      alert(error instanceof Error ? error.message : 'Unknown error');
+      toast.error(error instanceof Error ? error.message : 'Failed to convert quote');
     } finally {
       setConverting(false);
     }
@@ -125,7 +126,7 @@ export default function QuoteDetailPage() {
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
     } catch (error: unknown) {
-      alert('Error generating PDF: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      toast.error('Error generating PDF: ' + (error instanceof Error ? error.message : 'Unknown error'));
     }
   };
 

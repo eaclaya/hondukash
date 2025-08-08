@@ -22,6 +22,7 @@ import {
   FileText,
   Plus
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function ClientDetailsPage() {
   const router = useRouter();
@@ -51,7 +52,7 @@ export default function ClientDetailsPage() {
       const data = await response.json();
       setClient(data.client);
     } catch (error: unknown) {
-      alert(error instanceof Error ? error.message : 'Unknown error');
+      toast.error(error instanceof Error ? error.message : 'Failed to fetch client');
       router.push('/clients');
     } finally {
       setLoading(false);
@@ -93,7 +94,7 @@ export default function ClientDetailsPage() {
 
       router.push('/clients');
     } catch (error: unknown) {
-      alert(error instanceof Error ? error.message : 'Unknown error');
+      toast.error(error instanceof Error ? error.message : 'Failed to delete client');
     }
   };
 

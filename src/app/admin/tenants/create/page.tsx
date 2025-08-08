@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 export default function CreateTenantPage() {
   const router = useRouter();
@@ -104,7 +105,7 @@ export default function CreateTenantPage() {
 
       if (response.ok) {
         // Show success message with details
-        alert(
+        toast.success(
           `Tenant created successfully!\n\nTenant: ${data.tenant?.name}\nDomain: ${data.tenant?.domain}\nDatabase: ${data.database}\n\nDefault admin login:\nEmail: ${formData.email}\nPassword: Pa$$w0rd!\n\nThe tenant is now ready to use!`
         );
         router.push('/admin/tenants');

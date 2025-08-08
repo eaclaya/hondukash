@@ -521,33 +521,6 @@ CREATE TABLE tags (
     UNIQUE(name)
 );
 
--- Entity Tags (Polymorphic Relationship)
-CREATE TABLE taggable (
-    id SERIAL PRIMARY KEY,
-    tag_id INTEGER NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
-
-    -- Polymorphic relationship
-    entity_type TEXT NOT NULL CHECK (entity_type IN (
-        'client',           -- clients table
-        'product',          -- products table
-        'invoice',          -- invoices table
-        'category',         -- categories table
-        'user',            -- users table
-        'supplier',        -- suppliers table (if implemented)
-        'expense'          -- expenses table
-    )),
-    entity_id INTEGER NOT NULL,
-
-    -- Assignment details
-    assigned_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    assigned_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
-
-    -- Metadata
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-
-    UNIQUE(tag_id, entity_type, entity_id)
-);
-
 -- =========================================
 -- DISCOUNT & PRICING RULES SYSTEM
 -- =========================================
@@ -744,13 +717,6 @@ CREATE INDEX idx_quotes_valid_until ON quotes(valid_until);
 CREATE INDEX idx_quotes_converted_invoice ON quotes(converted_to_invoice_id);
 CREATE INDEX idx_quote_items_quote_id ON quote_items(quote_id);
 CREATE INDEX idx_quote_items_product_id ON quote_items(product_id);
-
--- Tagging System
-CREATE INDEX idx_tags_store_active ON tags(store_id, is_active);
-CREATE INDEX idx_tags_category ON tags(category);
-CREATE INDEX idx_taggable_tag ON taggable(tag_id);
-CREATE INDEX idx_taggable_entity ON taggable(entity_type, entity_id);
-CREATE INDEX idx_taggable_assigned ON taggable(assigned_at);
 
 -- Discount System
 CREATE INDEX idx_pricing_rules_store_active ON pricing_rules(store_id, is_active);

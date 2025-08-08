@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { Quote, UpdateQuoteRequest } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
 import QuoteForm from '@/components/quotes/QuoteForm';
+import { toast } from 'sonner';
 
 export default function EditQuotePage() {
   const router = useRouter();
@@ -60,7 +61,7 @@ export default function EditQuotePage() {
       // Redirect to quote list
       router.push('/quotes');
     } catch (error: unknown) {
-      alert(error instanceof Error ? error.message : 'Unknown error');
+      toast.error(error instanceof Error ? error.message : 'Failed to update quote');
     } finally {
       setLoading(false);
     }

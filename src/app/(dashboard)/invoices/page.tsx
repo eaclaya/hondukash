@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Pagination } from '@/components/ui/pagination';
 import { Plus, Edit, Trash2, FileText, Search, Eye } from 'lucide-react';
+import { toast } from 'sonner';
 import LoaderSpinner from '@/components/shared/loader-spinner';
 
 // Simple debounce function
@@ -92,7 +93,7 @@ export default function InvoicesPage() {
       // Refresh the invoices list
       fetchInvoices();
     } catch (error: unknown) {
-      alert(error instanceof Error ? error.message : 'Unknown error');
+      toast.error(error instanceof Error ? error.message : 'Failed to delete invoice');
     }
   };
 

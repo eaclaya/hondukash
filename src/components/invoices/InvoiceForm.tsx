@@ -11,8 +11,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Tags } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { EntityTagManager } from '@/components/tags';
+import SimpleTagSelector from '@/components/tags/SimpleTagSelector';
+import { toast } from 'sonner';
 
 interface InvoiceFormProps {
   invoice?: Invoice;
@@ -57,8 +60,23 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
     dueDate: invoice?.dueDate || '',
     notes: invoice?.notes || '',
     terms: invoice?.terms || '',
-    status: invoice?.status || 'draft' as const
+    status: invoice?.status || 'draft' as const,
+    tags: invoice?.tags || ''
   });
+
+  // Parse existing tags
+  const parseTagsFromString = (tagsString: string): string[] => {
+    if (!tagsString) return [];
+    try {
+      return JSON.parse(tagsString);
+    } catch {
+      return tagsString.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+    }
+  };
+
+  const [selectedTags, setSelectedTags] = useState<string[]>(
+    invoice ? parseTagsFromString(invoice.tags || '') : []
+  );
 
   const [items, setItems] = useState<InvoiceItemForm[]>([]);
   const [taxRates, setTaxRates] = useState<TaxRate[]>([]);
@@ -444,12 +462,12 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
     e.preventDefault();
 
     if (!formData.clientId) {
-      alert('Please select a client');
+      toast.error('Please select a client');
       return;
     }
 
     if (items.length === 0 || items.every(item => !item.productName)) {
-      alert('Please add at least one item');
+      toast.error('Please add at least one item');
       return;
     }
 
@@ -476,6 +494,7 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
       tax: totals.tax,
       discount: totals.discount,
       total: totals.total,
+      tags: JSON.stringify(selectedTags),
       storeId: 1 // Will be set by API from auth headers
     };
 
@@ -773,6 +792,17 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
                 rows={3}
               />
             </div>
+
+
+            <div className="space-y-2">
+                <SimpleTagSelector
+                  selectedTagNames={selectedTags}
+                  onTagsChange={setSelectedTags}
+                  categoryFilter={['invoice', 'general', 'client']}
+                  label="Tags"
+                  placeholder="Select tags for this invoice..."
+                />
+              </div>
           </CardContent>
         </Card>
       </form>

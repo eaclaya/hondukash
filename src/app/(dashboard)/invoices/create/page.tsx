@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { CreateInvoiceRequest, UpdateInvoiceRequest } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 import InvoiceForm from '@/components/invoices/InvoiceForm';
 
 export default function CreateInvoicePage() {
@@ -30,7 +31,7 @@ export default function CreateInvoicePage() {
       // Redirect to invoice detail page
       router.push(`/invoices/${result.invoice.id}`);
     } catch (error: unknown) {
-      alert(error instanceof Error ? error.message : 'Unknown error');
+      toast.error(error instanceof Error ? error.message : 'Failed to create invoice');
     } finally {
       setLoading(false);
     }

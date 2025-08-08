@@ -10,8 +10,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Trash2, Calculator } from 'lucide-react';
+import { Trash2, Calculator, Tags } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { EntityTagManager } from '@/components/tags';
+import SimpleTagSelector from '@/components/tags/SimpleTagSelector';
+import { toast } from 'sonner';
 
 interface QuoteFormProps {
   quote?: Quote;
@@ -52,8 +55,23 @@ export default function QuoteForm({ quote, onSubmit, onCancel, loading = false }
     validUntil: quote?.validUntil || '',
     notes: quote?.notes || '',
     terms: quote?.terms || '',
-    status: quote?.status || 'draft' as const
+    status: quote?.status || 'draft' as const,
+    tags: quote?.tags || ''
   });
+
+  // Parse existing tags
+  const parseTagsFromString = (tagsString: string): string[] => {
+    if (!tagsString) return [];
+    try {
+      return JSON.parse(tagsString);
+    } catch {
+      return tagsString.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+    }
+  };
+
+  const [selectedTags, setSelectedTags] = useState<string[]>(
+    quote ? parseTagsFromString(quote.tags || '') : []
+  );
 
   const [items, setItems] = useState<QuoteItemForm[]>([]);
 
@@ -292,12 +310,12 @@ export default function QuoteForm({ quote, onSubmit, onCancel, loading = false }
     e.preventDefault();
 
     if (!formData.clientId) {
-      alert('Please select a client');
+      toast.error('Please select a client');
       return;
     }
 
     if (items.length === 0 || items.every(item => !item.productName || !item.productId || item.productId === 0)) {
-      alert('Please add at least one item with a selected product');
+      toast.error('Please add at least one item with a selected product');
       return;
     }
 
@@ -610,6 +628,31 @@ export default function QuoteForm({ quote, onSubmit, onCancel, loading = false }
                 rows={3}
               />
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Tags Card */}
+        <Card className="col-span-3">
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Tags className="h-5 w-5" />
+              <span>Quote Tags</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {quote?.id ? (
+              <EntityTagManager
+                entityType="invoice" // Note: Using 'invoice' as the entity type since quotes and invoices share similar tagging logic
+                entityId={parseInt(quote.id)}
+                entityName={`Quote for ${formData.clientName || 'Client'}`}
+                storeId={1} // TODO: Get actual store ID from context/props
+              />
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <Tags className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>Tags can be managed after the quote is created.</p>
+              </div>
+            )}
           </CardContent>
         </Card>
       </form>

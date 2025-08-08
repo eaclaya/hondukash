@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Pagination } from '@/components/ui/pagination';
 import { Plus, Edit, Trash2, MapPin, Phone, Mail, User, Search } from 'lucide-react';
+import { toast } from 'sonner';
 import Link from 'next/link';
 
 export default function StoresPage() {
@@ -82,7 +83,7 @@ export default function StoresPage() {
       // Refresh the stores list
       fetchStores();
     } catch (error: unknown) {
-      alert(error instanceof Error ? error.message : 'Unknown error');
+      toast.error(error instanceof Error ? error.message : 'Failed to delete store');
     }
   };
 

@@ -115,6 +115,8 @@ export const products = sqliteTable('products', {
 
   // Metadata
   isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
+  tags: text('tags'),
+
   createdAt: text('created_at').notNull().$defaultFn(() => new Date().toISOString()),
   updatedAt: text('updated_at').notNull().$defaultFn(() => new Date().toISOString())
 });
@@ -211,6 +213,9 @@ export const clients = sqliteTable('clients', {
   // Metadata
   notes: text('notes'),
   isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
+  tags: text('tags'),
+
+
   createdAt: text('created_at').notNull().$defaultFn(() => new Date().toISOString()),
   updatedAt: text('updated_at').notNull().$defaultFn(() => new Date().toISOString())
 });
@@ -291,6 +296,7 @@ export const invoices = sqliteTable('invoices', {
   // Additional info
   notes: text('notes'),
   terms: text('terms'),
+  tags: text('tags'),
 
   // Metadata
   createdAt: text('created_at').notNull().$defaultFn(() => new Date().toISOString()),
@@ -355,6 +361,7 @@ export const quotes = sqliteTable('quotes', {
   // Additional info
   notes: text('notes'),
   terms: text('terms'),
+  tags: text('tags'),
 
   // Metadata
   createdAt: text('created_at').notNull().$defaultFn(() => new Date().toISOString()),
@@ -391,7 +398,6 @@ export const quoteItems = sqliteTable('quote_items', {
 // =========================================
 export const tags = sqliteTable('tags', {
   id: integer('id').primaryKey({ autoIncrement: true }),
-  storeId: integer('store_id').notNull().references(() => stores.id, { onDelete: 'cascade' }),
 
   // Tag details
   name: text('name').notNull(),
@@ -414,33 +420,12 @@ export const tags = sqliteTable('tags', {
   uniqueName: uniqueIndex('unique_tag_name').on(table.name)
 }));
 
-// Entity Tags (Polymorphic Relationship)
-export const taggable = sqliteTable('taggable', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
-  tagId: integer('tag_id').notNull().references(() => tags.id, { onDelete: 'cascade' }),
-
-  // Polymorphic relationship
-  entityType: text('entity_type', {
-    enum: ['client', 'product', 'invoice', 'category', 'user', 'supplier', 'expense']
-  }).notNull(),
-  entityId: integer('entity_id').notNull(),
-
-  // Assignment details
-  assignedAt: text('assigned_at').notNull().$defaultFn(() => new Date().toISOString()),
-  assignedBy: integer('assigned_by').references(() => users.id, { onDelete: 'set null' }),
-
-  // Metadata
-  createdAt: text('created_at').notNull().$defaultFn(() => new Date().toISOString())
-}, (table) => ({
-  uniqueTagEntity: uniqueIndex('unique_tag_entity').on(table.tagId, table.entityType, table.entityId)
-}));
 
 // =========================================
 // PRICING RULES SYSTEM
 // =========================================
 export const pricingRules = sqliteTable('pricing_rules', {
   id: integer('id').primaryKey({ autoIncrement: true }),
-  storeId: integer('store_id').notNull().references(() => stores.id, { onDelete: 'cascade' }),
 
   // Rule identification
   name: text('name').notNull(),
@@ -477,8 +462,101 @@ export const pricingRules = sqliteTable('pricing_rules', {
   createdAt: text('created_at').notNull().$defaultFn(() => new Date().toISOString()),
   updatedAt: text('updated_at').notNull().$defaultFn(() => new Date().toISOString())
 }, (table) => ({
-  uniqueStoreRuleCode: uniqueIndex('unique_store_rule_code').on(table.storeId, table.ruleCode)
+  uniqueRuleCode: uniqueIndex('unique_rule_code').on(table.ruleCode)
 }));
+
+// Rule Conditions
+export const ruleConditions = sqliteTable('rule_conditions', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  pricingRuleId: integer('pricing_rule_id').notNull().references(() => pricingRules.id, { onDelete: 'cascade' }),
+
+  // Condition details
+  conditionType: text('condition_type', {
+    enum: [
+      'cart_subtotal', 'cart_quantity', 'product_quantity',
+      'client_has_tag', 'client_has_any_tags', 'client_has_all_tags',
+      'product_has_tag', 'product_has_any_tags', 'product_category', 'product_sku',
+      'day_of_week', 'time_of_day', 'customer_total_purchases', 'invoice_has_tag'
+    ]
+  }).notNull(),
+
+  // Condition operators
+  operator: text('operator', {
+    enum: ['equals', 'not_equals', 'greater_than', 'greater_equal', 'less_than', 'less_equal', 'in', 'not_in', 'between']
+  }).notNull(),
+
+  // Condition values
+  valueText: text('value_text'), // For text comparisons
+  valueNumber: real('value_number'), // For numeric comparisons
+  valueArray: text('value_array'), // For IN/NOT IN operations (tag slugs, etc.) - JSON array
+  valueStart: real('value_start'), // For BETWEEN operations
+  valueEnd: real('value_end'), // For BETWEEN operations
+
+  // Logical operators
+  logicalOperator: text('logical_operator', { enum: ['AND', 'OR'] }).default('AND'),
+  conditionGroup: integer('condition_group').default(1), // Group conditions together
+
+  // Metadata
+  createdAt: text('created_at').notNull().$defaultFn(() => new Date().toISOString())
+});
+
+// Rule Targets
+export const ruleTargets = sqliteTable('rule_targets', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  pricingRuleId: integer('pricing_rule_id').notNull().references(() => pricingRules.id, { onDelete: 'cascade' }),
+
+  // Target type
+  targetType: text('target_type', {
+    enum: [
+      'all_products', 'specific_products', 'products_with_tag', 'products_with_any_tags',
+      'product_category', 'cheapest_item', 'most_expensive_item'
+    ]
+  }).notNull(),
+
+  // Target identifiers
+  targetIds: text('target_ids'), // JSON array of product IDs, category IDs, etc.
+  targetTags: text('target_tags'), // JSON array of tag slugs for tag-based targeting
+
+  // Metadata
+  createdAt: text('created_at').notNull().$defaultFn(() => new Date().toISOString())
+});
+
+// Discount Usage Tracking
+export const discountUsage = sqliteTable('discount_usage', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  pricingRuleId: integer('pricing_rule_id').notNull().references(() => pricingRules.id, { onDelete: 'cascade' }),
+  invoiceId: integer('invoice_id').notNull().references(() => invoices.id, { onDelete: 'cascade' }),
+  clientId: integer('client_id').references(() => clients.id, { onDelete: 'set null' }),
+
+  // Usage details
+  discountAmount: real('discount_amount').notNull(),
+  originalAmount: real('original_amount').notNull(),
+  finalAmount: real('final_amount').notNull(),
+
+  // Applied items
+  appliedItems: text('applied_items'), // JSON details of which items got the discount
+
+  // Metadata
+  createdAt: text('created_at').notNull().$defaultFn(() => new Date().toISOString())
+});
+
+// Quantity Price Tiers
+export const quantityPriceTiers = sqliteTable('quantity_price_tiers', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  pricingRuleId: integer('pricing_rule_id').notNull().references(() => pricingRules.id, { onDelete: 'cascade' }),
+
+  // Tier definition
+  minQuantity: real('min_quantity').notNull(),
+  maxQuantity: real('max_quantity'), // NULL = no upper limit
+
+  // Pricing
+  tierPrice: real('tier_price'), // Fixed price per unit
+  tierDiscountPercentage: real('tier_discount_percentage'), // Percentage discount
+  tierDiscountAmount: real('tier_discount_amount'), // Fixed amount discount per unit
+
+  // Metadata
+  createdAt: text('created_at').notNull().$defaultFn(() => new Date().toISOString())
+});
 
 // =========================================
 // TAX RATES
@@ -521,8 +599,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   memberships: many(memberships),
   clientContacts: many(clientContacts),
   invoices: many(invoices),
-  quotes: many(quotes),
-  assignedTags: many(taggable)
+  quotes: many(quotes)
 }));
 
 export const membershipsRelations = relations(memberships, ({ one }) => ({
@@ -655,18 +732,50 @@ export const quoteItemsRelations = relations(quoteItems, ({ one }) => ({
   })
 }));
 
-export const tagsRelations = relations(tags, ({ many }) => ({
-  taggable: many(taggable)
+export const pricingRulesRelations = relations(pricingRules, ({ one, many }) => ({
+  store: one(stores, {
+    fields: [pricingRules.storeId],
+    references: [stores.id]
+  }),
+  conditions: many(ruleConditions),
+  targets: many(ruleTargets),
+  usage: many(discountUsage),
+  quantityTiers: many(quantityPriceTiers)
 }));
 
-export const taggableRelations = relations(taggable, ({ one }) => ({
-  tag: one(tags, {
-    fields: [taggable.tagId],
-    references: [tags.id]
+export const ruleConditionsRelations = relations(ruleConditions, ({ one }) => ({
+  pricingRule: one(pricingRules, {
+    fields: [ruleConditions.pricingRuleId],
+    references: [pricingRules.id]
+  })
+}));
+
+export const ruleTargetsRelations = relations(ruleTargets, ({ one }) => ({
+  pricingRule: one(pricingRules, {
+    fields: [ruleTargets.pricingRuleId],
+    references: [pricingRules.id]
+  })
+}));
+
+export const discountUsageRelations = relations(discountUsage, ({ one }) => ({
+  pricingRule: one(pricingRules, {
+    fields: [discountUsage.pricingRuleId],
+    references: [pricingRules.id]
   }),
-  assignedBy: one(users, {
-    fields: [taggable.assignedBy],
-    references: [users.id]
+  invoice: one(invoices, {
+    fields: [discountUsage.invoiceId],
+    references: [invoices.id]
+  }),
+  client: one(clients, {
+    fields: [discountUsage.clientId],
+    references: [clients.id]
+  })
+}));
+
+export const quantityPriceTiersRelations = relations(quantityPriceTiers, ({ one }) => ({
+  pricingRule: one(pricingRules, {
+    fields: [quantityPriceTiers.pricingRuleId],
+    references: [pricingRules.id]
   })
 }));
 
@@ -687,8 +796,11 @@ export const tenantSchema = {
   quotes,
   quoteItems,
   tags,
-  taggable,
   pricingRules,
+  ruleConditions,
+  ruleTargets,
+  discountUsage,
+  quantityPriceTiers,
   taxRates,
   // Relations
   storesRelations,
@@ -704,6 +816,9 @@ export const tenantSchema = {
   invoiceItemsRelations,
   quotesRelations,
   quoteItemsRelations,
-  tagsRelations,
-  taggableRelations
+  pricingRulesRelations,
+  ruleConditionsRelations,
+  ruleTargetsRelations,
+  discountUsageRelations,
+  quantityPriceTiersRelations
 };

@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { CreateClientRequest } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 import ClientForm from '@/components/clients/ClientForm';
 
 export default function CreateClientPage() {
@@ -28,7 +29,7 @@ export default function CreateClientPage() {
       // Redirect to clients list
       router.push('/clients');
     } catch (error: unknown) {
-      alert(error instanceof Error ? error.message : 'Unknown error');
+      toast.error(error instanceof Error ? error.message : 'Failed to create client');
     } finally {
       setLoading(false);
     }

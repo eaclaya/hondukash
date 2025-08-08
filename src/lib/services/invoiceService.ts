@@ -151,6 +151,7 @@ export class InvoiceService {
           status: invoices.status,
           notes: invoices.notes,
           terms: invoices.terms,
+          tags: invoices.tags,
           createdAt: invoices.createdAt,
           updatedAt: invoices.updatedAt,
           clientId: invoices.clientId,
@@ -207,6 +208,7 @@ export class InvoiceService {
         dueDate: invoice.dueDate || undefined,
         notes: invoice.notes || undefined,
         terms: invoice.terms || undefined,
+        tags: invoice.tags ? JSON.parse(invoice.tags) : [],
         createdAt: invoice.createdAt,
         updatedAt: invoice.updatedAt,
         client: invoice.clientName ? {

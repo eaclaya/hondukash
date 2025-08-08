@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { CreateProductRequest } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 import ProductForm from '@/components/products/ProductForm';
 
 export default function CreateProductPage() {
@@ -28,7 +29,7 @@ export default function CreateProductPage() {
       // Redirect to products list
       router.push('/products');
     } catch (error: unknown) {
-      alert(error instanceof Error ? error.message : 'Unknown error');
+      toast.error(error instanceof Error ? error.message : 'Failed to create product');
     } finally {
       setLoading(false);
     }

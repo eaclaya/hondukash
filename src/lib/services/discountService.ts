@@ -6,8 +6,6 @@
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import type {
   PricingRule,
-  Tag,
-  EntityTag,
   RuleCondition,
   RuleTarget,
   QuantityPriceTier,

@@ -12,6 +12,7 @@ import { Pagination } from '@/components/ui/pagination';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Plus, Edit, Trash2, FileText, Search, ArrowRight } from 'lucide-react';
+import { toast } from 'sonner';
 import Link from 'next/link';
 
 export default function QuotesPage() {
@@ -91,7 +92,7 @@ export default function QuotesPage() {
       // Refresh the quotes list
       fetchQuotes();
     } catch (error: unknown) {
-      alert(error instanceof Error ? error.message : 'Unknown error');
+      toast.error(error instanceof Error ? error.message : 'Failed to delete quote');
     }
   };
 
@@ -120,14 +121,14 @@ export default function QuotesPage() {
       }
 
       const result = await response.json();
-      alert(`Quote successfully converted to invoice ${result.invoiceNumber}`);
+      toast.success(`Quote successfully converted to invoice ${result.invoiceNumber}`);
       
       // Close dialog and refresh the quotes list
       setConvertDialogOpen(false);
       setConvertingQuote(null);
       fetchQuotes();
     } catch (error: unknown) {
-      alert(error instanceof Error ? error.message : 'Unknown error');
+      toast.error(error instanceof Error ? error.message : 'Failed to convert quote');
     } finally {
       setConverting(false);
     }

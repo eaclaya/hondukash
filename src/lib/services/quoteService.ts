@@ -254,7 +254,6 @@ export class QuoteService {
       const { quotePrefix, quoteCounter } = storeResult[0];
       const defaultPrefix = quotePrefix || '';
       const quoteNumber = `${defaultPrefix}${quoteCounter?.toString().padStart(6, '0')}`;
-      console.log('quoteItems', quoteItems);
       // Start transaction
       const result = await db.transaction(async (tx) => {
         // Create quote

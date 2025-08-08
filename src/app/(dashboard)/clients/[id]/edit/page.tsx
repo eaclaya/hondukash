@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { Client, UpdateClientRequest } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
 import ClientForm from '@/components/clients/ClientForm';
+import { toast } from 'sonner';
 
 export default function EditClientPage() {
   const router = useRouter();
@@ -33,7 +34,7 @@ export default function EditClientPage() {
       const data = await response.json();
       setClient(data.client);
     } catch (error: unknown) {
-      alert(error instanceof Error ? error.message : 'Unknown error');
+      toast.error(error instanceof Error ? error.message : 'Failed to fetch client');
       router.push('/clients');
     } finally {
       setPageLoading(false);
@@ -57,7 +58,7 @@ export default function EditClientPage() {
       // Redirect to clients list
       router.push('/clients');
     } catch (error: unknown) {
-      alert(error instanceof Error ? error.message : 'Unknown error');
+      toast.error(error instanceof Error ? error.message : 'Failed to update client');
     } finally {
       setLoading(false);
     }

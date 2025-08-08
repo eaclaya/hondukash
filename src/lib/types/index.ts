@@ -210,6 +210,8 @@ export interface Client {
 
   notes?: string;
   isActive: boolean;
+  tags: string[];
+
   createdAt: string;
   updatedAt: string;
 
@@ -278,6 +280,7 @@ export interface Product {
   // Media
   imageUrl?: string;
   images: string[];
+  tags: string[];
 
   // Metadata
   isActive: boolean;
@@ -322,6 +325,8 @@ export interface CreateProductRequest {
   unit?: string;
   imageUrl?: string;
   images?: string[];
+  tags?: string[];
+
   // Initial inventory data
   quantity?: number;
   storePrice?: number;
@@ -356,6 +361,7 @@ export interface Invoice {
   dueDate?: string;
   notes?: string;
   terms?: string;
+  tags: string[];
 
   createdAt: string;
   updatedAt: string;
@@ -391,6 +397,7 @@ export interface CreateInvoiceRequest {
   dueDate?: string;
   notes?: string;
   terms?: string;
+  tags?: string[];
 }
 
 export interface CreateInvoiceItemRequest {
@@ -433,6 +440,7 @@ export interface Quote {
   validUntil?: string;
   notes?: string;
   terms?: string;
+  tags: string[];
 
   createdAt: string;
   updatedAt: string;
@@ -465,6 +473,7 @@ export interface CreateQuoteRequest {
   validUntil?: string;
   notes?: string;
   terms?: string;
+  tags?: string[];
 }
 
 export interface CreateQuoteItemRequest {

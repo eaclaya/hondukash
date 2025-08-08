@@ -10,7 +10,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Trash2, Building, User, Mail, Phone, MapPin, CreditCard } from 'lucide-react';
+import { Plus, Trash2, Building, User, Mail, Phone, MapPin, CreditCard, Tags } from 'lucide-react';
+import { EntityTagManager } from '@/components/tags';
+import SimpleTagSelector from '@/components/tags/SimpleTagSelector';
+import { toast } from 'sonner';
 
 interface ClientFormProps {
   client?: Client;
@@ -39,6 +42,7 @@ interface ContactFormData {
 }
 
 export default function ClientForm({ client, onSubmit, onCancel, loading = false }: ClientFormProps) {
+
   const [formData, setFormData] = useState<CreateClientRequest | UpdateClientRequest>({
     ...(client?.id && { id: client.id }),
     storeId: client?.storeId || 1,
@@ -60,7 +64,13 @@ export default function ClientForm({ client, onSubmit, onCancel, loading = false
     paymentTerms: client?.paymentTerms || 30,
     discountPercentage: client?.discountPercentage || 0,
     notes: client?.notes || '',
+    tags: client?.tags || [],
   });
+
+
+  const [selectedTags, setSelectedTags] = useState<string[]>(
+    client ? client.tags : []
+  );
 
   const [contacts, setContacts] = useState<ContactFormData[]>(
     client?.contacts?.map(contact => ({
@@ -117,6 +127,7 @@ export default function ClientForm({ client, onSubmit, onCancel, loading = false
 
     const submitData = {
       ...formData,
+      tags: JSON.stringify(selectedTags),
       contacts: contactsData
     };
 
@@ -166,7 +177,7 @@ export default function ClientForm({ client, onSubmit, onCancel, loading = false
       </div>
 
       <Tabs defaultValue="basic" className="space-y-6">
-        <TabsList className={`grid w-full ${formData.clientType === 'company' ? 'grid-cols-3' : 'grid-cols-1'}`}>
+        <TabsList className={`grid w-full ${formData.clientType === 'company' ? 'grid-cols-4' : 'grid-cols-2'}`}>
           <TabsTrigger value="basic">Basic Information</TabsTrigger>
           {formData.clientType === 'company' && (
             <>
@@ -174,6 +185,7 @@ export default function ClientForm({ client, onSubmit, onCancel, loading = false
               <TabsTrigger value="contacts">Contacts</TabsTrigger>
             </>
           )}
+          <TabsTrigger value="tags">Tags</TabsTrigger>
         </TabsList>
 
         <TabsContent value="basic" className="space-y-6">
@@ -379,6 +391,17 @@ export default function ClientForm({ client, onSubmit, onCancel, loading = false
                   rows={3}
                 />
               </div>
+
+              <div className="space-y-2">
+                <SimpleTagSelector
+                  selectedTagNames={selectedTags}
+                  onTagsChange={setSelectedTags}
+                  storeId={formData.storeId}
+                  categoryFilter={['client', 'general']}
+                  label="Client Tags"
+                  placeholder="Select tags for this client..."
+                />
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -531,6 +554,33 @@ export default function ClientForm({ client, onSubmit, onCancel, loading = false
           </Card>
           </TabsContent>
         )}
+
+        <TabsContent value="tags" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Tags className="h-5 w-5" />
+                <span>Client Tags</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {client?.id ? (
+                <EntityTagManager
+                  entityType="client"
+                  entityId={client.id}
+                  entityName={formData.name}
+                  storeId={formData.storeId}
+                  tags={client.tags}
+                />
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Tags className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>Tags can be managed after the client is created.</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
     </div>
   );
@@ -573,7 +623,7 @@ function ContactForm({ contact, onSave, onCancel, isPrimary = false }: ContactFo
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.contactName.trim()) {
-      alert('Contact name is required');
+      toast.error('Contact name is required');
       return;
     }
     onSave(formData);

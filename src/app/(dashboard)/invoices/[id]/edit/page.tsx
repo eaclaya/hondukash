@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { Invoice, UpdateInvoiceRequest } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
 import InvoiceForm from '@/components/invoices/InvoiceForm';
+import { toast } from 'sonner';
 
 export default function EditInvoicePage() {
   const router = useRouter();
@@ -37,7 +38,7 @@ export default function EditInvoicePage() {
       const data = await response.json();
       setInvoice(data.invoice);
     } catch (error: unknown) {
-      alert(error instanceof Error ? error.message : 'Unknown error');
+      toast.error(error instanceof Error ? error.message : 'Failed to fetch invoice');
       router.push('/invoices');
     } finally {
       setFetchLoading(false);
@@ -61,7 +62,7 @@ export default function EditInvoicePage() {
       // Redirect to invoice detail page
       router.push(`/invoices/${invoiceId}`);
     } catch (error: unknown) {
-      alert(error instanceof Error ? error.message : 'Unknown error');
+      toast.error(error instanceof Error ? error.message : 'Failed to update invoice');
     } finally {
       setLoading(false);
     }

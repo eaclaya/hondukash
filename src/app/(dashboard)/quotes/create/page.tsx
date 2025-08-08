@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { CreateQuoteRequest } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 import QuoteForm from '@/components/quotes/QuoteForm';
 
 export default function CreateQuotePage() {
@@ -30,7 +31,7 @@ export default function CreateQuotePage() {
       // Redirect to quote list
       router.push('/quotes');
     } catch (error: unknown) {
-      alert(error instanceof Error ? error.message : 'Unknown error');
+      toast.error(error instanceof Error ? error.message : 'Failed to create quote');
     } finally {
       setLoading(false);
     }

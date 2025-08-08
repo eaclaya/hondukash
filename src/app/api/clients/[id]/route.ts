@@ -27,7 +27,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     if (!result.success) {
       return NextResponse.json({ error: result.error }, { status: 404 });
     }
-
     return NextResponse.json({ client: result.data });
   } catch (error: unknown) {
     console.error('GET /api/clients/[id] error:', error);

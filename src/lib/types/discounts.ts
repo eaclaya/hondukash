@@ -2,33 +2,8 @@
 // DISCOUNT & PRICING RULES TYPES  
 // =========================================
 
-// Tags System Types
-export interface Tag {
-  id: string
-  storeId: string
-  name: string
-  slug: string
-  description?: string
-  color: string
-  category: 'general' | 'client' | 'product' | 'discount' | 'marketing' | 'custom'
-  isActive: boolean
-  sortOrder: number
-  createdAt: string
-  updatedAt: string
-}
-
-export interface EntityTag {
-  id: string
-  tagId: string
-  entityType: 'client' | 'product' | 'invoice' | 'category' | 'user' | 'supplier' | 'expense'
-  entityId: string
-  assignedAt: string
-  assignedBy?: string
-  createdAt: string
-  
-  // Related entities
-  tag?: Tag
-}
+// Note: Tags are now stored directly in entity tables as JSON arrays
+// No separate Tag or EntityTag interfaces needed
 
 export type RuleType = 
   | 'percentage_discount'    // 10% off

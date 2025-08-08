@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { useTenant } from '@/contexts/TenantContext';
+import { toast } from 'sonner';
 import { Building, Mail, Phone, MapPin } from 'lucide-react';
 
 interface TenantProfile {
@@ -76,13 +77,13 @@ export default function TenantProfilePage() {
 
       if (response.ok) {
         // Show success message
-        alert('Profile updated successfully!');
+        toast.success('Profile updated successfully!');
       } else {
         throw new Error('Failed to update profile');
       }
     } catch (error: unknown) {
       console.error('Error updating profile:', error);
-      alert('Failed to update profile. Please try again.');
+      toast.error('Failed to update profile. Please try again.');
     } finally {
       setSaving(false);
     }

@@ -145,6 +145,8 @@ CREATE TABLE products (
 
     -- Metadata
     is_active INTEGER NOT NULL DEFAULT 1 CHECK (is_active IN (0, 1)),
+    tags TEXT,
+
     created_at TEXT NOT NULL DEFAULT (datetime('now', 'utc')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now', 'utc'))
 );
@@ -208,6 +210,8 @@ CREATE TABLE clients (
     -- Metadata
     notes TEXT,
     is_active INTEGER NOT NULL DEFAULT 1 CHECK (is_active IN (0, 1)),
+    tags TEXT,
+
     created_at TEXT NOT NULL DEFAULT (datetime('now', 'utc')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now', 'utc'))
 );
@@ -294,6 +298,7 @@ CREATE TABLE invoices (
     -- Additional info
     notes TEXT,
     terms TEXT,
+    tags TEXT,
 
     -- Metadata
     created_at TEXT NOT NULL DEFAULT (datetime('now', 'utc')),
@@ -358,6 +363,7 @@ CREATE TABLE quotes (
     -- Additional info
     notes TEXT,
     terms TEXT,
+    tags TEXT,
 
     -- Metadata
     created_at TEXT NOT NULL DEFAULT (datetime('now', 'utc')),
@@ -493,7 +499,6 @@ CREATE TABLE payments (
 
 CREATE TABLE tags (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    store_id INTEGER NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
 
     -- Tag details
     name TEXT NOT NULL,
@@ -505,8 +510,8 @@ CREATE TABLE tags (
         'general',      -- General purpose tags
         'client',       -- Client-specific tags (wholesale, vip, etc.)
         'product',      -- Product-specific tags (featured, clearance, etc.)
-        'discount',     -- Discount-related tags
-        'marketing',    -- Marketing campaigns
+        'invoice',     -- Invoice-specific tags
+        'quote',    -- Quote-specific tags
         'custom'        -- Custom business logic
     )),
 
@@ -521,40 +526,12 @@ CREATE TABLE tags (
     UNIQUE(name)
 );
 
--- Entity Tags (Polymorphic Relationship)
-CREATE TABLE taggable (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    tag_id INTEGER NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
-
-    -- Polymorphic relationship
-    entity_type TEXT NOT NULL CHECK (entity_type IN (
-        'client',           -- clients table
-        'product',          -- products table
-        'invoice',          -- invoices table
-        'category',         -- categories table
-        'user',            -- users table
-        'supplier',        -- suppliers table (if implemented)
-        'expense'          -- expenses table
-    )),
-    entity_id INTEGER NOT NULL,
-
-    -- Assignment details
-    assigned_at TEXT NOT NULL DEFAULT (datetime('now', 'utc')),
-    assigned_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
-
-    -- Metadata
-    created_at TEXT NOT NULL DEFAULT (datetime('now', 'utc')),
-
-    UNIQUE(tag_id, entity_type, entity_id)
-);
-
 -- =========================================
 -- DISCOUNT & PRICING RULES SYSTEM
 -- =========================================
 
 CREATE TABLE pricing_rules (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    store_id INTEGER NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
 
     -- Rule identification
     name TEXT NOT NULL,
@@ -595,7 +572,7 @@ CREATE TABLE pricing_rules (
     created_at TEXT NOT NULL DEFAULT (datetime('now', 'utc')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now', 'utc')),
 
-    UNIQUE(store_id, rule_code)
+    UNIQUE(rule_code)
 );
 
 -- Rule Conditions
@@ -745,15 +722,8 @@ CREATE INDEX idx_quotes_converted_invoice ON quotes(converted_to_invoice_id);
 CREATE INDEX idx_quote_items_quote_id ON quote_items(quote_id);
 CREATE INDEX idx_quote_items_product_id ON quote_items(product_id);
 
--- Tagging System
-CREATE INDEX idx_tags_store_active ON tags(store_id, is_active);
-CREATE INDEX idx_tags_category ON tags(category);
-CREATE INDEX idx_taggable_tag ON taggable(tag_id);
-CREATE INDEX idx_taggable_entity ON taggable(entity_type, entity_id);
-CREATE INDEX idx_taggable_assigned ON taggable(assigned_at);
-
 -- Discount System
-CREATE INDEX idx_pricing_rules_store_active ON pricing_rules(store_id, is_active);
+CREATE INDEX idx_pricing_rules_active ON pricing_rules(is_active);
 CREATE INDEX idx_pricing_rules_dates ON pricing_rules(start_date, end_date);
 CREATE INDEX idx_pricing_rules_priority ON pricing_rules(priority DESC);
 CREATE INDEX idx_pricing_rules_type ON pricing_rules(rule_type);

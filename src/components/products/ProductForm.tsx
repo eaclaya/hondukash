@@ -10,8 +10,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Package, Warehouse, Tag, DollarSign, Settings } from 'lucide-react';
+import { Package, Warehouse, Tag, DollarSign, Settings, Tags } from 'lucide-react';
 import TaxRateSelector from '@/components/ui/TaxRateSelector';
+import { EntityTagManager } from '@/components/tags';
+import SimpleTagSelector from '@/components/tags/SimpleTagSelector';
 
 interface ProductFormProps {
   product?: ProductWithInventory;
@@ -49,7 +51,11 @@ export default function ProductForm({ product, onSubmit, onCancel, loading = fal
     quantity: product?.inventory?.quantity || 0,
     storePrice: product?.inventory?.price || calculatedPrice,
     location: product?.inventory?.location || '',
+    tags: product?.tags || [],
   });
+
+
+  const [selectedTags, setSelectedTags] = useState<string[]>(product?.tags || []);
 
   const validateAlphanumericCode = (value: string): string => {
     // Allow only letters, numbers, dash, dot, underscore
@@ -62,21 +68,21 @@ export default function ProductForm({ product, onSubmit, onCancel, loading = fal
         ...prev,
         [field]: value
       };
-      
+
       // Validate SKU and barcode fields
       if (field === 'sku' || field === 'barcode') {
         updated[field] = validateAlphanumericCode(value);
       }
-      
+
       // Auto-calculate selling price when base price or tax rate changes
       if (field === 'basePrice' || field === 'taxRate' || field === 'isTaxable' || field === 'taxRateId') {
         const basePrice = field === 'basePrice' ? value : updated.basePrice || 0;
         const taxRate = field === 'taxRate' ? value : updated.taxRate || 0;
         const isTaxable = field === 'isTaxable' ? value : updated.isTaxable;
-        
+
         updated.price = isTaxable ? basePrice * (1 + taxRate) : basePrice;
       }
-      
+
       return updated;
     });
   };
@@ -88,19 +94,23 @@ export default function ProductForm({ product, onSubmit, onCancel, loading = fal
         taxRateId,
         taxRate
       };
-      
+
       // Recalculate selling price
       const basePrice = updated.basePrice || 0;
       const isTaxable = updated.isTaxable;
       updated.price = isTaxable ? basePrice * (1 + taxRate) : basePrice;
-      
+
       return updated;
     });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await onSubmit(formData);
+    const submitData = {
+      ...formData,
+      tags: JSON.stringify(selectedTags)
+    };
+    await onSubmit(submitData);
   };
 
   const formatCurrency = (amount: number) => {
@@ -132,9 +142,10 @@ export default function ProductForm({ product, onSubmit, onCancel, loading = fal
       </div>
 
       <Tabs defaultValue="product" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="product">Product Information</TabsTrigger>
           <TabsTrigger value="inventory">Inventory & Pricing</TabsTrigger>
+          <TabsTrigger value="tags">Tags</TabsTrigger>
         </TabsList>
 
         <TabsContent value="product" className="space-y-6">
@@ -218,6 +229,17 @@ export default function ProductForm({ product, onSubmit, onCancel, loading = fal
                     </SelectContent>
                   </Select>
                 </div>
+
+                <div className="space-y-2 md:col-span-2">
+                  <SimpleTagSelector
+                    selectedTagNames={selectedTags}
+                    onTagsChange={setSelectedTags}
+                    storeId={1} // TODO: Get actual store ID from context/props
+                    categoryFilter={['product', 'general']}
+                    label="Product Tags"
+                    placeholder="Select tags for this product..."
+                  />
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -286,7 +308,7 @@ export default function ProductForm({ product, onSubmit, onCancel, loading = fal
                     allowNegative={false}
                   />
                   <p className="text-xs text-muted-foreground">
-                    {formData.isTaxable 
+                    {formData.isTaxable
                       ? `Calculated: Base Price (${formatCurrency(formData.basePrice || 0)}) + Tax (${((formData.taxRate || 0) * 100).toFixed(1)}%)`
                       : 'Calculated: Base Price (no tax)'
                     }
@@ -533,6 +555,33 @@ export default function ProductForm({ product, onSubmit, onCancel, loading = fal
               </CardContent>
             </Card>
           )}
+        </TabsContent>
+
+        <TabsContent value="tags" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Tags className="h-5 w-5" />
+                <span>Product Tags</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {product?.id ? (
+                <EntityTagManager
+                  entityType="product"
+                  entityId={product.id}
+                  entityName={formData.name}
+                  storeId={1} // TODO: Get actual store ID from context/props
+                  tags={product.tags}
+                />
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Tags className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>Tags can be managed after the product is created.</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>

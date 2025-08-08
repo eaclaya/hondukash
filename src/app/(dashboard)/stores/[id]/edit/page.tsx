@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { Store, UpdateStoreRequest } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { StoreForm } from '@/components/stores/StoreForm';
+import { toast } from 'sonner';
 
 export default function EditStorePage() {
   const router = useRouter();
@@ -60,7 +61,7 @@ export default function EditStorePage() {
       // Redirect to store list
       router.push('/stores');
     } catch (error: unknown) {
-      alert(error instanceof Error ? error.message : 'Unknown error');
+      toast.error(error instanceof Error ? error.message : 'Failed to update store');
     } finally {
       setLoading(false);
     }

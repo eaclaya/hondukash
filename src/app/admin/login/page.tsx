@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import Link from 'next/link'
 
 export default function AdminLoginPage() {
@@ -27,10 +28,10 @@ export default function AdminLoginPage() {
         router.push('/admin')
         router.refresh()
       } else {
-        alert('Invalid credentials')
+        toast.error('Invalid credentials')
       }
     } catch (error) {
-      alert('Login failed')
+      toast.error('Login failed')
     } finally {
       setIsLoading(false)
     }

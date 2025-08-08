@@ -6,6 +6,7 @@ import { Quote, Store } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Printer, Download } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function QuotePrintPage() {
   const params = useParams();
@@ -77,7 +78,7 @@ export default function QuotePrintPage() {
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
     } catch (error: unknown) {
-      alert('Error generating PDF: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      toast.error('Error generating PDF: ' + (error instanceof Error ? error.message : 'Unknown error'));
     }
   };
 

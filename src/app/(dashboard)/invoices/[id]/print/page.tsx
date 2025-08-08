@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Printer, Download } from 'lucide-react';
 import { toast } from 'sonner';
+import LoaderSpinner from '@/components/shared/loader-spinner';
 
 export default function InvoicePrintPage() {
   const params = useParams();
@@ -41,7 +42,7 @@ export default function InvoicePrintPage() {
         const storeResponse = await fetch(`/api/stores/${data.invoice.storeId}`, {
           headers: getAuthHeaders()
         });
-        
+
         if (storeResponse.ok) {
           const storeData = await storeResponse.json();
           setStore(storeData.store);
@@ -96,7 +97,7 @@ export default function InvoicePrintPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div>Loading invoice...</div>
+        <div><LoaderSpinner /></div>
       </div>
     );
   }
@@ -137,7 +138,7 @@ export default function InvoicePrintPage() {
               <p className="text-gray-600">Invoice Management System</p>
             </div>
           </div>
-          
+
           <div className="border-t border-gray-200 pt-6">
             <div className="grid grid-cols-2 gap-8">
               <div>
@@ -153,7 +154,7 @@ export default function InvoicePrintPage() {
                   {invoice.client?.country && <p>{invoice.client.country}</p>}
                 </div>
               </div>
-              
+
               <div>
                 <div className="space-y-2">
                   <div className="flex justify-between">
@@ -303,27 +304,27 @@ export default function InvoicePrintPage() {
           .no-print {
             display: none !important;
           }
-          
+
           body {
             margin: 0;
             padding: 0;
             font-size: 12pt;
             line-height: 1.4;
           }
-          
+
           .print-break {
             page-break-after: always;
           }
-          
+
           table {
             page-break-inside: avoid;
           }
-          
+
           tr {
             page-break-inside: avoid;
           }
         }
-        
+
         @page {
           size: A4;
           margin: 0.5in;

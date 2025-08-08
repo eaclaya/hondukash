@@ -9,6 +9,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Edit, ArrowLeft, Download, Send, DollarSign, Printer } from 'lucide-react';
 import { toast } from 'sonner';
+import LoaderSpinner from '@/components/shared/loader-spinner';
 
 export default function InvoiceDetailPage() {
   const router = useRouter();
@@ -109,7 +110,7 @@ export default function InvoiceDetailPage() {
     return (
       <div className="max-w-4xl mx-auto p-6">
         <div className="flex items-center justify-center py-12">
-          <div className="text-lg">Loading invoice...</div>
+          <div className="text-lg"><LoaderSpinner /></div>
         </div>
       </div>
     );

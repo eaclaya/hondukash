@@ -20,7 +20,7 @@ export function useCurrentStore() {
       // Get current store ID from localStorage or use first store as default
       const savedStoreId = localStorage.getItem('currentStoreId');
       let storeId: number;
-      
+
       if (savedStoreId) {
         storeId = parseInt(savedStoreId);
       } else if (user.stores.length > 0) {
@@ -50,7 +50,7 @@ export function getCurrentStoreId(): number | null {
   if (typeof window === 'undefined') {
     return null; // Server-side, can't access localStorage
   }
-  
+
   const savedStoreId = localStorage.getItem('currentStoreId');
   return savedStoreId ? parseInt(savedStoreId) : null;
 }

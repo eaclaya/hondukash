@@ -52,22 +52,22 @@ export default function SimpleTagSelector({
       setIsLoading(true);
       const response = await fetch('/api/tags', {
         headers: {
-          'X-Store-ID': storeId.toString()
+          'X-Store-ID': '1'
         }
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to load tags');
       }
-      
+
       const result = await response.json();
       let tags = result.data || [];
-      
+
       // Apply category filter if specified
       if (categoryFilter && categoryFilter.length > 0) {
         tags = tags.filter((tag: Tag) => categoryFilter.includes(tag.category));
       }
-      
+
       setAvailableTags(tags);
     } catch (error) {
       console.error('Error loading tags:', error);
@@ -104,14 +104,14 @@ export default function SimpleTagSelector({
   return (
     <div className={cn('space-y-2', className)}>
       {label && <label className="text-sm font-medium">{label}</label>}
-      
+
       {/* Selected Tags Display */}
       {selectedTagNames.length > 0 && (
         <div className="flex flex-wrap gap-1">
           {selectedTagNames.map(tagName => {
             const tag = availableTags.find(t => t.name === tagName);
             return (
-              <Badge 
+              <Badge
                 key={tagName}
                 variant="secondary"
                 className="flex items-center gap-1 pr-1"
@@ -153,8 +153,8 @@ export default function SimpleTagSelector({
         </PopoverTrigger>
         <PopoverContent className="w-full p-0" align="start">
           <Command>
-            <CommandInput 
-              placeholder="Search tags..." 
+            <CommandInput
+              placeholder="Search tags..."
               value={searchQuery}
               onValueChange={setSearchQuery}
             />
@@ -173,7 +173,7 @@ export default function SimpleTagSelector({
                       className="flex items-center justify-between"
                     >
                       <div className="flex items-center gap-2">
-                        <div 
+                        <div
                           className="w-3 h-3 rounded-full shrink-0"
                           style={{ backgroundColor: tag.color }}
                         />

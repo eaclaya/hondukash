@@ -6,6 +6,7 @@ import { Invoice, UpdateInvoiceRequest } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
 import InvoiceForm from '@/components/invoices/InvoiceForm';
 import { toast } from 'sonner';
+import LoaderSpinner from '@/components/shared/loader-spinner';
 
 export default function EditInvoicePage() {
   const router = useRouter();
@@ -76,7 +77,7 @@ export default function EditInvoicePage() {
     return (
       <div className="max-w-4xl mx-auto p-6">
         <div className="flex items-center justify-center py-12">
-          <div className="text-lg">Loading invoice...</div>
+          <div className="text-lg"><LoaderSpinner /></div>
         </div>
       </div>
     );

@@ -77,6 +77,12 @@ export default function DashboardLayout({
                   <DropdownMenuItem asChild>
                     <Link href="/tax-rates">Tax Rates</Link>
                   </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/tags">Tags</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/pricing-rules">Pricing Rules</Link>
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
                     <Link href="/stores">All Stores</Link>

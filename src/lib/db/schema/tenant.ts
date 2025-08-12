@@ -208,7 +208,6 @@ export const clients = sqliteTable('clients', {
   // Business settings
   creditLimit: real('credit_limit').default(0),
   paymentTerms: integer('payment_terms').default(30), // days
-  discountPercentage: real('discount_percentage').default(0), // Default discount for this client
 
   // Metadata
   notes: text('notes'),
@@ -426,6 +425,7 @@ export const tags = sqliteTable('tags', {
 // =========================================
 export const pricingRules = sqliteTable('pricing_rules', {
   id: integer('id').primaryKey({ autoIncrement: true }),
+  storeId: integer('store_id').notNull().references(() => stores.id, { onDelete: 'cascade' }),
 
   // Rule identification
   name: text('name').notNull(),

@@ -68,7 +68,6 @@ export class ClientService {
         address: client.address || undefined,
         creditLimit: client.creditLimit,
         paymentTerms: client.paymentTerms,
-        discountPercentage: client.discountPercentage,
         notes: client.notes || undefined,
         isActive: client.isActive,
         createdAt: client.createdAt,
@@ -166,8 +165,8 @@ export class ClientService {
           postalCode: clientData.postalCode || null,
           creditLimit: clientData.creditLimit || 0,
           paymentTerms: clientData.paymentTerms || 30,
-          discountPercentage: clientData.discountPercentage || 0,
-          notes: clientData.notes || null
+          notes: clientData.notes || null,
+          tags: clientData.tags ? JSON.stringify(clientData.tags) : null
         })
         .returning();
 
@@ -227,8 +226,9 @@ export class ClientService {
       if (clientData.postalCode !== undefined) updateData.postalCode = clientData.postalCode;
       if (clientData.creditLimit !== undefined) updateData.creditLimit = clientData.creditLimit;
       if (clientData.paymentTerms !== undefined) updateData.paymentTerms = clientData.paymentTerms;
-      if (clientData.discountPercentage !== undefined) updateData.discountPercentage = clientData.discountPercentage;
       if (clientData.notes !== undefined) updateData.notes = clientData.notes;
+      if (clientData.tags !== undefined) updateData.tags = JSON.stringify(clientData.tags);
+
 
       if (Object.keys(updateData).length === 0) {
         return { success: false, error: 'No fields to update' };
@@ -309,13 +309,13 @@ export class ClientService {
         mobile: contact.mobile || undefined,
         extension: contact.extension || undefined,
         contactType: contact.contactType,
-        canMakePurchases: contact.canMakePurchases,
+        canMakePurchases: contact.canMakePurchases ?? false,
         purchaseLimit: contact.purchaseLimit || undefined,
-        requiresApproval: contact.requiresApproval,
-        preferredContactMethod: contact.preferredContactMethod,
-        language: contact.language,
-        timezone: contact.timezone,
-        isPrimary: contact.isPrimary,
+        requiresApproval: contact.requiresApproval ?? false,
+        preferredContactMethod: contact.preferredContactMethod || 'email',
+        language: contact.language || 'es',
+        timezone: contact.timezone || 'America/Tegucigalpa',
+        isPrimary: contact.isPrimary ?? false,
         isActive: contact.isActive,
         notes: contact.notes || undefined,
         createdAt: contact.createdAt,
@@ -372,13 +372,13 @@ export class ClientService {
         mobile: contact.mobile || undefined,
         extension: contact.extension || undefined,
         contactType: contact.contactType,
-        canMakePurchases: contact.canMakePurchases,
+        canMakePurchases: contact.canMakePurchases ?? false,
         purchaseLimit: contact.purchaseLimit || undefined,
-        requiresApproval: contact.requiresApproval,
-        preferredContactMethod: contact.preferredContactMethod,
-        language: contact.language,
-        timezone: contact.timezone,
-        isPrimary: contact.isPrimary,
+        requiresApproval: contact.requiresApproval ?? false,
+        preferredContactMethod: contact.preferredContactMethod || 'email',
+        language: contact.language || 'es',
+        timezone: contact.timezone || 'America/Tegucigalpa',
+        isPrimary: contact.isPrimary ?? false,
         isActive: contact.isActive,
         notes: contact.notes || undefined,
         createdAt: contact.createdAt,

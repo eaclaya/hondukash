@@ -274,6 +274,7 @@ export class ProductService {
             unit: productData.unit || 'unit',
             imageUrl: productData.imageUrl || null,
             images: productData.images ? JSON.stringify(productData.images) : '[]',
+            tags: productData.tags ? JSON.stringify(productData.tags) : null,
             isActive: true
           })
           .returning();
@@ -330,6 +331,7 @@ export class ProductService {
       if (productData.unit !== undefined) updateData.unit = productData.unit;
       if (productData.imageUrl !== undefined) updateData.imageUrl = productData.imageUrl;
       if (productData.images !== undefined) updateData.images = JSON.stringify(productData.images);
+      if (productData.tags !== undefined) updateData.tags = JSON.stringify(productData.tags);
 
       if (Object.keys(updateData).length === 0 &&
           productData.quantity === undefined &&

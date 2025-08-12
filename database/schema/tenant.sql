@@ -205,7 +205,6 @@ CREATE TABLE clients (
     -- Business settings
     credit_limit REAL DEFAULT 0,
     payment_terms INTEGER DEFAULT 30, -- days
-    discount_percentage REAL DEFAULT 0, -- Default discount for this client
 
     -- Metadata
     notes TEXT,

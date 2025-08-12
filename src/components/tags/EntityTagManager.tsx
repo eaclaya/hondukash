@@ -35,6 +35,7 @@ interface EntityTagManagerProps {
   entityType: 'client' | 'product' | 'invoice' | 'quote';
   entityId: number;
   entityName?: string;
+  storeId: number;
   tags?: string[]; // Existing tag names from the entity
   onTagsChanged?: (tagNames: string[]) => void;
 }
@@ -66,6 +67,7 @@ export default function EntityTagManager({
   entityType,
   entityId,
   entityName,
+  storeId,
   tags = [],
   onTagsChanged
 }: EntityTagManagerProps) {
@@ -74,7 +76,6 @@ export default function EntityTagManager({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isCreateTagOpen, setIsCreateTagOpen] = useState(false);
 
   // Create tag form state
   const [newTag, setNewTag] = useState<CreateTagData>({
@@ -85,10 +86,15 @@ export default function EntityTagManager({
   });
 
 
-  // Load entity tags and available tags on mount
+  // Update entityTagNames when tags prop changes
+  useEffect(() => {
+    setEntityTagNames(tags);
+  }, [tags]);
+
+  // Load available tags on mount
   useEffect(() => {
     loadAvailableTags();
-  }, [entityType, entityId]);
+  }, [storeId]);
 
   // Refresh data when dialog is opened (in case tags were modified elsewhere)
   useEffect(() => {
@@ -102,7 +108,7 @@ export default function EntityTagManager({
     try {
       const response = await fetch('/api/tags', {
         headers: {
-          'X-Store-ID': '1'
+          'X-Store-ID': storeId.toString()
         }
       });
 
@@ -125,7 +131,7 @@ export default function EntityTagManager({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Store-ID': '1'
+          'X-Store-ID': storeId.toString()
         },
         body: JSON.stringify({
           entityType,
@@ -156,7 +162,7 @@ export default function EntityTagManager({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Store-ID': '1'
+          'X-Store-ID': storeId.toString()
         },
         body: JSON.stringify({
           entityType,
@@ -191,7 +197,7 @@ export default function EntityTagManager({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Store-ID': '1'
+          'X-Store-ID': storeId.toString()
         },
         body: JSON.stringify(newTag)
       });
@@ -201,7 +207,7 @@ export default function EntityTagManager({
         throw new Error(error.error || 'Failed to create tag');
       }
 
-      const createdTag = await response.json();
+      await response.json(); // Tag created successfully
 
       // Reset form
       setNewTag({
@@ -211,7 +217,7 @@ export default function EntityTagManager({
         category: 'general'
       });
 
-      setIsCreateTagOpen(false);
+      // Tag created successfully
       await loadAvailableTags();
 
       toast.success('Tag created successfully');
@@ -470,7 +476,7 @@ export default function EntityTagManager({
 
                   <div className="flex justify-end gap-2">
                     <Button
-                      onClick={() => setIsCreateTagOpen(false)}
+                      type="button"
                       variant="outline"
                     >
                       Cancel

@@ -136,14 +136,15 @@ export interface CreateClientRequest {
   postalCode?: string;
   creditLimit?: number;
   paymentTerms?: number;
-  discountPercentage?: number;
   notes?: string;
+  tags?: string[];
   contacts?: CreateClientContactRequest[];
 }
 
 export interface UpdateClientRequest extends Partial<CreateClientRequest> {
   id: number;
   contacts?: CreateClientContactRequest[];
+  tags?: string[];
 }
 
 export interface CreateClientContactRequest {
@@ -164,6 +165,7 @@ export interface CreateClientContactRequest {
   timezone?: string;
   isPrimary?: boolean;
   notes?: string;
+  tags?: string[];
 }
 
 export interface UpdateClientContactRequest extends Partial<CreateClientContactRequest> {
@@ -206,7 +208,6 @@ export interface Client {
   // Business settings
   creditLimit: number;
   paymentTerms: number;
-  discountPercentage: number;
 
   notes?: string;
   isActive: boolean;

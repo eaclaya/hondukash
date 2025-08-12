@@ -10,10 +10,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Package, Warehouse, Tag, DollarSign, Settings, Tags } from 'lucide-react';
+import { Package, Warehouse, Tag, DollarSign, Settings, Tags, ExternalLink } from 'lucide-react';
 import TaxRateSelector from '@/components/ui/TaxRateSelector';
-import { EntityTagManager } from '@/components/tags';
 import SimpleTagSelector from '@/components/tags/SimpleTagSelector';
+import Link from 'next/link';
 
 interface ProductFormProps {
   product?: ProductWithInventory;
@@ -55,7 +55,27 @@ export default function ProductForm({ product, onSubmit, onCancel, loading = fal
   });
 
 
-  const [selectedTags, setSelectedTags] = useState<string[]>(product?.tags || []);
+  const [selectedTags, setSelectedTags] = useState<string[]>(() => {
+    if (!product || !product.tags) return [];
+    
+    // If tags is already an array, use it directly
+    if (Array.isArray(product.tags)) {
+      return product.tags;
+    }
+    
+    // If tags is a string, try to parse it as JSON
+    if (typeof product.tags === 'string') {
+      try {
+        const parsed = JSON.parse(product.tags);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        // If JSON parsing fails, split by comma and clean up
+        return (product.tags as string).split(',').map((tag: string) => tag.trim()).filter((tag: string) => tag.length > 0);
+      }
+    }
+    
+    return [];
+  });
 
   const validateAlphanumericCode = (value: string): string => {
     // Allow only letters, numbers, dash, dot, underscore
@@ -108,7 +128,7 @@ export default function ProductForm({ product, onSubmit, onCancel, loading = fal
     e.preventDefault();
     const submitData = {
       ...formData,
-      tags: JSON.stringify(selectedTags)
+      tags: selectedTags
     };
     await onSubmit(submitData);
   };
@@ -132,6 +152,15 @@ export default function ProductForm({ product, onSubmit, onCancel, loading = fal
           </p>
         </div>
         <div className="flex space-x-3">
+          {product?.id && (
+            <Link href={`/tags/products/${product.id}`}>
+              <Button variant="outline" className="flex items-center space-x-2">
+                <Tags className="h-4 w-4" />
+                <span>Manage Tags</span>
+                <ExternalLink className="h-3 w-3" />
+              </Button>
+            </Link>
+          )}
           <Button variant="outline" onClick={onCancel} disabled={loading}>
             Cancel
           </Button>
@@ -142,10 +171,9 @@ export default function ProductForm({ product, onSubmit, onCancel, loading = fal
       </div>
 
       <Tabs defaultValue="product" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="product">Product Information</TabsTrigger>
           <TabsTrigger value="inventory">Inventory & Pricing</TabsTrigger>
-          <TabsTrigger value="tags">Tags</TabsTrigger>
         </TabsList>
 
         <TabsContent value="product" className="space-y-6">
@@ -557,31 +585,6 @@ export default function ProductForm({ product, onSubmit, onCancel, loading = fal
           )}
         </TabsContent>
 
-        <TabsContent value="tags" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Tags className="h-5 w-5" />
-                <span>Product Tags</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {product?.id ? (
-                <EntityTagManager
-                  entityType="product"
-                  entityId={product.id}
-                  entityName={formData.name}
-                  tags={product.tags}
-                />
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Tags className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>Tags can be managed after the product is created.</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
       </Tabs>
     </div>
   );

@@ -10,9 +10,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Trash2, Building, User, Mail, Phone, MapPin, CreditCard, Tags } from 'lucide-react';
-import { EntityTagManager } from '@/components/tags';
+import { Plus, Trash2, Building, User, Mail, Phone, MapPin, CreditCard, Tags, ExternalLink } from 'lucide-react';
 import SimpleTagSelector from '@/components/tags/SimpleTagSelector';
+import Link from 'next/link';
 import { toast } from 'sonner';
 
 interface ClientFormProps {
@@ -62,15 +62,32 @@ export default function ClientForm({ client, onSubmit, onCancel, loading = false
     postalCode: client?.postalCode || '',
     creditLimit: client?.creditLimit || 0,
     paymentTerms: client?.paymentTerms || 30,
-    discountPercentage: client?.discountPercentage || 0,
     notes: client?.notes || '',
     tags: client?.tags || [],
   });
 
 
-  const [selectedTags, setSelectedTags] = useState<string[]>(
-    client ? client.tags : []
-  );
+  const [selectedTags, setSelectedTags] = useState<string[]>(() => {
+    if (!client || !client.tags) return [];
+    
+    // If tags is already an array, use it directly
+    if (Array.isArray(client.tags)) {
+      return client.tags;
+    }
+    
+    // If tags is a string, try to parse it as JSON
+    if (typeof client.tags === 'string') {
+      try {
+        const parsed = JSON.parse(client.tags);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        // If JSON parsing fails, split by comma and clean up
+        return (client.tags as string).split(',').map((tag: string) => tag.trim()).filter((tag: string) => tag.length > 0);
+      }
+    }
+    
+    return [];
+  });
 
   const [contacts, setContacts] = useState<ContactFormData[]>(
     client?.contacts?.map(contact => ({
@@ -127,7 +144,7 @@ export default function ClientForm({ client, onSubmit, onCancel, loading = false
 
     const submitData = {
       ...formData,
-      tags: JSON.stringify(selectedTags),
+      tags: selectedTags,
       contacts: contactsData
     };
 
@@ -167,6 +184,15 @@ export default function ClientForm({ client, onSubmit, onCancel, loading = false
           </p>
         </div>
         <div className="flex space-x-3">
+          {client?.id && (
+            <Link href={`/tags/clients/${client.id}`}>
+              <Button variant="outline" className="flex items-center space-x-2">
+                <Tags className="h-4 w-4" />
+                <span>Manage Tags</span>
+                <ExternalLink className="h-3 w-3" />
+              </Button>
+            </Link>
+          )}
           <Button variant="outline" onClick={onCancel} disabled={loading}>
             Cancel
           </Button>
@@ -177,7 +203,7 @@ export default function ClientForm({ client, onSubmit, onCancel, loading = false
       </div>
 
       <Tabs defaultValue="basic" className="space-y-6">
-        <TabsList className={`grid w-full ${formData.clientType === 'company' ? 'grid-cols-4' : 'grid-cols-2'}`}>
+        <TabsList className={`grid w-full ${formData.clientType === 'company' ? 'grid-cols-3' : 'grid-cols-1'}`}>
           <TabsTrigger value="basic">Basic Information</TabsTrigger>
           {formData.clientType === 'company' && (
             <>
@@ -185,7 +211,6 @@ export default function ClientForm({ client, onSubmit, onCancel, loading = false
               <TabsTrigger value="contacts">Contacts</TabsTrigger>
             </>
           )}
-          <TabsTrigger value="tags">Tags</TabsTrigger>
         </TabsList>
 
         <TabsContent value="basic" className="space-y-6">
@@ -367,18 +392,6 @@ export default function ClientForm({ client, onSubmit, onCancel, loading = false
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="discountPercentage">Default Discount (%)</Label>
-                  <NumericInput
-                    id="discountPercentage"
-                    value={(formData.discountPercentage * 100).toString()}
-                    onValueChange={(value) => handleInputChange('discountPercentage', (value || 0) / 100)}
-                    placeholder="0"
-                    allowDecimals={true}
-                    maxDecimals={1}
-                    allowNegative={false}
-                  />
-                </div>
               </div>
 
               <div className="space-y-2">
@@ -555,32 +568,6 @@ export default function ClientForm({ client, onSubmit, onCancel, loading = false
           </TabsContent>
         )}
 
-        <TabsContent value="tags" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Tags className="h-5 w-5" />
-                <span>Client Tags</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {client?.id ? (
-                <EntityTagManager
-                  entityType="client"
-                  entityId={client.id}
-                  entityName={formData.name}
-                  storeId={formData.storeId}
-                  tags={client.tags}
-                />
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Tags className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>Tags can be managed after the client is created.</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
       </Tabs>
     </div>
   );

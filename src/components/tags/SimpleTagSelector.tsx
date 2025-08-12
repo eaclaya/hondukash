@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -37,6 +37,27 @@ export default function SimpleTagSelector({
   className,
   label
 }: SimpleTagSelectorProps) {
+  // Ensure selectedTagNames is always an array
+  const safeSelectedTagNames = React.useMemo(() => {
+    if (!selectedTagNames) return [];
+    
+    // If it's already an array, return it
+    if (Array.isArray(selectedTagNames)) {
+      return selectedTagNames;
+    }
+    
+    // If it's a string, try to parse it as JSON or split by comma
+    if (typeof selectedTagNames === 'string') {
+      try {
+        const parsed = JSON.parse(selectedTagNames as string);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return (selectedTagNames as string).split(',').map((tag: string) => tag.trim()).filter((tag: string) => tag.length > 0);
+      }
+    }
+    
+    return [];
+  }, [selectedTagNames]);
   const [availableTags, setAvailableTags] = useState<Tag[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -78,18 +99,18 @@ export default function SimpleTagSelector({
   };
 
   const handleTagSelect = (tag: Tag) => {
-    const isSelected = selectedTagNames.includes(tag.name);
+    const isSelected = safeSelectedTagNames.includes(tag.name);
     if (isSelected) {
       // Remove tag
-      onTagsChange(selectedTagNames.filter(name => name !== tag.name));
+      onTagsChange(safeSelectedTagNames.filter(name => name !== tag.name));
     } else {
       // Add tag
-      onTagsChange([...selectedTagNames, tag.name]);
+      onTagsChange([...safeSelectedTagNames, tag.name]);
     }
   };
 
   const handleTagRemove = (tagName: string) => {
-    onTagsChange(selectedTagNames.filter(name => name !== tagName));
+    onTagsChange(safeSelectedTagNames.filter(name => name !== tagName));
   };
 
   // Filter available tags based on search and selection
@@ -99,16 +120,16 @@ export default function SimpleTagSelector({
     return matchesSearch;
   });
 
-  const isTagSelected = (tagName: string) => selectedTagNames.includes(tagName);
+  const isTagSelected = (tagName: string) => safeSelectedTagNames.includes(tagName);
 
   return (
     <div className={cn('space-y-2', className)}>
       {label && <label className="text-sm font-medium">{label}</label>}
 
       {/* Selected Tags Display */}
-      {selectedTagNames.length > 0 && (
+      {safeSelectedTagNames.length > 0 && (
         <div className="flex flex-wrap gap-1">
-          {selectedTagNames.map(tagName => {
+          {safeSelectedTagNames.map(tagName => {
             const tag = availableTags.find(t => t.name === tagName);
             return (
               <Badge
@@ -143,9 +164,9 @@ export default function SimpleTagSelector({
             className="w-full justify-between"
           >
             <span className="truncate">
-              {selectedTagNames.length === 0
+              {safeSelectedTagNames.length === 0
                 ? placeholder
-                : `${selectedTagNames.length} tag${selectedTagNames.length > 1 ? 's' : ''} selected`
+                : `${safeSelectedTagNames.length} tag${safeSelectedTagNames.length > 1 ? 's' : ''} selected`
               }
             </span>
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />

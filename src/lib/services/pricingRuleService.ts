@@ -90,16 +90,22 @@ export class PricingRuleService {
       const sortOrder = params?.sortOrder || 'desc';
       const offset = (page - 1) * limit;
 
-      // Build where conditions
-      let whereConditions = eq(pricingRules.storeId, storeId);
+      // Always filter by store_id
+      const storeCondition = eq(pricingRules.storeId, storeId);
+      
+      let whereConditions;
 
       if (search) {
-        const searchConditions = or(
-          like(pricingRules.name, `%${search}%`),
-          like(pricingRules.description, `%${search}%`),
-          like(pricingRules.ruleCode, `%${search}%`)
+        whereConditions = and(
+          storeCondition,
+          or(
+            like(pricingRules.name, `%${search}%`),
+            like(pricingRules.description, `%${search}%`),
+            like(pricingRules.ruleCode, `%${search}%`)
+          )
         );
-        whereConditions = and(whereConditions, searchConditions);
+      } else {
+        whereConditions = storeCondition;
       }
 
       // Get total count for pagination
@@ -110,18 +116,21 @@ export class PricingRuleService {
 
       const totalCount = totalCountResult[0]?.count || 0;
 
-      // Build sort condition
-      const sortField = (pricingRules as any)[sortBy] || pricingRules.createdAt;
-      const sortCondition = sortOrder === 'asc' ? asc(sortField) : desc(sortField);
-
-      // Get paginated results
-      const rules = await db
-        .select()
-        .from(pricingRules)
-        .where(whereConditions)
-        .limit(limit)
-        .offset(offset)
-        .orderBy(sortCondition);
+      // Get paginated results with related data
+      const rules = await db.query.pricingRules.findMany({
+        where: whereConditions,
+        limit: limit,
+        offset: offset,
+        orderBy: (pricingRules, { asc, desc }) => {
+          const sortField = (pricingRules as any)[sortBy] || pricingRules.createdAt;
+          return sortOrder === 'asc' ? [asc(sortField)] : [desc(sortField)];
+        },
+        with: {
+          conditions: true,
+          targets: true,
+          quantityTiers: true
+        }
+      });
 
       const totalPages = Math.ceil(totalCount / limit);
 

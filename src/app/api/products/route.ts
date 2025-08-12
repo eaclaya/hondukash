@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
 
     // Extract domain from host (remove port if present)
     const domain = host.split(':')[0];
-
+    console.log('domain', domain);
     // Use X-Store-ID header first, then fall back to query params
     const { searchParams } = new URL(request.url);
     const storeIdParam = searchParams.get('storeId');

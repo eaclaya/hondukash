@@ -56,22 +56,29 @@ export class DiscountCalculator {
       updatedItems: [...context.items]
     };
 
-    // Sort rules by priority (higher priority first)
-    const sortedRules = [...pricingRules].sort((a, b) => b.priority - a.priority);
+    // Evaluate all applicable rules and find the one with highest discount
+    const applicableDiscounts: AppliedDiscount[] = [];
 
-    for (const rule of sortedRules) {
+    for (const rule of pricingRules) {
       // Check if rule can be applied
       if (!this.canApplyRule(rule, context, result)) {
         continue;
       }
 
-      // Apply the rule
+      // Calculate what the discount would be for this rule
       const discount = this.applyRule(rule, context, result);
       console.log('discount', discount);
       if (discount) {
-        result.appliedDiscounts.push(discount);
-        result.totalDiscountAmount += discount.discountAmount;
+        applicableDiscounts.push(discount);
       }
+    }
+
+    // Apply only the discount with the highest amount
+    if (applicableDiscounts.length > 0) {
+      const bestDiscount = applicableDiscounts.reduce((best, current) => (current.discountAmount > best.discountAmount ? current : best));
+
+      result.appliedDiscounts.push(bestDiscount);
+      result.totalDiscountAmount = bestDiscount.discountAmount;
     }
 
     result.finalSubtotal = result.originalSubtotal - result.totalDiscountAmount;
@@ -82,7 +89,6 @@ export class DiscountCalculator {
    * Check if a rule can be applied to the current context
    */
   private static canApplyRule(rule: PricingRule, context: DiscountCalculationContext, currentResult: DiscountCalculationResult): boolean {
-    console.log('canApplyRule', rule);
     // Check if rule is active
     if (!rule.isActive) {
       return false;
@@ -223,6 +229,7 @@ export class DiscountCalculator {
       case 'client_has_tag':
       case 'client_has_any_tags':
         requiredTags = condition.valueText ? [condition.valueText] : condition.valueArray ? (JSON.parse(condition.valueArray) as string[]) : [];
+        console.log('requiredTags1', requiredTags, context.clientTags);
         if (requiredTags && context.clientTags) {
           return requiredTags.some((tag) => context.clientTags!.includes(tag));
         }
@@ -231,6 +238,7 @@ export class DiscountCalculator {
       case 'invoice_has_tag':
       case 'invoice_has_any_tags':
         requiredTags = condition.valueText ? [condition.valueText] : condition.valueArray ? (JSON.parse(condition.valueArray) as string[]) : [];
+        console.log('requiredTags2', requiredTags);
         if (requiredTags && context.invoiceTags) {
           return requiredTags.some((tag) => context.invoiceTags!.includes(tag));
         }

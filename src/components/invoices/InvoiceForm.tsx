@@ -11,10 +11,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Trash2, Tags } from 'lucide-react';
+import { Plus, Trash2, Tags, Calculator } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import SimpleTagSelector from '@/components/tags/SimpleTagSelector';
 import { toast } from 'sonner';
+import { usePricingRules } from '@/hooks/usePricingRules';
+import { DiscountCalculator, DiscountCalculationContext, DiscountCalculationResult } from '@/lib/services/discountCalculator';
 
 interface InvoiceFormProps {
   invoice?: Invoice;
@@ -59,7 +61,7 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
     dueDate: invoice?.dueDate || '',
     notes: invoice?.notes || '',
     terms: invoice?.terms || '',
-    status: invoice?.status || 'draft' as const,
+    status: invoice?.status || ('draft' as const),
     tags: invoice?.tags || ''
   });
 
@@ -69,13 +71,14 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
     try {
       return JSON.parse(tagsString);
     } catch {
-      return tagsString.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+      return tagsString
+        .split(',')
+        .map((tag) => tag.trim())
+        .filter((tag) => tag.length > 0);
     }
   };
 
-  const [selectedTags, setSelectedTags] = useState<string[]>(
-    invoice ? parseTagsFromString(invoice.tags || '') : []
-  );
+  const [selectedTags, setSelectedTags] = useState<string[]>(invoice ? parseTagsFromString(invoice.tags || '') : []);
 
   const [items, setItems] = useState<InvoiceItemForm[]>([]);
   const [taxRates, setTaxRates] = useState<TaxRate[]>([]);
@@ -83,6 +86,10 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
   const [globalTaxRate, setGlobalTaxRate] = useState(0.15); // 15% default global tax rate
   const [useGlobalTax, setUseGlobalTax] = useState(false); // Enable/disable global tax
 
+  // Pricing rules and discounts
+  const { pricingRules, loading: loadingPricingRules, error: pricingRulesError } = usePricingRules();
+  const [discountResult, setDiscountResult] = useState<DiscountCalculationResult | null>(null);
+  const [applyDiscounts, setApplyDiscounts] = useState(true);
 
   useEffect(() => {
     // Auto-focus client search on component mount
@@ -137,12 +144,8 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
   const updateAllItemTaxes = (newGlobalTax: number) => {
     if (!useGlobalTax) return;
 
-    const updatedItems = items.map(item => {
-      const { lineTotal, taxAmount, total } = calculateItemTotals(
-        item.quantity,
-        item.unitPrice,
-        newGlobalTax
-      );
+    const updatedItems = items.map((item) => {
+      const { lineTotal, taxAmount, total } = calculateItemTotals(item.quantity, item.unitPrice, newGlobalTax);
 
       return {
         ...item,
@@ -165,15 +168,11 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
       updateAllItemTaxes(globalTaxRate);
     } else {
       // Revert to individual product tax rates
-      const updatedItems = items.map(item => {
-        const product = products.find(p => p.id === item.productId);
-        const taxRate = product?.taxRate !== undefined ? product.taxRate / 100 : (defaultTaxRate?.rate ? defaultTaxRate.rate / 100 : globalTaxRate);
+      const updatedItems = items.map((item) => {
+        const product = products.find((p) => p.id === item.productId);
+        const taxRate = product?.taxRate !== undefined ? product.taxRate / 100 : defaultTaxRate?.rate ? defaultTaxRate.rate / 100 : globalTaxRate;
 
-        const { lineTotal, taxAmount, total } = calculateItemTotals(
-          item.quantity,
-          item.unitPrice,
-          taxRate
-        );
+        const { lineTotal, taxAmount, total } = calculateItemTotals(item.quantity, item.unitPrice, taxRate);
 
         return {
           ...item,
@@ -196,10 +195,47 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
     }
   };
 
+  // Calculate discounts when items, client, or pricing rules change
+  const calculateDiscounts = () => {
+    if (!applyDiscounts || !selectedClient || items.length === 0 || pricingRules.length === 0) {
+      setDiscountResult(null);
+      return;
+    }
+
+    const context: DiscountCalculationContext = {
+      items: items.map((item) => ({
+        productId: item.productId,
+        sku: item.sku,
+        productName: item.productName,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        lineTotal: item.lineTotal,
+        tags: [], // TODO: Add product tags when available
+        categoryId: undefined // TODO: Add category when available
+      })),
+      clientId: selectedClient.id,
+      subtotal: items.reduce((sum, item) => sum + item.lineTotal, 0),
+      clientTags: selectedClient.tags || []
+    };
+
+    const result = DiscountCalculator.calculateDiscounts(context, pricingRules);
+    console.log('calculateDiscounts', context, result);
+    setDiscountResult(result);
+  };
+
+  // Recalculate discounts when relevant data changes
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      calculateDiscounts();
+    }, 300); // Debounce to avoid excessive calculations
+
+    return () => clearTimeout(timeoutId);
+  }, [items, selectedClient, pricingRules, applyDiscounts]);
+
   // Set initial selected client if editing
   useEffect(() => {
     if (invoice && formData.clientId) {
-      const client = clients.find(c => c.id === formData.clientId);
+      const client = clients.find((c) => c.id === formData.clientId);
       if (client) {
         setSelectedClient(client);
         setClientSearch(client.name);
@@ -295,15 +331,11 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault();
-        setSelectedClientIndex(prev =>
-          prev < clientResults.length - 1 ? prev + 1 : 0
-        );
+        setSelectedClientIndex((prev) => (prev < clientResults.length - 1 ? prev + 1 : 0));
         break;
       case 'ArrowUp':
         e.preventDefault();
-        setSelectedClientIndex(prev =>
-          prev > 0 ? prev - 1 : clientResults.length - 1
-        );
+        setSelectedClientIndex((prev) => (prev > 0 ? prev - 1 : clientResults.length - 1));
         break;
       case 'Enter':
         e.preventDefault();
@@ -321,7 +353,7 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
   const selectClient = (client: Client) => {
     setSelectedClient(client);
     setClientSearch(client.name);
-    setFormData(prev => ({ ...prev, clientId: client.id }));
+    setFormData((prev) => ({ ...prev, clientId: client.id }));
     setShowClientDropdown(false);
     setSelectedClientIndex(-1);
 
@@ -332,11 +364,10 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
         productInput.focus();
       }
     }, 100);
-
   };
 
   const handleInputChange = (field: string, value: unknown) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       [field]: value
     }));
@@ -349,11 +380,7 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
     // Auto-calculate totals when quantity, unit price, or tax rate changes
     if (field === 'quantity' || field === 'unitPrice' || field === 'taxRate') {
       const item = newItems[index];
-      const { lineTotal, taxAmount, total } = calculateItemTotals(
-        item.quantity,
-        item.unitPrice,
-        item.taxRate
-      );
+      const { lineTotal, taxAmount, total } = calculateItemTotals(item.quantity, item.unitPrice, item.taxRate);
 
       newItems[index].lineTotal = lineTotal;
       newItems[index].taxAmount = taxAmount;
@@ -362,15 +389,11 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
 
     // Auto-fill product details when product is selected
     if (field === 'productId' && value) {
-      const product = products.find(p => p.id === parseInt(value as string));
+      const product = products.find((p) => p.id === parseInt(value as string));
       if (product) {
         const unitPrice = product.inventory?.price || product.price;
         const taxRate = getProductTaxRate(product);
-        const { lineTotal, taxAmount, total } = calculateItemTotals(
-          newItems[index].quantity,
-          unitPrice,
-          taxRate
-        );
+        const { lineTotal, taxAmount, total } = calculateItemTotals(newItems[index].quantity, unitPrice, taxRate);
 
         newItems[index].productName = product.name;
         newItems[index].unitPrice = unitPrice;
@@ -386,7 +409,7 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
   };
 
   const handleQuickProductAdd = (productId: number, sku: string, quantity: number = 1) => {
-    const product = productResults.find(p => p.id === productId);
+    const product = productResults.find((p) => p.id === productId);
     if (!product) return;
 
     const unitPrice = product.inventory?.price || product.price;
@@ -408,7 +431,7 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
 
     let updatedItems;
     // Check if product already exists in items
-    const existingIndex = items.findIndex(item => item.productId === productId);
+    const existingIndex = items.findIndex((item) => item.productId === productId);
     if (existingIndex >= 0) {
       // Update quantity of existing item
       const newItems = [...items];
@@ -421,7 +444,6 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
       updatedItems = [...items, newItem];
       setItems(updatedItems);
     }
-
 
     // Clear product search
     setProductSearch('');
@@ -436,7 +458,7 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
       quantity: 1,
       unitPrice: 0,
       taxRateId: defaultTaxRate?.id,
-      taxRate: useGlobalTax ? globalTaxRate : (defaultTaxRate?.rate ? defaultTaxRate.rate / 100 : globalTaxRate),
+      taxRate: useGlobalTax ? globalTaxRate : defaultTaxRate?.rate ? defaultTaxRate.rate / 100 : globalTaxRate,
       taxAmount: 0,
       lineTotal: 0,
       total: 0
@@ -451,11 +473,15 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
   };
 
   const calculateTotals = () => {
-    const subtotal = items.reduce((sum, item) => sum + item.lineTotal, 0);
+    const originalSubtotal = items.reduce((sum, item) => sum + item.lineTotal, 0);
+    const discountAmount = discountResult?.totalDiscountAmount || 0;
+    const subtotal = originalSubtotal - discountAmount;
     const tax = items.reduce((sum, item) => sum + item.taxAmount, 0);
     const total = subtotal + tax;
 
     return {
+      originalSubtotal,
+      discountAmount,
       subtotal,
       tax,
       total
@@ -470,7 +496,7 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
       return;
     }
 
-    if (items.length === 0 || items.every(item => !item.productName)) {
+    if (items.length === 0 || items.every((item) => !item.productName)) {
       toast.error('Please add at least one item');
       return;
     }
@@ -486,14 +512,16 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
       notes: formData.notes || undefined,
       terms: formData.terms || undefined,
       status: formData.status,
-      items: items.filter(item => item.productName).map(item => ({
-        productId: item.productId || 0,
-        sku: item.sku,
-        description: item.productName,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
-        total: item.total
-      })),
+      items: items
+        .filter((item) => item.productName)
+        .map((item) => ({
+          productId: item.productId || 0,
+          sku: item.sku,
+          description: item.productName,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          total: item.total
+        })),
       subtotal: totals.subtotal,
       tax: totals.tax,
       total: totals.total,
@@ -560,9 +588,7 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
                         onClick={() => selectClient(client)}
                       >
                         <div className="font-medium">{client.name}</div>
-                        {client.email && (
-                          <div className="text-sm text-gray-500">{client.email}</div>
-                        )}
+                        {client.email && <div className="text-sm text-gray-500">{client.email}</div>}
                       </div>
                     ))}
                   </div>
@@ -576,11 +602,7 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
 
               <div className="space-y-2">
                 <Label htmlFor="status">Status</Label>
-                <Select
-                  value={formData.status}
-                  onValueChange={(value) => handleInputChange('status', value)}
-                  disabled
-                >
+                <Select value={formData.status} onValueChange={(value) => handleInputChange('status', value)} disabled>
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
@@ -608,11 +630,7 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
 
               <div className="space-y-2">
                 <div className="flex items-center space-x-2 mb-2">
-                  <Checkbox
-                    id="useGlobalTax"
-                    checked={useGlobalTax}
-                    onCheckedChange={handleGlobalTaxToggle}
-                  />
+                  <Checkbox id="useGlobalTax" checked={useGlobalTax} onCheckedChange={handleGlobalTaxToggle} />
                   <Label htmlFor="useGlobalTax" className="text-sm font-medium">
                     Global tax
                   </Label>
@@ -637,12 +655,37 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
         </Card>
 
         {/* Totals */}
-        <Card className='py-4 gap-2'>
-
+        <Card className="py-4 gap-2">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-medium">Summary</CardTitle>
+              <div className="flex items-center space-x-2">
+                <Checkbox id="applyDiscounts" checked={applyDiscounts} onCheckedChange={setApplyDiscounts} />
+                <Label htmlFor="applyDiscounts" className="text-xs">
+                  Apply discounts
+                </Label>
+                <Calculator className="h-4 w-4 text-muted-foreground" />
+              </div>
+            </div>
+          </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <div className="pt-4">
                 <div className="space-y-3">
+                  {applyDiscounts && discountResult && discountResult.totalDiscountAmount > 0 && (
+                    <>
+                      <div className="flex justify-between text-sm">
+                        <span>Original Subtotal:</span>
+                        <span>{formatCurrency(totals.originalSubtotal)}</span>
+                      </div>
+                      <div className="flex justify-between text-sm text-green-600">
+                        <span>
+                          Discount ({discountResult.appliedDiscounts.length} rule{discountResult.appliedDiscounts.length !== 1 ? 's' : ''}):
+                        </span>
+                        <span>-{formatCurrency(totals.discountAmount)}</span>
+                      </div>
+                    </>
+                  )}
                   <div className="flex justify-between text-sm">
                     <span>Subtotal:</span>
                     <span>{formatCurrency(totals.subtotal)}</span>
@@ -657,6 +700,26 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
                   </div>
                 </div>
               </div>
+
+              {/* Discount Details */}
+              {applyDiscounts && discountResult && discountResult.appliedDiscounts.length > 0 && (
+                <div className="border-t pt-4 space-y-2">
+                  <h4 className="text-sm font-medium text-muted-foreground">Applied Discounts:</h4>
+                  {discountResult.appliedDiscounts.map((discount, index) => (
+                    <div key={index} className="text-xs text-green-600 flex justify-between">
+                      <span>{discount.ruleName}</span>
+                      <span>-{formatCurrency(discount.discountAmount)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Pricing Rules Status */}
+              {loadingPricingRules && <div className="text-xs text-muted-foreground">Loading pricing rules...</div>}
+              {pricingRulesError && <div className="text-xs text-red-600">Error loading pricing rules: {pricingRulesError}</div>}
+              {!loadingPricingRules && pricingRules.length === 0 && applyDiscounts && (
+                <div className="text-xs text-muted-foreground">No active pricing rules found</div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -721,14 +784,10 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
                         />
                       </TableCell>
                       <TableCell>
-                        <div className="text-sm ">
-                          {formatCurrency(item.taxAmount)}
-                        </div>
+                        <div className="text-sm ">{formatCurrency(item.taxAmount)}</div>
                       </TableCell>
                       <TableCell>
-                        <div className="font-medium">
-                          {formatCurrency(item.total)}
-                        </div>
+                        <div className="font-medium">{formatCurrency(item.total)}</div>
                       </TableCell>
                       <TableCell>
                         {items.length > 1 && (
@@ -749,20 +808,13 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
               </Table>
             </div>
             <div className="pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={addItem}
-                className="flex items-center gap-2"
-              >
+              <Button type="button" variant="outline" onClick={addItem} className="flex items-center gap-2">
                 <Plus className="h-4 w-4" />
                 Add Item
               </Button>
             </div>
           </CardContent>
-
         </Card>
-
 
         {/* Notes and Terms */}
         <Card className="col-span-3">
@@ -792,17 +844,16 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
               />
             </div>
 
-
             <div className="space-y-2">
-                <SimpleTagSelector
-                  selectedTagNames={selectedTags}
-                  onTagsChange={setSelectedTags}
-                  storeId={1} // TODO: Get actual store ID from context/props
-                  categoryFilter={['invoice', 'general', 'client']}
-                  label="Tags"
-                  placeholder="Select tags for this invoice..."
-                />
-              </div>
+              <SimpleTagSelector
+                selectedTagNames={selectedTags}
+                onTagsChange={setSelectedTags}
+                storeId={1} // TODO: Get actual store ID from context/props
+                categoryFilter={['invoice', 'general', 'client']}
+                label="Tags"
+                placeholder="Select tags for this invoice..."
+              />
+            </div>
           </CardContent>
         </Card>
       </form>
@@ -841,7 +892,7 @@ function QuickProductEntry({ products, loading, onProductAdd, onSearchChange, se
       case 'Enter':
         e.preventDefault();
         if (selectedProductId) {
-          const product = products.find(p => p.id === selectedProductId);
+          const product = products.find((p) => p.id === selectedProductId);
           if (!product) return;
           onProductAdd(selectedProductId, product.sku, quantity);
           setSelectedProductId(null);
@@ -902,7 +953,7 @@ function QuickProductEntry({ products, loading, onProductAdd, onSearchChange, se
           type="button"
           onClick={() => {
             if (selectedProductId) {
-              const product = products.find(p => p.id === selectedProductId);
+              const product = products.find((p) => p.id === selectedProductId);
               if (!product) return;
               onProductAdd(selectedProductId, product.sku, quantity);
               setSelectedProductId(null);
@@ -939,17 +990,11 @@ function QuickProductEntry({ products, loading, onProductAdd, onSearchChange, se
                   <div className="flex items-center justify-between">
                     <div>
                       <div className="font-medium">{product.name}</div>
-                      {product.sku && (
-                        <div className="text-sm text-muted-foreground">SKU: {product.sku}</div>
-                      )}
+                      {product.sku && <div className="text-sm text-muted-foreground">SKU: {product.sku}</div>}
                     </div>
                     <div className="text-right">
                       <div className="font-medium">{formatCurrency(product.inventory?.price || product.price)}</div>
-                      {product.inventory && (
-                        <div className="text-sm text-muted-foreground">
-                          Stock: {product.inventory.quantity}
-                        </div>
-                      )}
+                      {product.inventory && <div className="text-sm text-muted-foreground">Stock: {product.inventory.quantity}</div>}
                     </div>
                   </div>
                 </div>

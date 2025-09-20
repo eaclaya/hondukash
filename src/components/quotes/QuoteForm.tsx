@@ -9,12 +9,15 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Trash2, Calculator, Tags, ExternalLink } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import SimpleTagSelector from '@/components/tags/SimpleTagSelector';
 import Link from 'next/link';
 import { toast } from 'sonner';
+import { usePricingRules } from '@/hooks/usePricingRules';
+import { DiscountCalculator, DiscountCalculationContext, DiscountCalculationResult } from '@/lib/services/discountCalculator';
 
 interface QuoteFormProps {
   quote?: Quote;
@@ -76,6 +79,11 @@ export default function QuoteForm({ quote, onSubmit, onCancel, loading = false }
   const [items, setItems] = useState<QuoteItemForm[]>([]);
 
   const [taxRate, setTaxRate] = useState(0.15); // 15% default tax rate
+
+  // Pricing rules and discounts
+  const { pricingRules, loading: loadingPricingRules, error: pricingRulesError } = usePricingRules();
+  const [discountResult, setDiscountResult] = useState<DiscountCalculationResult | null>(null);
+  const [applyDiscounts, setApplyDiscounts] = useState(true);
 
 
   useEffect(() => {
@@ -299,12 +307,52 @@ export default function QuoteForm({ quote, onSubmit, onCancel, loading = false }
     }
   };
 
+  // Calculate discounts when items, client, or pricing rules change
+  const calculateDiscounts = () => {
+    if (!applyDiscounts || !selectedClient || items.length === 0 || pricingRules.length === 0) {
+      setDiscountResult(null);
+      return;
+    }
+
+    const context: DiscountCalculationContext = {
+      items: items.map(item => ({
+        productId: item.productId,
+        sku: item.sku,
+        productName: item.productName,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        lineTotal: item.total,
+        tags: [], // TODO: Add product tags when available
+        categoryId: undefined // TODO: Add category when available
+      })),
+      clientId: selectedClient.id,
+      subtotal: items.reduce((sum, item) => sum + item.total, 0),
+      clientTags: selectedClient.tags || []
+    };
+
+    const result = DiscountCalculator.calculateDiscounts(context, pricingRules);
+    setDiscountResult(result);
+  };
+
+  // Recalculate discounts when relevant data changes
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      calculateDiscounts();
+    }, 300); // Debounce to avoid excessive calculations
+
+    return () => clearTimeout(timeoutId);
+  }, [items, selectedClient, pricingRules, applyDiscounts]);
+
   const calculateTotals = () => {
-    const subtotal = items.reduce((sum, item) => sum + item.total, 0);
+    const originalSubtotal = items.reduce((sum, item) => sum + item.total, 0);
+    const discountAmount = discountResult?.totalDiscountAmount || 0;
+    const subtotal = originalSubtotal - discountAmount;
     const tax = subtotal * taxRate;
     const total = subtotal + tax;
 
     return {
+      originalSubtotal,
+      discountAmount,
       subtotal,
       tax,
       total
@@ -568,10 +616,20 @@ export default function QuoteForm({ quote, onSubmit, onCancel, loading = false }
         {/* Totals */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Calculator className="h-5 w-5" />
-              <span>Quote Summary</span>
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center space-x-2">
+                <Calculator className="h-5 w-5" />
+                <span>Quote Summary</span>
+              </CardTitle>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="applyDiscounts"
+                  checked={applyDiscounts}
+                  onCheckedChange={setApplyDiscounts}
+                />
+                <Label htmlFor="applyDiscounts" className="text-xs">Apply discounts</Label>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -592,6 +650,18 @@ export default function QuoteForm({ quote, onSubmit, onCancel, loading = false }
 
               <div className="border-t pt-4">
                 <div className="space-y-3">
+                  {applyDiscounts && discountResult && discountResult.totalDiscountAmount > 0 && (
+                    <>
+                      <div className="flex justify-between text-sm">
+                        <span>Original Subtotal:</span>
+                        <span>{formatCurrency(totals.originalSubtotal)}</span>
+                      </div>
+                      <div className="flex justify-between text-sm text-green-600">
+                        <span>Discount ({discountResult.appliedDiscounts.length} rule{discountResult.appliedDiscounts.length !== 1 ? 's' : ''}):</span>
+                        <span>-{formatCurrency(totals.discountAmount)}</span>
+                      </div>
+                    </>
+                  )}
                   <div className="flex justify-between text-sm">
                     <span>Subtotal:</span>
                     <span>{formatCurrency(totals.subtotal)}</span>
@@ -606,6 +676,30 @@ export default function QuoteForm({ quote, onSubmit, onCancel, loading = false }
                   </div>
                 </div>
               </div>
+
+              {/* Discount Details */}
+              {applyDiscounts && discountResult && discountResult.appliedDiscounts.length > 0 && (
+                <div className="border-t pt-4 space-y-2">
+                  <h4 className="text-sm font-medium text-muted-foreground">Applied Discounts:</h4>
+                  {discountResult.appliedDiscounts.map((discount, index) => (
+                    <div key={index} className="text-xs text-green-600 flex justify-between">
+                      <span>{discount.ruleName}</span>
+                      <span>-{formatCurrency(discount.discountAmount)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Pricing Rules Status */}
+              {loadingPricingRules && (
+                <div className="text-xs text-muted-foreground">Loading pricing rules...</div>
+              )}
+              {pricingRulesError && (
+                <div className="text-xs text-red-600">Error loading pricing rules: {pricingRulesError}</div>
+              )}
+              {!loadingPricingRules && pricingRules.length === 0 && applyDiscounts && (
+                <div className="text-xs text-muted-foreground">No active pricing rules found</div>
+              )}
             </div>
           </CardContent>
         </Card>

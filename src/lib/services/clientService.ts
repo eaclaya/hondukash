@@ -53,26 +53,40 @@ export class ClientService {
         .limit(limit)
         .offset(offset);
 
-      const mappedClients: Client[] = clientsResult.map((client) => ({
-        id: client.id,
-        storeId: client.storeId,
-        name: client.name,
-        clientType: client.clientType,
-        primaryContactName: client.primaryContactName || undefined,
-        email: client.email || undefined,
-        phone: client.phone || undefined,
-        mobile: client.mobile || undefined,
-        companyRegistrationNumber: client.companyRegistrationNumber || undefined,
-        industry: client.industry || undefined,
-        website: client.website || undefined,
-        address: client.address || undefined,
-        creditLimit: client.creditLimit,
-        paymentTerms: client.paymentTerms,
-        notes: client.notes || undefined,
-        isActive: client.isActive,
-        createdAt: client.createdAt,
-        updatedAt: client.updatedAt
-      }));
+      const mappedClients: Client[] = clientsResult.map((client) => {
+        // Parse tags from JSON string, fallback to empty array
+        let tags: string[] = [];
+        if (client.tags) {
+          try {
+            tags = JSON.parse(client.tags);
+          } catch {
+            // If parsing fails, treat as comma-separated string
+            tags = client.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+          }
+        }
+
+        return {
+          id: client.id,
+          storeId: client.storeId,
+          name: client.name,
+          clientType: client.clientType,
+          primaryContactName: client.primaryContactName || undefined,
+          email: client.email || undefined,
+          phone: client.phone || undefined,
+          mobile: client.mobile || undefined,
+          companyRegistrationNumber: client.companyRegistrationNumber || undefined,
+          industry: client.industry || undefined,
+          website: client.website || undefined,
+          address: client.address || undefined,
+          creditLimit: client.creditLimit,
+          paymentTerms: client.paymentTerms,
+          notes: client.notes || undefined,
+          isActive: client.isActive,
+          tags: tags,
+          createdAt: client.createdAt,
+          updatedAt: client.updatedAt
+        };
+      });
 
       return {
         success: true,

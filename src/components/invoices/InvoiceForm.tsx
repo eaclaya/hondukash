@@ -11,10 +11,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Trash2, Tags, Percent } from 'lucide-react';
+import { Plus, Trash2, Tags } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import SimpleTagSelector from '@/components/tags/SimpleTagSelector';
-import { useDiscountCalculation } from '@/hooks/useDiscountCalculation';
 import { toast } from 'sonner';
 
 interface InvoiceFormProps {
@@ -52,7 +51,6 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
   const [clientSearchTimeout, setClientSearchTimeout] = useState<NodeJS.Timeout | null>(null);
   const [productSearchTimeout, setProductSearchTimeout] = useState<NodeJS.Timeout | null>(null);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-  const [productDetailsForDiscount, setProductDetailsForDiscount] = useState<ProductWithInventory[]>([]);
 
   const [formData, setFormData] = useState({
     clientId: invoice?.clientId ? parseInt(invoice.clientId) : null,
@@ -85,26 +83,6 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
   const [globalTaxRate, setGlobalTaxRate] = useState(0.15); // 15% default global tax rate
   const [useGlobalTax, setUseGlobalTax] = useState(false); // Enable/disable global tax
 
-  // Initialize discount calculation hook
-  const {
-    originalSubtotal: discountOriginalSubtotal,
-    discountAmount,
-    finalSubtotal: discountFinalSubtotal,
-    appliedDiscounts,
-    hasDiscounts,
-    isLoading: discountLoading,
-    calculateDiscountsWithProductDetails,
-    hasActivePricingRules
-  } = useDiscountCalculation({
-    selectedClient,
-    items: items.map(item => ({
-      productId: item.productId,
-      quantity: item.quantity,
-      unitPrice: item.unitPrice,
-      productName: item.productName
-    })),
-    storeId: 1 // TODO: Get from context/props
-  });
 
   useEffect(() => {
     // Auto-focus client search on component mount
@@ -355,10 +333,6 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
       }
     }, 100);
 
-    // Calculate discounts with current products
-    if (productDetailsForDiscount.length > 0) {
-      calculateDiscountsWithProductDetails(productDetailsForDiscount).catch(console.error);
-    }
   };
 
   const handleInputChange = (field: string, value: unknown) => {
@@ -448,17 +422,6 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
       setItems(updatedItems);
     }
 
-    // Update product details for discount calculation
-    const updatedProductDetails = [...productDetailsForDiscount];
-    if (!updatedProductDetails.find(p => p.id === product.id)) {
-      updatedProductDetails.push(product);
-      setProductDetailsForDiscount(updatedProductDetails);
-    }
-
-    // Recalculate discounts with updated items and products
-    if (selectedClient) {
-      calculateDiscountsWithProductDetails(updatedProductDetails).catch(console.error);
-    }
 
     // Clear product search
     setProductSearch('');
@@ -488,22 +451,14 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
   };
 
   const calculateTotals = () => {
-    const itemsSubtotal = items.reduce((sum, item) => sum + item.lineTotal, 0);
+    const subtotal = items.reduce((sum, item) => sum + item.lineTotal, 0);
     const tax = items.reduce((sum, item) => sum + item.taxAmount, 0);
-
-    // Use discount calculation if available, otherwise no discount
-    const subtotalAfterDiscount = hasDiscounts ? discountFinalSubtotal : itemsSubtotal;
-    const discountApplied = hasDiscounts ? discountAmount : 0;
-    const total = subtotalAfterDiscount + tax;
-    console.log('discountApplied', discountApplied);
-
+    const total = subtotal + tax;
 
     return {
-      subtotal: itemsSubtotal,
-      subtotalAfterDiscount,
+      subtotal,
       tax,
-      total,
-      discount: discountApplied
+      total
     };
   };
 
@@ -539,9 +494,8 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
         unitPrice: item.unitPrice,
         total: item.total
       })),
-      subtotal: totals.subtotalAfterDiscount, // Use discounted subtotal
+      subtotal: totals.subtotal,
       tax: totals.tax,
-      discount: totals.discount,
       total: totals.total,
       tags: selectedTags,
       storeId: 1 // Will be set by API from auth headers
@@ -693,21 +647,6 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
                     <span>Subtotal:</span>
                     <span>{formatCurrency(totals.subtotal)}</span>
                   </div>
-                  {hasDiscounts && (
-                    <>
-                      <div className="flex justify-between text-sm text-green-600">
-                        <span className="flex items-center gap-1">
-                          <Percent className="h-3 w-3" />
-                          Discount:
-                        </span>
-                        <span>-{formatCurrency(totals.discount)}</span>
-                      </div>
-                      <div className="flex justify-between text-sm font-medium">
-                        <span>Subtotal after discount:</span>
-                        <span>{formatCurrency(totals.subtotalAfterDiscount)}</span>
-                      </div>
-                    </>
-                  )}
                   <div className="flex justify-between text-sm">
                     <span>Tax (per item):</span>
                     <span>{formatCurrency(totals.tax)}</span>
@@ -716,19 +655,6 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
                     <span>Total:</span>
                     <span>{formatCurrency(totals.total)}</span>
                   </div>
-                  {hasDiscounts && appliedDiscounts.length > 0 && (
-                    <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-                      <h4 className="text-sm font-medium text-green-800 mb-2">Applied Discounts:</h4>
-                      <div className="space-y-1">
-                        {appliedDiscounts.map((discount, index) => (
-                          <div key={index} className="flex justify-between text-xs text-green-700">
-                            <span>{discount.description}</span>
-                            <span>-{formatCurrency(discount.discountAmount)}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>

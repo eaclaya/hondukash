@@ -350,7 +350,6 @@ export interface Invoice {
   items: InvoiceItem[];
   subtotal: number;
   tax: number;
-  discount: number;
   total: number;
   status: 'draft' | 'sent' | 'paid' | 'partial' | 'overdue' | 'cancelled';
 
@@ -391,7 +390,6 @@ export interface CreateInvoiceRequest {
   items: CreateInvoiceItemRequest[];
   subtotal: number;
   tax: number;
-  discount: number;
   total: number;
   status?: 'draft' | 'sent' | 'paid' | 'partial' | 'overdue' | 'cancelled';
   invoiceDate: string;
@@ -429,7 +427,6 @@ export interface Quote {
   items: QuoteItem[];
   subtotal: number;
   tax: number;
-  discount: number;
   total: number;
   status: 'draft' | 'sent' | 'accepted' | 'declined' | 'expired' | 'converted';
 
@@ -467,7 +464,6 @@ export interface CreateQuoteRequest {
   items: CreateQuoteItemRequest[];
   subtotal: number;
   tax: number;
-  discount: number;
   total: number;
   status?: 'draft' | 'sent' | 'accepted' | 'declined' | 'expired' | 'converted';
   quoteDate: string;

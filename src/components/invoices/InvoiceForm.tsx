@@ -231,7 +231,7 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
     }, 300); // Debounce to avoid excessive calculations
 
     return () => clearTimeout(timeoutId);
-  }, [items, selectedClient, pricingRules, applyDiscounts]);
+  }, [items, selectedClient, pricingRules, applyDiscounts, selectedTags]);
 
   // Set initial selected client if editing
   useEffect(() => {

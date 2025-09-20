@@ -341,7 +341,7 @@ export default function QuoteForm({ quote, onSubmit, onCancel, loading = false }
     }, 300); // Debounce to avoid excessive calculations
 
     return () => clearTimeout(timeoutId);
-  }, [items, selectedClient, pricingRules, applyDiscounts]);
+  }, [items, selectedClient, pricingRules, applyDiscounts, selectedTags]);
 
   const calculateTotals = () => {
     const originalSubtotal = items.reduce((sum, item) => sum + item.total, 0);

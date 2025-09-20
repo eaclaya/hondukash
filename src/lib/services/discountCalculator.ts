@@ -16,6 +16,7 @@ export interface DiscountCalculationContext {
   clientId?: number;
   subtotal: number;
   clientTags?: string[];
+  invoiceTags?: string[];
 }
 
 export interface AppliedDiscount {
@@ -176,7 +177,7 @@ export class DiscountCalculator {
       }
       groups[condition.conditionGroup].push(condition);
     });
-    console.log('groups', groups);
+
     // All groups must evaluate to true (groups are AND'ed together)
     return Object.values(groups).every((group) => this.evaluateConditionGroup(group, context));
   }
@@ -190,7 +191,7 @@ export class DiscountCalculator {
 
     for (const condition of conditions) {
       const conditionResult = this.evaluateCondition(condition, context);
-
+      console.log('conditionResult', conditionResult, context);
       if (currentOperator === 'AND') {
         result = result && conditionResult;
       } else {
@@ -207,6 +208,7 @@ export class DiscountCalculator {
    * Evaluate a single condition
    */
   private static evaluateCondition(condition: RuleCondition, context: DiscountCalculationContext): boolean {
+    let requiredTags = [];
     switch (condition.conditionType) {
       case 'cart_total':
         return this.evaluateNumericCondition(condition, context.subtotal);
@@ -220,16 +222,17 @@ export class DiscountCalculator {
 
       case 'client_has_tag':
       case 'client_has_any_tags':
-        if (condition.valueArray && context.clientTags) {
-          const requiredTags = JSON.parse(condition.valueArray) as string[];
+        requiredTags = condition.valueText ? [condition.valueText] : condition.valueArray ? (JSON.parse(condition.valueArray) as string[]) : [];
+        if (requiredTags && context.clientTags) {
           return requiredTags.some((tag) => context.clientTags!.includes(tag));
         }
         return false;
 
-      case 'client_has_all_tags':
-        if (condition.valueArray && context.clientTags) {
-          const requiredTags = JSON.parse(condition.valueArray) as string[];
-          return requiredTags.every((tag) => context.clientTags!.includes(tag));
+      case 'invoice_has_tag':
+      case 'invoice_has_any_tags':
+        requiredTags = condition.valueText ? [condition.valueText] : condition.valueArray ? (JSON.parse(condition.valueArray) as string[]) : [];
+        if (requiredTags && context.invoiceTags) {
+          return requiredTags.some((tag) => context.invoiceTags!.includes(tag));
         }
         return false;
 

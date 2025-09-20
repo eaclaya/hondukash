@@ -31,8 +31,12 @@ export const stores = sqliteTable('stores', {
 
   // Metadata
   isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
-  createdAt: text('created_at').notNull().$defaultFn(() => new Date().toISOString()),
-  updatedAt: text('updated_at').notNull().$defaultFn(() => new Date().toISOString())
+  createdAt: text('created_at')
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+  updatedAt: text('updated_at')
+    .notNull()
+    .$defaultFn(() => new Date().toISOString())
 });
 
 // =========================================
@@ -53,8 +57,12 @@ export const users = sqliteTable('users', {
   // Metadata
   isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
   lastLoginAt: text('last_login_at'),
-  createdAt: text('created_at').notNull().$defaultFn(() => new Date().toISOString()),
-  updatedAt: text('updated_at').notNull().$defaultFn(() => new Date().toISOString())
+  createdAt: text('created_at')
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+  updatedAt: text('updated_at')
+    .notNull()
+    .$defaultFn(() => new Date().toISOString())
 });
 
 // =========================================
@@ -62,11 +70,19 @@ export const users = sqliteTable('users', {
 // =========================================
 export const memberships = sqliteTable('memberships', {
   id: integer('id').primaryKey({ autoIncrement: true }),
-  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  storeId: integer('store_id').notNull().references(() => stores.id, { onDelete: 'cascade' }),
+  userId: integer('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  storeId: integer('store_id')
+    .notNull()
+    .references(() => stores.id, { onDelete: 'cascade' }),
   role: text('role').notNull().default('user'),
-  createdAt: text('created_at').notNull().$defaultFn(() => new Date().toISOString()),
-  updatedAt: text('updated_at').notNull().$defaultFn(() => new Date().toISOString())
+  createdAt: text('created_at')
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+  updatedAt: text('updated_at')
+    .notNull()
+    .$defaultFn(() => new Date().toISOString())
 });
 
 // =========================================
@@ -79,8 +95,12 @@ export const categories = sqliteTable('categories', {
   parentId: integer('parent_id').references(() => categories.id, { onDelete: 'set null' }),
   sortOrder: integer('sort_order').default(0),
   isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
-  createdAt: text('created_at').notNull().$defaultFn(() => new Date().toISOString()),
-  updatedAt: text('updated_at').notNull().$defaultFn(() => new Date().toISOString())
+  createdAt: text('created_at')
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+  updatedAt: text('updated_at')
+    .notNull()
+    .$defaultFn(() => new Date().toISOString())
 });
 
 // =========================================
@@ -117,39 +137,59 @@ export const products = sqliteTable('products', {
   isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
   tags: text('tags'),
 
-  createdAt: text('created_at').notNull().$defaultFn(() => new Date().toISOString()),
-  updatedAt: text('updated_at').notNull().$defaultFn(() => new Date().toISOString())
+  createdAt: text('created_at')
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+  updatedAt: text('updated_at')
+    .notNull()
+    .$defaultFn(() => new Date().toISOString())
 });
 
 // =========================================
 // INVENTORY TABLE
 // =========================================
-export const inventory = sqliteTable('inventory', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
-  productId: integer('product_id').notNull().references(() => products.id, { onDelete: 'cascade' }),
-  storeId: integer('store_id').notNull().references(() => stores.id, { onDelete: 'cascade' }),
+export const inventory = sqliteTable(
+  'inventory',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    productId: integer('product_id')
+      .notNull()
+      .references(() => products.id, { onDelete: 'cascade' }),
+    storeId: integer('store_id')
+      .notNull()
+      .references(() => stores.id, { onDelete: 'cascade' }),
 
-  // Stock levels
-  quantity: real('quantity').notNull().default(0),
-  price: real('price').notNull().default(0),
+    // Stock levels
+    quantity: real('quantity').notNull().default(0),
+    price: real('price').notNull().default(0),
 
-  // Location
-  location: text('location'), // Aisle, bin, etc.
+    // Location
+    location: text('location'), // Aisle, bin, etc.
 
-  // Metadata
-  createdAt: text('created_at').notNull().$defaultFn(() => new Date().toISOString()),
-  updatedAt: text('updated_at').notNull().$defaultFn(() => new Date().toISOString())
-}, (table) => ({
-  uniqueProductStore: uniqueIndex('unique_product_store').on(table.productId, table.storeId)
-}));
+    // Metadata
+    createdAt: text('created_at')
+      .notNull()
+      .$defaultFn(() => new Date().toISOString()),
+    updatedAt: text('updated_at')
+      .notNull()
+      .$defaultFn(() => new Date().toISOString())
+  },
+  (table) => ({
+    uniqueProductStore: uniqueIndex('unique_product_store').on(table.productId, table.storeId)
+  })
+);
 
 // =========================================
 // INVENTORY MOVEMENTS TABLE
 // =========================================
 export const inventoryMovements = sqliteTable('inventory_movements', {
   id: integer('id').primaryKey({ autoIncrement: true }),
-  productId: integer('product_id').notNull().references(() => products.id, { onDelete: 'cascade' }),
-  storeId: integer('store_id').notNull().references(() => stores.id, { onDelete: 'cascade' }),
+  productId: integer('product_id')
+    .notNull()
+    .references(() => products.id, { onDelete: 'cascade' }),
+  storeId: integer('store_id')
+    .notNull()
+    .references(() => stores.id, { onDelete: 'cascade' }),
 
   // Movement details
   movementType: text('movement_type', {
@@ -173,7 +213,9 @@ export const inventoryMovements = sqliteTable('inventory_movements', {
 
   // Metadata
   userId: integer('user_id').references(() => users.id, { onDelete: 'set null' }),
-  createdAt: text('created_at').notNull().$defaultFn(() => new Date().toISOString())
+  createdAt: text('created_at')
+    .notNull()
+    .$defaultFn(() => new Date().toISOString())
 });
 
 // =========================================
@@ -181,11 +223,15 @@ export const inventoryMovements = sqliteTable('inventory_movements', {
 // =========================================
 export const clients = sqliteTable('clients', {
   id: integer('id').primaryKey({ autoIncrement: true }),
-  storeId: integer('store_id').notNull().references(() => stores.id, { onDelete: 'cascade' }),
+  storeId: integer('store_id')
+    .notNull()
+    .references(() => stores.id, { onDelete: 'cascade' }),
 
   // Basic info
   name: text('name').notNull(),
-  clientType: text('client_type', { enum: ['individual', 'company'] }).notNull().default('individual'),
+  clientType: text('client_type', { enum: ['individual', 'company'] })
+    .notNull()
+    .default('individual'),
 
   // Primary contact (for individuals, this is the person; for companies, this is main contact)
   primaryContactName: text('primary_contact_name'),
@@ -214,9 +260,12 @@ export const clients = sqliteTable('clients', {
   isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
   tags: text('tags'),
 
-
-  createdAt: text('created_at').notNull().$defaultFn(() => new Date().toISOString()),
-  updatedAt: text('updated_at').notNull().$defaultFn(() => new Date().toISOString())
+  createdAt: text('created_at')
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+  updatedAt: text('updated_at')
+    .notNull()
+    .$defaultFn(() => new Date().toISOString())
 });
 
 // =========================================
@@ -224,7 +273,9 @@ export const clients = sqliteTable('clients', {
 // =========================================
 export const clientContacts = sqliteTable('client_contacts', {
   id: integer('id').primaryKey({ autoIncrement: true }),
-  clientId: integer('client_id').notNull().references(() => clients.id, { onDelete: 'cascade' }),
+  clientId: integer('client_id')
+    .notNull()
+    .references(() => clients.id, { onDelete: 'cascade' }),
 
   // Contact details
   contactName: text('contact_name').notNull(),
@@ -240,7 +291,9 @@ export const clientContacts = sqliteTable('client_contacts', {
   // Contact type and permissions
   contactType: text('contact_type', {
     enum: ['primary', 'employee', 'manager', 'executive', 'procurement', 'accounting', 'other']
-  }).notNull().default('employee'),
+  })
+    .notNull()
+    .default('employee'),
 
   // Purchase permissions
   canMakePurchases: integer('can_make_purchases', { mode: 'boolean' }).default(true),
@@ -258,8 +311,12 @@ export const clientContacts = sqliteTable('client_contacts', {
 
   // Metadata
   notes: text('notes'),
-  createdAt: text('created_at').notNull().$defaultFn(() => new Date().toISOString()),
-  updatedAt: text('updated_at').notNull().$defaultFn(() => new Date().toISOString())
+  createdAt: text('created_at')
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+  updatedAt: text('updated_at')
+    .notNull()
+    .$defaultFn(() => new Date().toISOString())
 });
 
 // =========================================
@@ -267,13 +324,19 @@ export const clientContacts = sqliteTable('client_contacts', {
 // =========================================
 export const invoices = sqliteTable('invoices', {
   id: integer('id').primaryKey({ autoIncrement: true }),
-  storeId: integer('store_id').notNull().references(() => stores.id, { onDelete: 'restrict' }),
-  clientId: integer('client_id').notNull().references(() => clients.id, { onDelete: 'restrict' }),
+  storeId: integer('store_id')
+    .notNull()
+    .references(() => stores.id, { onDelete: 'restrict' }),
+  clientId: integer('client_id')
+    .notNull()
+    .references(() => clients.id, { onDelete: 'restrict' }),
   userId: integer('user_id').references(() => users.id, { onDelete: 'set null' }),
 
   // Invoice details
   invoiceNumber: text('invoice_number').notNull(),
-  invoiceDate: text('invoice_date').notNull().$defaultFn(() => new Date().toISOString().split('T')[0]),
+  invoiceDate: text('invoice_date')
+    .notNull()
+    .$defaultFn(() => new Date().toISOString().split('T')[0]),
   dueDate: text('due_date'),
 
   // Contact info at time of invoice (for historical record)
@@ -286,7 +349,9 @@ export const invoices = sqliteTable('invoices', {
   totalAmount: real('total_amount').notNull().default(0),
 
   // Status
-  status: text('status', { enum: ['draft', 'sent', 'paid', 'partial', 'overdue', 'cancelled'] }).notNull().default('draft'),
+  status: text('status', { enum: ['draft', 'sent', 'paid', 'partial', 'overdue', 'cancelled'] })
+    .notNull()
+    .default('draft'),
 
   // Payment
   paidAmount: real('paid_amount').notNull().default(0),
@@ -298,8 +363,12 @@ export const invoices = sqliteTable('invoices', {
   tags: text('tags'),
 
   // Metadata
-  createdAt: text('created_at').notNull().$defaultFn(() => new Date().toISOString()),
-  updatedAt: text('updated_at').notNull().$defaultFn(() => new Date().toISOString())
+  createdAt: text('created_at')
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+  updatedAt: text('updated_at')
+    .notNull()
+    .$defaultFn(() => new Date().toISOString())
 });
 
 // =========================================
@@ -307,8 +376,12 @@ export const invoices = sqliteTable('invoices', {
 // =========================================
 export const invoiceItems = sqliteTable('invoice_items', {
   id: integer('id').primaryKey({ autoIncrement: true }),
-  invoiceId: integer('invoice_id').notNull().references(() => invoices.id, { onDelete: 'cascade' }),
-  productId: integer('product_id').notNull().references(() => products.id, { onDelete: 'restrict' }),
+  invoiceId: integer('invoice_id')
+    .notNull()
+    .references(() => invoices.id, { onDelete: 'cascade' }),
+  productId: integer('product_id')
+    .notNull()
+    .references(() => products.id, { onDelete: 'restrict' }),
 
   // Item details
   description: text('description').notNull(),
@@ -324,7 +397,9 @@ export const invoiceItems = sqliteTable('invoice_items', {
 
   // Metadata
   sortOrder: integer('sort_order').default(0),
-  createdAt: text('created_at').notNull().$defaultFn(() => new Date().toISOString())
+  createdAt: text('created_at')
+    .notNull()
+    .$defaultFn(() => new Date().toISOString())
 });
 
 // =========================================
@@ -332,13 +407,19 @@ export const invoiceItems = sqliteTable('invoice_items', {
 // =========================================
 export const quotes = sqliteTable('quotes', {
   id: integer('id').primaryKey({ autoIncrement: true }),
-  storeId: integer('store_id').notNull().references(() => stores.id, { onDelete: 'restrict' }),
-  clientId: integer('client_id').notNull().references(() => clients.id, { onDelete: 'restrict' }),
+  storeId: integer('store_id')
+    .notNull()
+    .references(() => stores.id, { onDelete: 'restrict' }),
+  clientId: integer('client_id')
+    .notNull()
+    .references(() => clients.id, { onDelete: 'restrict' }),
   userId: integer('user_id').references(() => users.id, { onDelete: 'set null' }),
 
   // Quote details
   quoteNumber: text('quote_number').notNull().unique(),
-  quoteDate: text('quote_date').notNull().$defaultFn(() => new Date().toISOString().split('T')[0]),
+  quoteDate: text('quote_date')
+    .notNull()
+    .$defaultFn(() => new Date().toISOString().split('T')[0]),
   validUntil: text('valid_until'),
 
   // Contact info at time of quote (for historical record)
@@ -351,7 +432,9 @@ export const quotes = sqliteTable('quotes', {
   totalAmount: real('total_amount').notNull().default(0),
 
   // Status
-  status: text('status', { enum: ['draft', 'sent', 'accepted', 'declined', 'expired', 'converted'] }).notNull().default('draft'),
+  status: text('status', { enum: ['draft', 'sent', 'accepted', 'declined', 'expired', 'converted'] })
+    .notNull()
+    .default('draft'),
 
   // Conversion tracking
   convertedToInvoiceId: integer('converted_to_invoice_id').references(() => invoices.id, { onDelete: 'set null' }),
@@ -363,8 +446,12 @@ export const quotes = sqliteTable('quotes', {
   tags: text('tags'),
 
   // Metadata
-  createdAt: text('created_at').notNull().$defaultFn(() => new Date().toISOString()),
-  updatedAt: text('updated_at').notNull().$defaultFn(() => new Date().toISOString())
+  createdAt: text('created_at')
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+  updatedAt: text('updated_at')
+    .notNull()
+    .$defaultFn(() => new Date().toISOString())
 });
 
 // =========================================
@@ -372,8 +459,12 @@ export const quotes = sqliteTable('quotes', {
 // =========================================
 export const quoteItems = sqliteTable('quote_items', {
   id: integer('id').primaryKey({ autoIncrement: true }),
-  quoteId: integer('quote_id').notNull().references(() => quotes.id, { onDelete: 'cascade' }),
-  productId: integer('product_id').notNull().references(() => products.id, { onDelete: 'restrict' }),
+  quoteId: integer('quote_id')
+    .notNull()
+    .references(() => quotes.id, { onDelete: 'cascade' }),
+  productId: integer('product_id')
+    .notNull()
+    .references(() => products.id, { onDelete: 'restrict' }),
 
   // Item details
   description: text('description').notNull(),
@@ -389,94 +480,124 @@ export const quoteItems = sqliteTable('quote_items', {
 
   // Metadata
   sortOrder: integer('sort_order').default(0),
-  createdAt: text('created_at').notNull().$defaultFn(() => new Date().toISOString())
+  createdAt: text('created_at')
+    .notNull()
+    .$defaultFn(() => new Date().toISOString())
 });
 
 // =========================================
 // TAGGING SYSTEM
 // =========================================
-export const tags = sqliteTable('tags', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+export const tags = sqliteTable(
+  'tags',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
 
-  // Tag details
-  name: text('name').notNull(),
-  description: text('description'),
-  color: text('color').default('#3B82F6'), // Hex color for UI display
+    // Tag details
+    name: text('name').notNull(),
+    description: text('description'),
+    color: text('color').default('#3B82F6'), // Hex color for UI display
 
-  // Tag category/type for organization
-  category: text('category', {
-    enum: ['general', 'client', 'product', 'discount', 'marketing', 'custom']
-  }).default('general'),
+    // Tag category/type for organization
+    category: text('category', {
+      enum: ['general', 'client', 'product', 'discount', 'marketing', 'custom']
+    }).default('general'),
 
-  // Tag settings
-  isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
-  sortOrder: integer('sort_order').default(0),
+    // Tag settings
+    isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
+    sortOrder: integer('sort_order').default(0),
 
-  // Metadata
-  createdAt: text('created_at').notNull().$defaultFn(() => new Date().toISOString()),
-  updatedAt: text('updated_at').notNull().$defaultFn(() => new Date().toISOString())
-}, (table) => ({
-  uniqueName: uniqueIndex('unique_tag_name').on(table.name)
-}));
-
+    // Metadata
+    createdAt: text('created_at')
+      .notNull()
+      .$defaultFn(() => new Date().toISOString()),
+    updatedAt: text('updated_at')
+      .notNull()
+      .$defaultFn(() => new Date().toISOString())
+  },
+  (table) => ({
+    uniqueName: uniqueIndex('unique_tag_name').on(table.name)
+  })
+);
 
 // =========================================
 // PRICING RULES SYSTEM
 // =========================================
-export const pricingRules = sqliteTable('pricing_rules', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
-  storeId: integer('store_id').notNull().references(() => stores.id, { onDelete: 'cascade' }),
+export const pricingRules = sqliteTable(
+  'pricing_rules',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    storeId: integer('store_id')
+      .notNull()
+      .references(() => stores.id, { onDelete: 'cascade' }),
 
-  // Rule identification
-  name: text('name').notNull(),
-  description: text('description'),
-  ruleCode: text('rule_code'),
+    // Rule identification
+    name: text('name').notNull(),
+    description: text('description'),
+    ruleCode: text('rule_code'),
 
-  // Rule type and priority
-  ruleType: text('rule_type', {
-    enum: ['percentage_discount', 'fixed_amount_discount', 'fixed_price', 'buy_x_get_y', 'quantity_discount']
-  }).notNull(),
-  priority: integer('priority').notNull().default(0), // Higher number = higher priority
+    // Rule type and priority
+    ruleType: text('rule_type', {
+      enum: ['percentage_discount', 'fixed_amount_discount', 'fixed_price', 'buy_x_get_y', 'quantity_discount']
+    }).notNull(),
+    priority: integer('priority').notNull().default(0), // Higher number = higher priority
 
-  // Discount values
-  discountPercentage: real('discount_percentage').default(0), // 15.50 = 15.5%
-  discountAmount: real('discount_amount').default(0), // Fixed amount off
-  fixedPrice: real('fixed_price').default(0), // Set specific price
+    // Discount values
+    discountPercentage: real('discount_percentage').default(0), // 15.50 = 15.5%
+    discountAmount: real('discount_amount').default(0), // Fixed amount off
+    fixedPrice: real('fixed_price').default(0), // Set specific price
 
-  // Buy X Get Y settings
-  buyQuantity: integer('buy_quantity').default(0), // Buy X items
-  getQuantity: integer('get_quantity').default(0), // Get Y items free/discounted
-  getDiscountPercentage: real('get_discount_percentage').default(0), // Discount on Y items
+    // Buy X Get Y settings
+    buyQuantity: integer('buy_quantity').default(0), // Buy X items
+    getQuantity: integer('get_quantity').default(0), // Get Y items free/discounted
+    getDiscountPercentage: real('get_discount_percentage').default(0), // Discount on Y items
 
-  // Rule status and dates
-  isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
-  startDate: text('start_date'),
-  endDate: text('end_date'),
+    // Rule status and dates
+    isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
+    startDate: text('start_date'),
+    endDate: text('end_date'),
 
-  // Usage limits
-  usageLimit: integer('usage_limit'), // Total times rule can be used
-  usageCount: integer('usage_count').default(0),
-  usageLimitPerCustomer: integer('usage_limit_per_customer'), // Per customer limit
+    // Usage limits
+    usageLimit: integer('usage_limit'), // Total times rule can be used
+    usageCount: integer('usage_count').default(0),
+    usageLimitPerCustomer: integer('usage_limit_per_customer'), // Per customer limit
 
-  // Metadata
-  createdAt: text('created_at').notNull().$defaultFn(() => new Date().toISOString()),
-  updatedAt: text('updated_at').notNull().$defaultFn(() => new Date().toISOString())
-}, (table) => ({
-  uniqueRuleCode: uniqueIndex('unique_rule_code').on(table.ruleCode)
-}));
+    // Metadata
+    createdAt: text('created_at')
+      .notNull()
+      .$defaultFn(() => new Date().toISOString()),
+    updatedAt: text('updated_at')
+      .notNull()
+      .$defaultFn(() => new Date().toISOString())
+  },
+  (table) => ({
+    uniqueRuleCode: uniqueIndex('unique_rule_code').on(table.ruleCode)
+  })
+);
 
 // Rule Conditions
 export const ruleConditions = sqliteTable('rule_conditions', {
   id: integer('id').primaryKey({ autoIncrement: true }),
-  pricingRuleId: integer('pricing_rule_id').notNull().references(() => pricingRules.id, { onDelete: 'cascade' }),
+  pricingRuleId: integer('pricing_rule_id')
+    .notNull()
+    .references(() => pricingRules.id, { onDelete: 'cascade' }),
 
   // Condition details
   conditionType: text('condition_type', {
     enum: [
-      'cart_subtotal', 'cart_quantity', 'product_quantity',
-      'client_has_tag', 'client_has_any_tags', 'client_has_all_tags',
-      'product_has_tag', 'product_has_any_tags', 'product_category', 'product_sku',
-      'day_of_week', 'time_of_day', 'customer_total_purchases', 'invoice_has_tag'
+      'cart_subtotal',
+      'cart_quantity',
+      'product_quantity',
+      'client_has_tag',
+      'client_has_any_tags',
+      'product_has_tag',
+      'product_has_any_tags',
+      'product_category',
+      'product_sku',
+      'day_of_week',
+      'time_of_day',
+      'customer_total_purchases',
+      'invoice_has_tag'
     ]
   }).notNull(),
 
@@ -497,19 +618,28 @@ export const ruleConditions = sqliteTable('rule_conditions', {
   conditionGroup: integer('condition_group').default(1), // Group conditions together
 
   // Metadata
-  createdAt: text('created_at').notNull().$defaultFn(() => new Date().toISOString())
+  createdAt: text('created_at')
+    .notNull()
+    .$defaultFn(() => new Date().toISOString())
 });
 
 // Rule Targets
 export const ruleTargets = sqliteTable('rule_targets', {
   id: integer('id').primaryKey({ autoIncrement: true }),
-  pricingRuleId: integer('pricing_rule_id').notNull().references(() => pricingRules.id, { onDelete: 'cascade' }),
+  pricingRuleId: integer('pricing_rule_id')
+    .notNull()
+    .references(() => pricingRules.id, { onDelete: 'cascade' }),
 
   // Target type
   targetType: text('target_type', {
     enum: [
-      'all_products', 'specific_products', 'products_with_tag', 'products_with_any_tags',
-      'product_category', 'cheapest_item', 'most_expensive_item'
+      'all_products',
+      'specific_products',
+      'products_with_tag',
+      'products_with_any_tags',
+      'product_category',
+      'cheapest_item',
+      'most_expensive_item'
     ]
   }).notNull(),
 
@@ -518,14 +648,20 @@ export const ruleTargets = sqliteTable('rule_targets', {
   targetTags: text('target_tags'), // JSON array of tag slugs for tag-based targeting
 
   // Metadata
-  createdAt: text('created_at').notNull().$defaultFn(() => new Date().toISOString())
+  createdAt: text('created_at')
+    .notNull()
+    .$defaultFn(() => new Date().toISOString())
 });
 
 // Discount Usage Tracking
 export const discountUsage = sqliteTable('discount_usage', {
   id: integer('id').primaryKey({ autoIncrement: true }),
-  pricingRuleId: integer('pricing_rule_id').notNull().references(() => pricingRules.id, { onDelete: 'cascade' }),
-  invoiceId: integer('invoice_id').notNull().references(() => invoices.id, { onDelete: 'cascade' }),
+  pricingRuleId: integer('pricing_rule_id')
+    .notNull()
+    .references(() => pricingRules.id, { onDelete: 'cascade' }),
+  invoiceId: integer('invoice_id')
+    .notNull()
+    .references(() => invoices.id, { onDelete: 'cascade' }),
   clientId: integer('client_id').references(() => clients.id, { onDelete: 'set null' }),
 
   // Usage details
@@ -537,13 +673,17 @@ export const discountUsage = sqliteTable('discount_usage', {
   appliedItems: text('applied_items'), // JSON details of which items got the discount
 
   // Metadata
-  createdAt: text('created_at').notNull().$defaultFn(() => new Date().toISOString())
+  createdAt: text('created_at')
+    .notNull()
+    .$defaultFn(() => new Date().toISOString())
 });
 
 // Quantity Price Tiers
 export const quantityPriceTiers = sqliteTable('quantity_price_tiers', {
   id: integer('id').primaryKey({ autoIncrement: true }),
-  pricingRuleId: integer('pricing_rule_id').notNull().references(() => pricingRules.id, { onDelete: 'cascade' }),
+  pricingRuleId: integer('pricing_rule_id')
+    .notNull()
+    .references(() => pricingRules.id, { onDelete: 'cascade' }),
 
   // Tier definition
   minQuantity: real('min_quantity').notNull(),
@@ -555,7 +695,9 @@ export const quantityPriceTiers = sqliteTable('quantity_price_tiers', {
   tierDiscountAmount: real('tier_discount_amount'), // Fixed amount discount per unit
 
   // Metadata
-  createdAt: text('created_at').notNull().$defaultFn(() => new Date().toISOString())
+  createdAt: text('created_at')
+    .notNull()
+    .$defaultFn(() => new Date().toISOString())
 });
 
 // =========================================
@@ -576,8 +718,12 @@ export const taxRates = sqliteTable('tax_rates', {
 
   // Metadata
   description: text('description'),
-  createdAt: text('created_at').notNull().$defaultFn(() => new Date().toISOString()),
-  updatedAt: text('updated_at').notNull().$defaultFn(() => new Date().toISOString())
+  createdAt: text('created_at')
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+  updatedAt: text('updated_at')
+    .notNull()
+    .$defaultFn(() => new Date().toISOString())
 });
 
 // =========================================
@@ -774,7 +920,6 @@ export const quantityPriceTiersRelations = relations(quantityPriceTiers, ({ one 
     references: [pricingRules.id]
   })
 }));
-
 
 // Export all tables as schema
 export const tenantSchema = {

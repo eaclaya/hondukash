@@ -215,7 +215,8 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
       })),
       clientId: selectedClient.id,
       subtotal: items.reduce((sum, item) => sum + item.lineTotal, 0),
-      clientTags: selectedClient.tags || []
+      clientTags: selectedClient.tags || [],
+      invoiceTags: selectedTags
     };
 
     const result = DiscountCalculator.calculateDiscounts(context, pricingRules);
@@ -937,6 +938,7 @@ function QuickProductEntry({ products, loading, onProductAdd, onSearchChange, se
             onChange={(e) => onSearchChange(e.target.value)}
             onKeyDown={handleKeyDown}
             className="w-full"
+            autoComplete="off"
           />
         </div>
         <div className="w-24">

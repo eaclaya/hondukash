@@ -1,134 +1,129 @@
 // =========================================
-// DISCOUNT & PRICING RULES TYPES  
+// DISCOUNT & PRICING RULES TYPES
 // =========================================
 
 // Note: Tags are now stored directly in entity tables as JSON arrays
 // No separate Tag or EntityTag interfaces needed
 
-export type RuleType = 
-  | 'percentage_discount'    // 10% off
-  | 'fixed_amount_discount'  // L 50 off
-  | 'fixed_price'           // Set price to L 100
-  | 'buy_x_get_y'           // Buy 2 get 1 free
-  | 'quantity_discount'     // Bulk pricing tiers
+export type RuleType =
+  | 'percentage_discount' // 10% off
+  | 'fixed_amount_discount' // L 50 off
+  | 'fixed_price' // Set price to L 100
+  | 'buy_x_get_y' // Buy 2 get 1 free
+  | 'quantity_discount'; // Bulk pricing tiers
 
 export interface PricingRule {
-  id: string
-  storeId: string
-  name: string
-  description?: string
-  ruleCode?: string
-  ruleType: RuleType
-  priority: number
-  
+  id: string;
+  storeId: string;
+  name: string;
+  description?: string;
+  ruleCode?: string;
+  ruleType: RuleType;
+  priority: number;
+
   // Discount values
-  discountPercentage: number
-  discountAmount: number
-  fixedPrice: number
-  
+  discountPercentage: number;
+  discountAmount: number;
+  fixedPrice: number;
+
   // Buy X Get Y settings
-  buyQuantity: number
-  getQuantity: number
-  getDiscountPercentage: number
-  
+  buyQuantity: number;
+  getQuantity: number;
+  getDiscountPercentage: number;
+
   // Status and dates
-  isActive: boolean
-  startDate?: string
-  endDate?: string
-  
+  isActive: boolean;
+  startDate?: string;
+  endDate?: string;
+
   // Usage limits
-  usageLimit?: number
-  usageCount: number
-  usageLimitPerCustomer?: number
-  
+  usageLimit?: number;
+  usageCount: number;
+  usageLimitPerCustomer?: number;
+
   // Related entities
-  conditions: RuleCondition[]
-  targets: RuleTarget[]
-  quantityTiers: QuantityPriceTier[]
-  
-  createdAt: string
-  updatedAt: string
+  conditions: RuleCondition[];
+  targets: RuleTarget[];
+  quantityTiers: QuantityPriceTier[];
+
+  createdAt: string;
+  updatedAt: string;
 }
 
 export type ConditionType =
-  | 'cart_subtotal'           // Total cart amount
-  | 'cart_quantity'           // Total items in cart
-  | 'product_quantity'        // Quantity of specific product
-  | 'client_has_tag'          // Client has specific tag
-  | 'client_has_any_tags'     // Client has any of specified tags
-  | 'client_has_all_tags'     // Client has all specified tags
-  | 'product_has_tag'         // Product has specific tag
-  | 'product_has_any_tags'    // Product has any of specified tags
-  | 'product_category'        // Product in category
-  | 'product_sku'            // Specific product SKU
-  | 'day_of_week'            // Monday, Tuesday, etc.
-  | 'time_of_day'            // Between certain hours
+  | 'cart_subtotal' // Total cart amount
+  | 'cart_quantity' // Total items in cart
+  | 'product_quantity' // Quantity of specific product
+  | 'client_has_tag' // Client has specific tag
+  | 'client_has_any_tags' // Client has any of specified tags
+  | 'product_has_tag' // Product has specific tag
+  | 'product_has_any_tags' // Product has any of specified tags
+  | 'product_category' // Product in category
+  | 'product_sku' // Specific product SKU
+  | 'day_of_week' // Monday, Tuesday, etc.
+  | 'time_of_day' // Between certain hours
   | 'customer_total_purchases' // Customer lifetime value
-  | 'invoice_has_tag'         // Invoice has specific tag
+  | 'invoice_has_tag'; // Invoice has specific tag
 
-export type ConditionOperator =
-  | 'equals' | 'not_equals' 
-  | 'greater_than' | 'greater_equal' 
-  | 'less_than' | 'less_equal' 
-  | 'in' | 'not_in' | 'between'
+export type ConditionOperator = 'equals' | 'not_equals' | 'greater_than' | 'greater_equal' | 'less_than' | 'less_equal' | 'in' | 'not_in' | 'between';
 
 export interface RuleCondition {
-  id: string
-  pricingRuleId: string
-  conditionType: ConditionType
-  operator: ConditionOperator
-  valueText?: string
-  valueNumber?: number
-  valueArray?: string[]
-  valueStart?: number
-  valueEnd?: number
-  logicalOperator: 'AND' | 'OR'
-  conditionGroup: number
-  createdAt: string
+  id: string;
+  pricingRuleId: string;
+  conditionType: ConditionType;
+  operator: ConditionOperator;
+  valueText?: string;
+  valueNumber?: number;
+  valueArray?: string[];
+  valueStart?: number;
+  valueEnd?: number;
+  logicalOperator: 'AND' | 'OR';
+  conditionGroup: number;
+  createdAt: string;
 }
 
 export type TargetType =
-  | 'all_products'           // Apply to entire cart
-  | 'specific_products'      // Specific product IDs
-  | 'products_with_tag'      // Products that have specific tag
+  | 'all_products' // Apply to entire cart
+  | 'specific_products' // Specific product IDs
+  | 'products_with_tag' // Products that have specific tag
   | 'products_with_any_tags' // Products with any of specified tags
-  | 'product_category'       // Products in category
-  | 'cheapest_item'          // Cheapest item in cart
-  | 'most_expensive_item'    // Most expensive item
+  | 'product_category' // Products in category
+  | 'cheapest_item' // Cheapest item in cart
+  | 'most_expensive_item'; // Most expensive item
 
 export interface RuleTarget {
-  id: string
-  pricingRuleId: string
-  targetType: TargetType
-  targetIds?: string[]
-  targetTags?: string[]  // Tag slugs for tag-based targeting
-  createdAt: string
+  id: string;
+  pricingRuleId: string;
+  targetType: TargetType;
+  targetIds?: string[];
+  targetTags?: string[]; // Tag slugs for tag-based targeting
+  createdAt: string;
 }
 
 export interface DiscountUsage {
-  id: string
-  pricingRuleId: string
-  invoiceId: string
-  clientId?: string
-  discountAmount: number
-  originalAmount: number
-  finalAmount: number
-  appliedItems: unknown[]
-  createdAt: string
-  
+  id: string;
+  pricingRuleId: string;
+  invoiceId: string;
+  clientId?: string;
+  discountAmount: number;
+  originalAmount: number;
+  finalAmount: number;
+  appliedItems: unknown[];
+  createdAt: string;
+
   // Related entities
-  pricingRule?: PricingRule
+  pricingRule?: PricingRule;
 }
 
 export interface QuantityPriceTier {
-  id: string
-  pricingRuleId: string
-  minQuantity: number
-  maxQuantity?: number
-  tierPrice?: number
-  tierDiscountPercentage?: number
-  tierDiscountAmount?: number
-  createdAt: string
+  id: string;
+  pricingRuleId: string;
+  minQuantity: number;
+  maxQuantity?: number;
+  tierPrice?: number;
+  tierDiscountPercentage?: number;
+  tierDiscountAmount?: number;
+  createdAt: string;
 }
 
 // =========================================
@@ -136,56 +131,56 @@ export interface QuantityPriceTier {
 // =========================================
 
 export interface DiscountCalculationContext {
-  storeId: string
-  clientId?: string
-  clientTags: string[]  // Client tag slugs (replaces customerGroups)
-  cartItems: CartItem[]
-  cartSubtotal: number
-  cartQuantity: number
-  currentDate: Date
+  storeId: string;
+  clientId?: string;
+  clientTags: string[]; // Client tag slugs (replaces customerGroups)
+  cartItems: CartItem[];
+  cartSubtotal: number;
+  cartQuantity: number;
+  currentDate: Date;
 }
 
 export interface CartItem {
-  productId: string
-  sku: string
-  categoryId?: string
-  productTags: string[]  // Product tag slugs
-  quantity: number
-  unitPrice: number
-  lineTotal: number
+  productId: string;
+  sku: string;
+  categoryId?: string;
+  productTags: string[]; // Product tag slugs
+  quantity: number;
+  unitPrice: number;
+  lineTotal: number;
   product?: {
-    name: string
-    category?: string
-  }
+    name: string;
+    category?: string;
+  };
 }
 
 export interface AppliedDiscount {
-  ruleId: string
-  ruleName: string
-  ruleType: RuleType
-  discountAmount: number
-  originalAmount: number
-  finalAmount: number
+  ruleId: string;
+  ruleName: string;
+  ruleType: RuleType;
+  discountAmount: number;
+  originalAmount: number;
+  finalAmount: number;
   appliedToItems: {
-    productId: string
-    quantity: number
-    originalPrice: number
-    finalPrice: number
-    discountAmount: number
-  }[]
+    productId: string;
+    quantity: number;
+    originalPrice: number;
+    finalPrice: number;
+    discountAmount: number;
+  }[];
 }
 
 export interface DiscountCalculationResult {
-  originalTotal: number
-  discountTotal: number
-  finalTotal: number
-  appliedDiscounts: AppliedDiscount[]
+  originalTotal: number;
+  discountTotal: number;
+  finalTotal: number;
+  appliedDiscounts: AppliedDiscount[];
   updatedCartItems: (CartItem & {
-    originalUnitPrice: number
-    finalUnitPrice: number
-    discountAmount: number
-    appliedRules: string[]
-  })[]
+    originalUnitPrice: number;
+    finalUnitPrice: number;
+    discountAmount: number;
+    appliedRules: string[];
+  })[];
 }
 
 // =========================================
@@ -193,45 +188,45 @@ export interface DiscountCalculationResult {
 // =========================================
 
 export interface CreatePricingRuleRequest {
-  name: string
-  description?: string
-  ruleCode?: string
-  ruleType: RuleType
-  priority?: number
-  
+  name: string;
+  description?: string;
+  ruleCode?: string;
+  ruleType: RuleType;
+  priority?: number;
+
   // Discount configuration
-  discountPercentage?: number
-  discountAmount?: number
-  fixedPrice?: number
-  
+  discountPercentage?: number;
+  discountAmount?: number;
+  fixedPrice?: number;
+
   // Buy X Get Y
-  buyQuantity?: number
-  getQuantity?: number
-  getDiscountPercentage?: number
-  
+  buyQuantity?: number;
+  getQuantity?: number;
+  getDiscountPercentage?: number;
+
   // Schedule
-  startDate?: string
-  endDate?: string
-  
+  startDate?: string;
+  endDate?: string;
+
   // Usage limits
-  usageLimit?: number
-  usageLimitPerCustomer?: number
-  
+  usageLimit?: number;
+  usageLimitPerCustomer?: number;
+
   // Conditions
-  conditions: Omit<RuleCondition, 'id' | 'pricingRuleId' | 'createdAt'>[]
-  
+  conditions: Omit<RuleCondition, 'id' | 'pricingRuleId' | 'createdAt'>[];
+
   // Targets
-  targets: Omit<RuleTarget, 'id' | 'pricingRuleId' | 'createdAt'>[]
-  
+  targets: Omit<RuleTarget, 'id' | 'pricingRuleId' | 'createdAt'>[];
+
   // Quantity tiers (for quantity discount rules)
-  quantityTiers?: Omit<QuantityPriceTier, 'id' | 'pricingRuleId' | 'createdAt'>[]
+  quantityTiers?: Omit<QuantityPriceTier, 'id' | 'pricingRuleId' | 'createdAt'>[];
 }
 
 export interface PricingRuleTemplate {
-  id: string
-  name: string
-  description: string
-  template: Partial<CreatePricingRuleRequest>
+  id: string;
+  name: string;
+  description: string;
+  template: Partial<CreatePricingRuleRequest>;
 }
 
 // =========================================
@@ -329,4 +324,4 @@ export const RULE_TEMPLATES: PricingRuleTemplate[] = [
       ]
     }
   }
-]
+];

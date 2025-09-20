@@ -582,7 +582,6 @@ CREATE TABLE rule_conditions (
         'product_quantity',        -- Quantity of specific product
         'client_has_tag',          -- Client has specific tag
         'client_has_any_tags',     -- Client has any of specified tags
-        'client_has_all_tags',     -- Client has all specified tags
         'product_has_tag',         -- Product has specific tag
         'product_has_any_tags',    -- Product has any of specified tags
         'product_category',        -- Product in category

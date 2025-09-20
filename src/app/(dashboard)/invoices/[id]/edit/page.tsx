@@ -56,14 +56,27 @@ export default function EditInvoicePage() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to update invoice');
+        let errorMessage = 'Failed to update invoice';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch (parseError) {
+          console.error('Failed to parse error response:', parseError);
+          errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        }
+
+        toast.error(errorMessage);
+        return;
       }
+
+      toast.success('Invoice updated successfully');
 
       // Redirect to invoice detail page
       router.push(`/invoices/${invoiceId}`);
     } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : 'Failed to update invoice');
+      console.error('Submit error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update invoice';
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -77,7 +90,9 @@ export default function EditInvoicePage() {
     return (
       <div className="max-w-4xl mx-auto p-6">
         <div className="flex items-center justify-center py-12">
-          <div className="text-lg"><LoaderSpinner /></div>
+          <div className="text-lg">
+            <LoaderSpinner />
+          </div>
         </div>
       </div>
     );
@@ -93,12 +108,5 @@ export default function EditInvoicePage() {
     );
   }
 
-  return (
-    <InvoiceForm
-      invoice={invoice}
-      onSubmit={handleSubmit}
-      onCancel={handleCancel}
-      loading={loading}
-    />
-  );
+  return <InvoiceForm invoice={invoice} onSubmit={handleSubmit} onCancel={handleCancel} loading={loading} />;
 }

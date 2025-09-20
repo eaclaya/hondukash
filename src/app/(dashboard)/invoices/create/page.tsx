@@ -22,16 +22,27 @@ export default function CreateInvoicePage() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create invoice');
+        let errorMessage = 'Failed to create invoice';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch (parseError) {
+          console.error('Failed to parse error response:', parseError);
+          errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        }
+        toast.error(errorMessage);
+        return;
       }
 
       const result = await response.json();
-      
+      toast.success('Invoice created successfully');
+
       // Redirect to invoice detail page
       router.push(`/invoices/${result.invoice.id}`);
     } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : 'Failed to create invoice');
+      console.error('Submit error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create invoice';
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -41,11 +52,5 @@ export default function CreateInvoicePage() {
     router.push('/invoices');
   };
 
-  return (
-    <InvoiceForm
-      onSubmit={handleSubmit}
-      onCancel={handleCancel}
-      loading={loading}
-    />
-  );
+  return <InvoiceForm onSubmit={handleSubmit} onCancel={handleCancel} loading={loading} />;
 }

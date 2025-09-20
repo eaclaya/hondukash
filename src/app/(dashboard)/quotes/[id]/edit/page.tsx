@@ -52,16 +52,28 @@ export default function EditQuotePage() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to update quote');
+        let errorMessage = 'Failed to update quote';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch (parseError) {
+          console.error('Failed to parse error response:', parseError);
+          errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        }
+
+        toast.error(errorMessage);
+        return;
       }
 
-      await response.json();
-      
+      const result = await response.json();
+      toast.success('Quote updated successfully');
+
       // Redirect to quote list
       router.push('/quotes');
     } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : 'Failed to update quote');
+      console.error('Submit error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update quote';
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -101,12 +113,5 @@ export default function EditQuotePage() {
     );
   }
 
-  return (
-    <QuoteForm
-      quote={quote}
-      onSubmit={handleSubmit}
-      onCancel={handleCancel}
-      loading={loading}
-    />
-  );
+  return <QuoteForm quote={quote} onSubmit={handleSubmit} onCancel={handleCancel} loading={loading} />;
 }

@@ -67,7 +67,6 @@ export class DiscountCalculator {
 
       // Calculate what the discount would be for this rule
       const discount = this.applyRule(rule, context, result);
-      console.log('discount', discount);
       if (discount) {
         applicableDiscounts.push(discount);
       }
@@ -192,19 +191,36 @@ export class DiscountCalculator {
    * Evaluate a group of conditions (within a group, conditions are AND/OR'ed based on logical_operator)
    */
   private static evaluateConditionGroup(conditions: RuleCondition[], context: DiscountCalculationContext): boolean {
-    let result = true;
-    let currentOperator: 'AND' | 'OR' = 'AND';
+    if (conditions.length === 0) return true;
+    if (conditions.length === 1) {
+      return this.evaluateCondition(conditions[0], context);
+    }
 
-    for (const condition of conditions) {
+    // Sort conditions to ensure proper evaluation order
+    const sortedConditions = [...conditions].sort((a, b) => a.id - b.id);
+
+    // Start with the first condition result
+    let result = this.evaluateCondition(sortedConditions[0], context);
+
+    // Process remaining conditions with their operators
+    for (let i = 1; i < sortedConditions.length; i++) {
+      const condition = sortedConditions[i];
       const conditionResult = this.evaluateCondition(condition, context);
-      console.log('conditionResult', conditionResult, context);
-      if (currentOperator === 'AND') {
-        result = result && conditionResult;
-      } else {
-        result = result || conditionResult;
-      }
+      const operator = condition.logicalOperator || 'AND';
 
-      currentOperator = condition.logicalOperator;
+      if (operator === 'AND') {
+        result = result && conditionResult;
+        // For AND operations, if result is false, we can short-circuit
+        if (!result) {
+          break;
+        }
+      } else if (operator === 'OR') {
+        result = result || conditionResult;
+        // For OR operations, if result is true, we can short-circuit
+        if (result) {
+          break;
+        }
+      }
     }
 
     return result;
@@ -229,7 +245,6 @@ export class DiscountCalculator {
       case 'client_has_tag':
       case 'client_has_any_tags':
         requiredTags = condition.valueText ? [condition.valueText] : condition.valueArray ? (JSON.parse(condition.valueArray) as string[]) : [];
-        console.log('requiredTags1', requiredTags, context.clientTags);
         if (requiredTags && context.clientTags) {
           return requiredTags.some((tag) => context.clientTags!.includes(tag));
         }
@@ -238,7 +253,6 @@ export class DiscountCalculator {
       case 'invoice_has_tag':
       case 'invoice_has_any_tags':
         requiredTags = condition.valueText ? [condition.valueText] : condition.valueArray ? (JSON.parse(condition.valueArray) as string[]) : [];
-        console.log('requiredTags2', requiredTags);
         if (requiredTags && context.invoiceTags) {
           return requiredTags.some((tag) => context.invoiceTags!.includes(tag));
         }

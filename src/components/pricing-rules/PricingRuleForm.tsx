@@ -531,7 +531,7 @@ export default function PricingRuleForm({ rule, onSubmit, onCancel, loading = fa
                           </Button>
                         </div>
                         
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                           <div className="space-y-2">
                             <Label>Condition Type</Label>
                             <Select
@@ -594,6 +594,24 @@ export default function PricingRuleForm({ rule, onSubmit, onCancel, loading = fa
                               />
                             )}
                           </div>
+
+                          {index > 0 && (
+                            <div className="space-y-2">
+                              <Label>Logic with Previous</Label>
+                              <Select
+                                value={condition.logicalOperator}
+                                onValueChange={(value) => handleConditionChange(index, 'logicalOperator', value)}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="AND">AND</SelectItem>
+                                  <SelectItem value="OR">OR</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))}

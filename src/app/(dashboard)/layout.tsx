@@ -9,6 +9,7 @@ import { useEffect } from 'react';
 import Link from 'next/link';
 import StoreSwitcher from '@/components/StoreSwitcher';
 import { useStore } from '@/contexts/StoreContext';
+import { useTranslations } from '@/contexts/LocaleContext';
 
 export default function DashboardLayout({
   children,
@@ -19,6 +20,8 @@ export default function DashboardLayout({
   const { currentStore } = useStore();
   const router = useRouter();
   const pathname = usePathname();
+  const tNav = useTranslations('navigation');
+  const tAuth = useTranslations('auth');
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -30,7 +33,7 @@ export default function DashboardLayout({
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg">Redirecting to login...</div>
+        <div className="text-lg">{tAuth('pleaseSignIn')}</div>
       </div>
     );
   }
@@ -42,56 +45,56 @@ export default function DashboardLayout({
           <div className="flex justify-between items-center">
             <nav className="flex items-center space-x-3">
               <Link href="/dashboard" className={`px-3 py-2 text-sm font-medium rounded-md hover:bg-muted transition-colors ${pathname === '/dashboard' ? 'bg-muted' : ''}`}>
-                Dashboard
+                {tNav('dashboard')}
               </Link>
               <Link href="/clients" className={`px-3 py-2 text-sm font-medium rounded-md hover:bg-muted transition-colors ${pathname === '/clients' ? 'bg-muted' : ''}`}>
-                Clients
+                {tNav('clients')}
               </Link>
 
               <Link href="/products" className={`px-3 py-2 text-sm font-medium rounded-md hover:bg-muted transition-colors ${pathname === '/products' ? 'bg-muted' : ''}`}>
-                Products
+                {tNav('products')}
               </Link>
 
               <Link href="/invoices" className={`px-3 py-2 text-sm font-medium rounded-md hover:bg-muted transition-colors ${pathname === '/invoices' ? 'bg-muted' : ''}`}>
-                Invoices
+                {tNav('invoices')}
               </Link>
 
               <Link href="/quotes" className={`px-3 py-2 text-sm font-medium rounded-md hover:bg-muted transition-colors ${pathname === '/quotes' ? 'bg-muted' : ''}`}>
-                Quotes
+                {tNav('quotes')}
               </Link>
 
               {/* Settings Dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className={`px-3 py-2 text-sm font-medium rounded-md hover:bg-muted transition-colors ${pathname.startsWith('/stores/') && pathname.includes('/edit') || pathname === '/tax-rates' || pathname === '/stores' || pathname === '/reports' || pathname === '/transfers' ? 'bg-muted' : ''}`}>
-                    Settings
+                    {tNav('settings')}
                     <ChevronDown className="ml-1 h-3 w-3" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start">
                   {currentStore && (
                     <DropdownMenuItem asChild>
-                      <Link href={`/stores/${currentStore.id}/edit`}>Settings</Link>
+                      <Link href={`/stores/${currentStore.id}/edit`}>{tNav('settings')}</Link>
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuItem asChild>
-                    <Link href="/tax-rates">Tax Rates</Link>
+                    <Link href="/tax-rates">{tNav('taxRates')}</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link href="/tags">Tags</Link>
+                    <Link href="/tags">{tNav('tags')}</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link href="/pricing-rules">Pricing Rules</Link>
+                    <Link href="/pricing-rules">{tNav('pricingRules')}</Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
-                    <Link href="/stores">All Stores</Link>
+                    <Link href="/stores">{tNav('allStores')}</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link href="/reports">Reports</Link>
+                    <Link href="/reports">{tNav('reports')}</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link href="/transfers">Transfers</Link>
+                    <Link href="/transfers">{tNav('transfers')}</Link>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -117,7 +120,7 @@ export default function DashboardLayout({
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => router.push('/settings')}>
                     <Settings className="mr-2 h-4 w-4" />
-                    Settings
+                    {tNav('settings')}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
@@ -125,7 +128,7 @@ export default function DashboardLayout({
                     className="text-red-600 focus:text-red-600"
                   >
                     <LogOut className="mr-2 h-4 w-4" />
-                    Logout
+                    {tAuth('logout')}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

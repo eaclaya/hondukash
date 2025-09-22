@@ -23,6 +23,7 @@ CREATE TABLE stores (
 
     -- Settings
     currency TEXT DEFAULT 'HNL',
+    language TEXT DEFAULT 'es', -- Default language for the store
     tax_rate DECIMAL(5,4) DEFAULT 0.15, -- 15% default tax rate
     invoice_prefix TEXT DEFAULT 'F',
     invoice_counter INTEGER DEFAULT 1,

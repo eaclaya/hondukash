@@ -11,6 +11,7 @@ import { Pagination } from '@/components/ui/pagination';
 import { Plus, Edit, Trash2, Package, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import LoaderSpinner from '@/components/shared/loader-spinner';
+import { useTranslations } from '@/contexts/LocaleContext';
 
 // Simple debounce function
 function debounce<T extends (...args: unknown[]) => void>(func: T, delay: number): T {
@@ -23,6 +24,8 @@ function debounce<T extends (...args: unknown[]) => void>(func: T, delay: number
 
 export default function ProductsPage() {
   const router = useRouter();
+  const t = useTranslations('products');
+  const tCommon = useTranslations('common');
   const [productsData, setProductsData] = useState<PaginatedResponse<ProductWithInventory> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -149,12 +152,12 @@ export default function ProductsPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Products</h1>
-          <p className="text-muted-foreground">Manage your product catalog and inventory</p>
+          <h1 className="text-3xl font-bold">{t('products')}</h1>
+          <p className="text-muted-foreground">{t('manageProductCatalogAndInventory')}</p>
         </div>
         <Button onClick={() => router.push('/products/create')}>
           <Plus className="h-4 w-4 mr-2" />
-          Add Product
+          {t('addProduct')}
         </Button>
       </div>
 
@@ -163,7 +166,7 @@ export default function ProductsPage() {
       <div className="relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
         <Input
-          placeholder="Search products by name, SKU, description, or category..."
+          placeholder={t('searchProductsPlaceholder')}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="pl-10"
@@ -175,10 +178,10 @@ export default function ProductsPage() {
           <div className="mx-auto w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-4">
             <Search className="h-12 w-12 text-muted-foreground" />
           </div>
-          <h3 className="text-lg font-semibold mb-2">No products found</h3>
-          <p className="text-muted-foreground mb-4">Try adjusting your search terms.</p>
+          <h3 className="text-lg font-semibold mb-2">{t('noProductsFound')}</h3>
+          <p className="text-muted-foreground mb-4">{t('tryAdjustingSearchTerms')}</p>
           <Button variant="outline" onClick={() => setSearchTerm('')}>
-            Clear Search
+            {tCommon('clearSearch')}
           </Button>
         </div>
       ) : !productsData || productsData.pagination.total === 0 ? (
@@ -186,8 +189,8 @@ export default function ProductsPage() {
           <div className="mx-auto w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-4">
             <Package className="h-12 w-12 text-muted-foreground" />
           </div>
-          <h3 className="text-lg font-semibold mb-2">No products found</h3>
-          <p className="text-muted-foreground mb-4">Get started by adding your first product.</p>
+          <h3 className="text-lg font-semibold mb-2">{t('noProductsFound')}</h3>
+          <p className="text-muted-foreground mb-4">{t('getStartedByAddingFirstProduct')}</p>
           <Button onClick={() => router.push('/products/create')}>
             <Plus className="h-4 w-4 mr-2" />
             Add Product

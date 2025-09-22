@@ -4,6 +4,7 @@ import "./globals.css";
 import { TenantProvider } from "@/contexts/TenantContext";
 import { StoreProvider } from "@/contexts/StoreContext";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { LocaleProvider } from "@/contexts/LocaleContext";
 import { Toaster } from "@/components/ui/sonner";
 
 const geistSans = Geist({
@@ -27,15 +28,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="es">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <TenantProvider>
           <AuthProvider>
             <StoreProvider>
-              {children}
-              <Toaster />
+              <LocaleProvider>
+                {children}
+                <Toaster />
+              </LocaleProvider>
             </StoreProvider>
           </AuthProvider>
         </TenantProvider>

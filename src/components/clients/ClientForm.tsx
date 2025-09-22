@@ -14,6 +14,7 @@ import { Plus, Trash2, Building, User, Mail, Phone, MapPin, CreditCard, Tags, Ex
 import SimpleTagSelector from '@/components/tags/SimpleTagSelector';
 import Link from 'next/link';
 import { toast } from 'sonner';
+import { useTranslations } from '@/contexts/LocaleContext';
 
 interface ClientFormProps {
   client?: Client;
@@ -42,6 +43,8 @@ interface ContactFormData {
 }
 
 export default function ClientForm({ client, onSubmit, onCancel, loading = false }: ClientFormProps) {
+  const t = useTranslations('clients');
+  const tCommon = useTranslations('common');
 
   const [formData, setFormData] = useState<CreateClientRequest | UpdateClientRequest>({
     ...(client?.id && { id: client.id }),
@@ -177,10 +180,10 @@ export default function ClientForm({ client, onSubmit, onCancel, loading = false
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">
-            {client ? 'Edit Client' : 'Create New Client'}
+            {client ? t('editClient') : t('createNewClient')}
           </h1>
           <p className="text-slate-600">
-            {client ? 'Update client information and contacts' : 'Add a new client to your system'}
+            {client ? t('updateClientInfo') : t('addNewClientToSystem')}
           </p>
         </div>
         <div className="flex space-x-3">
@@ -188,27 +191,27 @@ export default function ClientForm({ client, onSubmit, onCancel, loading = false
             <Link href={`/tags/clients/${client.id}`}>
               <Button variant="outline" className="flex items-center space-x-2">
                 <Tags className="h-4 w-4" />
-                <span>Manage Tags</span>
+                <span>{t('manageTags')}</span>
                 <ExternalLink className="h-3 w-3" />
               </Button>
             </Link>
           )}
           <Button variant="outline" onClick={onCancel} disabled={loading}>
-            Cancel
+            {tCommon('cancel')}
           </Button>
           <Button onClick={handleSubmit} disabled={loading} className="btn-primary-modern">
-            {loading ? 'Saving...' : client ? 'Update Client' : 'Create Client'}
+            {loading ? tCommon('saving') : client ? t('updateClient') : t('createClient')}
           </Button>
         </div>
       </div>
 
       <Tabs defaultValue="basic" className="space-y-6">
         <TabsList className={`grid w-full ${formData.clientType === 'company' ? 'grid-cols-3' : 'grid-cols-1'}`}>
-          <TabsTrigger value="basic">Basic Information</TabsTrigger>
+          <TabsTrigger value="basic">{t('basicInformation')}</TabsTrigger>
           {formData.clientType === 'company' && (
             <>
-              <TabsTrigger value="business">Business Details</TabsTrigger>
-              <TabsTrigger value="contacts">Contacts</TabsTrigger>
+              <TabsTrigger value="business">{t('businessDetails')}</TabsTrigger>
+              <TabsTrigger value="contacts">{t('contacts')}</TabsTrigger>
             </>
           )}
         </TabsList>
@@ -218,78 +221,78 @@ export default function ClientForm({ client, onSubmit, onCancel, loading = false
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <User className="h-5 w-5" />
-                <span>Client Information</span>
+                <span>{t('clientInformation')}</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="clientType">Client Type</Label>
+                  <Label htmlFor="clientType">{t('clientType')}</Label>
                   <Select
                     value={formData.clientType}
                     onValueChange={(value) => handleInputChange('clientType', value)}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select client type" />
+                      <SelectValue placeholder={t('selectClientType')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="individual">Individual</SelectItem>
-                      <SelectItem value="company">Company</SelectItem>
+                      <SelectItem value="individual">{t('individual')}</SelectItem>
+                      <SelectItem value="company">{t('company')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="name">
-                    {formData.clientType === 'company' ? 'Company Name' : 'Full Name'} *
+                    {formData.clientType === 'company' ? t('companyName') : t('fullName')} *
                   </Label>
                   <Input
                     id="name"
                     value={formData.name}
                     onChange={(e) => handleInputChange('name', e.target.value)}
-                    placeholder={formData.clientType === 'company' ? 'Enter company name' : 'Enter full name'}
+                    placeholder={formData.clientType === 'company' ? t('enterCompanyName') : t('enterFullName')}
                     required
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="primaryContactName">Primary Contact</Label>
+                  <Label htmlFor="primaryContactName">{t('primaryContact')}</Label>
                   <Input
                     id="primaryContactName"
                     value={formData.primaryContactName}
                     onChange={(e) => handleInputChange('primaryContactName', e.target.value)}
-                    placeholder="Enter primary contact name"
+                    placeholder={t('enterPrimaryContactName')}
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">{t('email')}</Label>
                   <Input
                     id="email"
                     type="email"
                     value={formData.email}
                     onChange={(e) => handleInputChange('email', e.target.value)}
-                    placeholder="Enter email address"
+                    placeholder={t('enterEmailAddress')}
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Phone</Label>
+                  <Label htmlFor="phone">{t('phone')}</Label>
                   <Input
                     id="phone"
                     value={formData.phone}
                     onChange={(e) => handleInputChange('phone', e.target.value)}
-                    placeholder="Enter phone number"
+                    placeholder={t('enterPhoneNumber')}
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="mobile">Mobile</Label>
+                  <Label htmlFor="mobile">{t('mobile')}</Label>
                   <Input
                     id="mobile"
                     value={formData.mobile}
                     onChange={(e) => handleInputChange('mobile', e.target.value)}
-                    placeholder="Enter mobile number"
+                    placeholder={t('enterMobileNumber')}
                   />
                 </div>
               </div>
@@ -300,7 +303,7 @@ export default function ClientForm({ client, onSubmit, onCancel, loading = false
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <MapPin className="h-5 w-5" />
-                <span>Address Information</span>
+                <span>{t('addressInformation')}</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">

@@ -17,6 +17,7 @@ import SimpleTagSelector from '@/components/tags/SimpleTagSelector';
 import { toast } from 'sonner';
 import { usePricingRules } from '@/hooks/usePricingRules';
 import { DiscountCalculator, DiscountCalculationContext, DiscountCalculationResult } from '@/lib/services/discountCalculator';
+import { useTranslations } from '@/contexts/LocaleContext';
 
 interface InvoiceFormProps {
   invoice?: Invoice;
@@ -40,6 +41,8 @@ interface InvoiceItemForm {
 
 export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = false }: InvoiceFormProps) {
   const { getAuthHeaders } = useAuth();
+  const t = useTranslations('invoices');
+  const tCommon = useTranslations('common');
   const [clients, setClients] = useState<Client[]>([]);
   const [products, setProducts] = useState<ProductWithInventory[]>([]);
   const [loadingClients, setLoadingClients] = useState(false);
@@ -493,12 +496,12 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
     e.preventDefault();
 
     if (!formData.clientId) {
-      toast.error('Please select a client');
+      toast.error(t('pleaseSelectClient'));
       return;
     }
 
     if (items.length === 0 || items.every((item) => !item.productName)) {
-      toast.error('Please add at least one item');
+      toast.error(t('pleaseAddAtLeastOneItem'));
       return;
     }
 
@@ -546,10 +549,10 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
       <div className="flex items-center justify-end fixed bottom-0 left-0 right-0 bg-white p-4 z-50 shadow-inner">
         <div className="flex space-x-3">
           <Button variant="outline" onClick={onCancel} disabled={loading}>
-            Cancel
+            {tCommon('cancel')}
           </Button>
           <Button onClick={handleSubmit} disabled={loading} className="btn-primary-modern">
-            {loading ? 'Saving...' : invoice ? 'Update Invoice' : 'Create Invoice'}
+            {loading ? tCommon('saving') : invoice ? t('updateInvoice') : t('createInvoice')}
           </Button>
         </div>
       </div>
@@ -560,7 +563,7 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2 relative">
-                <Label htmlFor="client-search">Client *</Label>
+                <Label htmlFor="client-search">{t('client')} *</Label>
                 <Input
                   id="client-search"
                   value={clientSearch}
@@ -575,7 +578,7 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
                     // Delay hiding dropdown to allow clicking on items
                     setTimeout(() => setShowClientDropdown(false), 200);
                   }}
-                  placeholder="Search clients..."
+                  placeholder={t('searchClients')}
                   autoComplete="off"
                 />
                 {showClientDropdown && clientResults.length > 0 && (
@@ -596,30 +599,30 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
                 )}
                 {loadingClients && (
                   <div className="absolute z-50 w-full bg-white border border-gray-200 rounded-md shadow-lg top-full">
-                    <div className="px-3 py-2 text-gray-500">Searching clients...</div>
+                    <div className="px-3 py-2 text-gray-500">{t('searchingClients')}</div>
                   </div>
                 )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="status">Status</Label>
+                <Label htmlFor="status">{t('status')}</Label>
                 <Select value={formData.status} onValueChange={(value) => handleInputChange('status', value)} disabled>
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select status" />
+                    <SelectValue placeholder={t('selectStatus')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="sent">Sent</SelectItem>
-                    <SelectItem value="paid">Paid</SelectItem>
-                    <SelectItem value="partial">Partial Payment</SelectItem>
-                    <SelectItem value="overdue">Overdue</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                    <SelectItem value="draft">{t('draft')}</SelectItem>
+                    <SelectItem value="sent">{t('sent')}</SelectItem>
+                    <SelectItem value="paid">{t('paid')}</SelectItem>
+                    <SelectItem value="partial">{t('partialPayment')}</SelectItem>
+                    <SelectItem value="overdue">{t('overdue')}</SelectItem>
+                    <SelectItem value="cancelled">{t('cancelled')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="invoiceDate">Invoice Date *</Label>
+                <Label htmlFor="invoiceDate">{t('invoiceDate')} *</Label>
                 <Input
                   id="invoiceDate"
                   type="date"
@@ -633,7 +636,7 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
                 <div className="flex items-center space-x-2 mb-2">
                   <Checkbox id="useGlobalTax" checked={useGlobalTax} onCheckedChange={handleGlobalTaxToggle} />
                   <Label htmlFor="useGlobalTax" className="text-sm font-medium">
-                    Global tax
+                    {t('globalTax')}
                   </Label>
                 </div>
                 <div className="flex items-center space-x-2">
@@ -659,11 +662,11 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
         <Card className="py-4 gap-2">
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium">Summary</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('summary')}</CardTitle>
               <div className="flex items-center space-x-2">
                 <Checkbox id="applyDiscounts" checked={applyDiscounts} onCheckedChange={setApplyDiscounts} />
                 <Label htmlFor="applyDiscounts" className="text-xs">
-                  Apply discounts
+                  {t('applyDiscounts')}
                 </Label>
                 <Calculator className="h-4 w-4 text-muted-foreground" />
               </div>
@@ -676,27 +679,27 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
                   {applyDiscounts && discountResult && discountResult.totalDiscountAmount > 0 && (
                     <>
                       <div className="flex justify-between text-sm">
-                        <span>Original Subtotal:</span>
+                        <span>{t('originalSubtotal')}:</span>
                         <span>{formatCurrency(totals.originalSubtotal)}</span>
                       </div>
                       <div className="flex justify-between text-sm text-green-600">
                         <span>
-                          Discount ({discountResult.appliedDiscounts.length} rule{discountResult.appliedDiscounts.length !== 1 ? 's' : ''}):
+                          {t('discount')} ({discountResult.appliedDiscounts.length} {discountResult.appliedDiscounts.length === 1 ? t('rule') : t('rules')}):
                         </span>
                         <span>-{formatCurrency(totals.discountAmount)}</span>
                       </div>
                     </>
                   )}
                   <div className="flex justify-between text-sm">
-                    <span>Subtotal:</span>
+                    <span>{t('subtotal')}:</span>
                     <span>{formatCurrency(totals.subtotal)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span>Tax (per item):</span>
+                    <span>{t('taxPerItem')}:</span>
                     <span>{formatCurrency(totals.tax)}</span>
                   </div>
                   <div className="flex justify-between text-lg font-bold border-t pt-3">
-                    <span>Total:</span>
+                    <span>{t('total')}:</span>
                     <span>{formatCurrency(totals.total)}</span>
                   </div>
                 </div>
@@ -705,7 +708,7 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
               {/* Discount Details */}
               {applyDiscounts && discountResult && discountResult.appliedDiscounts.length > 0 && (
                 <div className="border-t pt-4 space-y-2">
-                  <h4 className="text-sm font-medium text-muted-foreground">Applied Discounts:</h4>
+                  <h4 className="text-sm font-medium text-muted-foreground">{t('appliedDiscounts')}:</h4>
                   {discountResult.appliedDiscounts.map((discount, index) => (
                     <div key={index} className="text-xs text-green-600 flex justify-between">
                       <span>{discount.ruleName}</span>
@@ -716,10 +719,10 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
               )}
 
               {/* Pricing Rules Status */}
-              {loadingPricingRules && <div className="text-xs text-muted-foreground">Loading pricing rules...</div>}
-              {pricingRulesError && <div className="text-xs text-red-600">Error loading pricing rules: {pricingRulesError}</div>}
+              {loadingPricingRules && <div className="text-xs text-muted-foreground">{t('loadingPricingRules')}</div>}
+              {pricingRulesError && <div className="text-xs text-red-600">{t('errorLoadingPricingRules')}: {pricingRulesError}</div>}
               {!loadingPricingRules && pricingRules.length === 0 && applyDiscounts && (
-                <div className="text-xs text-muted-foreground">No active pricing rules found</div>
+                <div className="text-xs text-muted-foreground">{t('noActivePricingRulesFound')}</div>
               )}
             </div>
           </CardContent>
@@ -742,11 +745,11 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Product</TableHead>
-                    <TableHead>Quantity</TableHead>
-                    <TableHead>Unit Price</TableHead>
-                    <TableHead>Tax Amount</TableHead>
-                    <TableHead>Total</TableHead>
+                    <TableHead>{t('product')}</TableHead>
+                    <TableHead>{t('quantity')}</TableHead>
+                    <TableHead>{t('unitPrice')}</TableHead>
+                    <TableHead>{t('taxAmount')}</TableHead>
+                    <TableHead>{t('total')}</TableHead>
                     <TableHead></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -758,7 +761,7 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
                           <Input
                             value={item.productName}
                             onChange={(e) => handleItemChange(index, 'productName', e.target.value)}
-                            placeholder="Product name / description"
+                            placeholder={t('productNameDescription')}
                             className="font-medium"
                           />
                         </div>
@@ -811,7 +814,7 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
             <div className="pt-4">
               <Button type="button" variant="outline" onClick={addItem} className="flex items-center gap-2">
                 <Plus className="h-4 w-4" />
-                Add Item
+                {t('addItem')}
               </Button>
             </div>
           </CardContent>
@@ -820,27 +823,27 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
         {/* Notes and Terms */}
         <Card className="col-span-3">
           <CardHeader>
-            <CardTitle>Additional Information</CardTitle>
+            <CardTitle>{t('additionalInformation')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="notes">Notes</Label>
+              <Label htmlFor="notes">{t('notes')}</Label>
               <Textarea
                 id="notes"
                 value={formData.notes}
                 onChange={(e) => handleInputChange('notes', e.target.value)}
-                placeholder="Internal notes (not visible to client)"
+                placeholder={t('internalNotesPlaceholder')}
                 rows={3}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="terms">Terms & Conditions</Label>
+              <Label htmlFor="terms">{t('termsConditions')}</Label>
               <Textarea
                 id="terms"
                 value={formData.terms}
                 onChange={(e) => handleInputChange('terms', e.target.value)}
-                placeholder="Payment terms and conditions"
+                placeholder={t('paymentTermsPlaceholder')}
                 rows={3}
               />
             </div>
@@ -851,8 +854,8 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
                 onTagsChange={setSelectedTags}
                 storeId={1} // TODO: Get actual store ID from context/props
                 categoryFilter={['invoice', 'general', 'client']}
-                label="Tags"
-                placeholder="Select tags for this invoice..."
+                label={t('tags')}
+                placeholder={t('selectTagsForInvoice')}
               />
             </div>
           </CardContent>
@@ -933,7 +936,7 @@ function QuickProductEntry({ products, loading, onProductAdd, onSearchChange, se
         <div className="flex-1">
           <Input
             id="product-search"
-            placeholder="Search products by name or SKU..."
+            placeholder={t('searchProductsByNameOrSku')}
             value={searchValue}
             onChange={(e) => onSearchChange(e.target.value)}
             onKeyDown={handleKeyDown}
@@ -943,7 +946,7 @@ function QuickProductEntry({ products, loading, onProductAdd, onSearchChange, se
         </div>
         <div className="w-24">
           <NumericInput
-            placeholder="Qty"
+            placeholder={t('qty')}
             value={quantity.toString()}
             onValueChange={(value) => setQuantity(Math.floor(value || 1))}
             allowDecimals={false}
@@ -966,16 +969,16 @@ function QuickProductEntry({ products, loading, onProductAdd, onSearchChange, se
           disabled={!selectedProductId}
           size="sm"
         >
-          Add
+          {t('add')}
         </Button>
       </div>
 
       {searchValue && (
         <div className="border rounded-lg max-h-48 overflow-y-auto">
           {loading ? (
-            <div className="p-4 text-center text-muted-foreground">Loading products...</div>
+            <div className="p-4 text-center text-muted-foreground">{t('loadingProducts')}</div>
           ) : products.length === 0 ? (
-            <div className="p-4 text-center text-muted-foreground">No products found</div>
+            <div className="p-4 text-center text-muted-foreground">{t('noProductsFound')}</div>
           ) : (
             <div className="divide-y">
               {products.map((product, index) => (

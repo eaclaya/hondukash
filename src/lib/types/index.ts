@@ -63,6 +63,7 @@ export interface Store {
 
   // Settings
   currency: string;
+  language: string;
   taxRate: number;
   invoicePrefix: string;
   invoiceCounter: number;
@@ -105,6 +106,7 @@ export interface CreateStoreRequest {
   email?: string;
   managerName?: string;
   currency?: string;
+  language?: string;
   taxRate?: number;
   invoicePrefix?: string;
   quotePrefix?: string;

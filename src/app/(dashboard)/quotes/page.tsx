@@ -14,9 +14,12 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Plus, Edit, Trash2, FileText, Search, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
+import { useTranslations } from '@/contexts/LocaleContext';
 
 export default function QuotesPage() {
   const router = useRouter();
+  const t = useTranslations('quotes');
+  const tCommon = useTranslations('common');
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -59,7 +62,7 @@ export default function QuotesPage() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch quotes');
+        throw new Error(t('failedToFetchQuotes'));
       }
 
       const data: PaginatedResponse<Quote> = await response.json();
@@ -74,7 +77,7 @@ export default function QuotesPage() {
   };
 
   const handleDelete = async (quoteId: string) => {
-    if (!confirm('Are you sure you want to delete this quote?')) {
+    if (!confirm(t('confirmDeleteQuote'))) {
       return;
     }
 
@@ -86,13 +89,13 @@ export default function QuotesPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to delete quote');
+        throw new Error(errorData.error || t('failedToDeleteQuote'));
       }
 
       // Refresh the quotes list
       fetchQuotes();
     } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : 'Failed to delete quote');
+      toast.error(error instanceof Error ? error.message : t('failedToDeleteQuote'));
     }
   };
 
@@ -117,18 +120,18 @@ export default function QuotesPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to convert quote');
+        throw new Error(errorData.error || t('failedToConvertQuote'));
       }
 
       const result = await response.json();
-      toast.success(`Quote successfully converted to invoice ${result.invoiceNumber}`);
+      toast.success(t('quoteSuccessfullyConverted', { invoiceNumber: result.invoiceNumber }));
       
       // Close dialog and refresh the quotes list
       setConvertDialogOpen(false);
       setConvertingQuote(null);
       fetchQuotes();
     } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : 'Failed to convert quote');
+      toast.error(error instanceof Error ? error.message : t('failedToConvertQuote'));
     } finally {
       setConverting(false);
     }
@@ -136,12 +139,12 @@ export default function QuotesPage() {
 
   const getStatusBadge = (status: Quote['status']) => {
     const statusConfig = {
-      draft: { variant: 'secondary' as const, label: 'Draft' },
-      sent: { variant: 'default' as const, label: 'Sent' },
-      accepted: { variant: 'success' as const, label: 'Accepted' },
-      declined: { variant: 'destructive' as const, label: 'Declined' },
-      expired: { variant: 'outline' as const, label: 'Expired' },
-      converted: { variant: 'success' as const, label: 'Converted' }
+      draft: { variant: 'secondary' as const, label: t('draft') },
+      sent: { variant: 'default' as const, label: t('sent') },
+      accepted: { variant: 'success' as const, label: t('accepted') },
+      declined: { variant: 'destructive' as const, label: t('declined') },
+      expired: { variant: 'outline' as const, label: t('expired') },
+      converted: { variant: 'success' as const, label: t('converted') }
     };
 
     const config = statusConfig[status] || statusConfig.draft;
@@ -163,7 +166,7 @@ export default function QuotesPage() {
     return (
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">Quotes</h1>
+          <h1 className="text-3xl font-bold">{t('quotes')}</h1>
         </div>
         <div className="flex items-center justify-center py-12">
           <div className="text-lg">Loading quotes...</div>

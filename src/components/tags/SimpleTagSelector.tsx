@@ -9,6 +9,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Check, ChevronsUpDown, Hash, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { useTranslations } from '@/contexts/LocaleContext';
 
 interface Tag {
   id: number;
@@ -37,6 +38,8 @@ export default function SimpleTagSelector({
   className,
   label
 }: SimpleTagSelectorProps) {
+  const t = useTranslations('tags');
+  const tCommon = useTranslations('common');
   // Ensure selectedTagNames is always an array
   const safeSelectedTagNames = React.useMemo(() => {
     if (!selectedTagNames) return [];
@@ -92,7 +95,7 @@ export default function SimpleTagSelector({
       setAvailableTags(tags);
     } catch (error) {
       console.error('Error loading tags:', error);
-      toast.error('Failed to load tags');
+      toast.error(t('failedToLoadTags'));
     } finally {
       setIsLoading(false);
     }
@@ -166,7 +169,7 @@ export default function SimpleTagSelector({
             <span className="truncate">
               {safeSelectedTagNames.length === 0
                 ? placeholder
-                : `${safeSelectedTagNames.length} tag${safeSelectedTagNames.length > 1 ? 's' : ''} selected`
+                : `${safeSelectedTagNames.length} ${safeSelectedTagNames.length === 1 ? t('tagSelected') : t('tagsSelected')}`
               }
             </span>
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -175,13 +178,13 @@ export default function SimpleTagSelector({
         <PopoverContent className="w-full p-0" align="start">
           <Command>
             <CommandInput
-              placeholder="Search tags..."
+              placeholder={t('searchTags')}
               value={searchQuery}
               onValueChange={setSearchQuery}
             />
             <CommandList>
               <CommandEmpty>
-                {isLoading ? 'Loading tags...' : 'No tags found.'}
+                {isLoading ? t('loadingTags') : t('noTagsFound')}
               </CommandEmpty>
               <CommandGroup>
                 {filteredTags.map((tag) => {

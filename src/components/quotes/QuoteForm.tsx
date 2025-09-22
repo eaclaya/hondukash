@@ -16,6 +16,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import SimpleTagSelector from '@/components/tags/SimpleTagSelector';
 import Link from 'next/link';
 import { toast } from 'sonner';
+import { useTranslations } from '@/contexts/LocaleContext';
 import { usePricingRules } from '@/hooks/usePricingRules';
 import { DiscountCalculator, DiscountCalculationContext, DiscountCalculationResult } from '@/lib/services/discountCalculator';
 
@@ -37,6 +38,8 @@ interface QuoteItemForm {
 
 export default function QuoteForm({ quote, onSubmit, onCancel, loading = false }: QuoteFormProps) {
   const { getAuthHeaders } = useAuth();
+  const t = useTranslations('quotes');
+  const tCommon = useTranslations('common');
   const [clients, setClients] = useState<Client[]>([]);
   const [products, setProducts] = useState<ProductWithInventory[]>([]);
   const [loadingClients, setLoadingClients] = useState(false);
@@ -363,12 +366,12 @@ export default function QuoteForm({ quote, onSubmit, onCancel, loading = false }
     e.preventDefault();
 
     if (!formData.clientId) {
-      toast.error('Please select a client');
+      toast.error(t('pleaseSelectClient'));
       return;
     }
 
     if (items.length === 0 || items.every(item => !item.productName || !item.productId || item.productId === 0)) {
-      toast.error('Please add at least one item with a selected product');
+      toast.error(t('pleaseAddAtLeastOneItem'));
       return;
     }
 
@@ -412,10 +415,10 @@ export default function QuoteForm({ quote, onSubmit, onCancel, loading = false }
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-slate-900">
-            {quote ? 'Edit Quote' : 'Create New Quote'}
+            {quote ? t('editQuote') : t('createNewQuote')}
           </h1>
           <p className="text-slate-600">
-            {quote ? 'Update quote details and line items' : 'Create a new quote for your client'}
+            {quote ? t('updateQuoteDetails') : t('createNewQuoteForClient')}
           </p>
         </div>
         <div className="flex space-x-3">
@@ -423,16 +426,16 @@ export default function QuoteForm({ quote, onSubmit, onCancel, loading = false }
             <Link href={`/tags/quotes/${quote.id}`}>
               <Button variant="outline" className="flex items-center space-x-2">
                 <Tags className="h-4 w-4" />
-                <span>Manage Tags</span>
+                <span>{t('manageTags')}</span>
                 <ExternalLink className="h-3 w-3" />
               </Button>
             </Link>
           )}
           <Button variant="outline" onClick={onCancel} disabled={loading}>
-            Cancel
+            {tCommon('cancel')}
           </Button>
           <Button onClick={handleSubmit} disabled={loading} className="btn-primary-modern">
-            {loading ? 'Saving...' : quote ? 'Update Quote' : 'Create Quote'}
+            {loading ? tCommon('saving') : quote ? t('updateQuote') : t('createQuote')}
           </Button>
         </div>
       </div>
@@ -443,7 +446,7 @@ export default function QuoteForm({ quote, onSubmit, onCancel, loading = false }
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="space-y-2 relative">
-                <Label htmlFor="client-search">Client *</Label>
+                <Label htmlFor="client-search">{t('client')} *</Label>
                 <Input
                   id="client-search"
                   value={clientSearch}
@@ -458,7 +461,7 @@ export default function QuoteForm({ quote, onSubmit, onCancel, loading = false }
                     // Delay hiding dropdown to allow clicking on items
                     setTimeout(() => setShowClientDropdown(false), 200);
                   }}
-                  placeholder="Search clients..."
+                  placeholder={t('searchClients')}
                   autoComplete="off"
                 />
                 {showClientDropdown && clientResults.length > 0 && (

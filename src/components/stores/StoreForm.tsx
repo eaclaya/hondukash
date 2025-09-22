@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Building, Receipt, Settings } from 'lucide-react';
 import Link from 'next/link';
+import { useTranslations } from '@/contexts/LocaleContext';
 
 interface StoreFormProps {
   store?: Store;
@@ -22,6 +23,8 @@ interface StoreFormProps {
 }
 
 export function StoreForm({ store, onSubmit, onCancel, loading = false }: StoreFormProps) {
+  const t = useTranslations('stores');
+  const tCommon = useTranslations('common');
   const [formData, setFormData] = useState({
     name: store?.name || '',
     description: store?.description || '',
@@ -35,6 +38,7 @@ export function StoreForm({ store, onSubmit, onCancel, loading = false }: StoreF
     email: store?.email || '',
     managerName: store?.managerName || '',
     currency: store?.currency || 'HNL',
+    language: store?.language || 'es',
     taxRate: store?.taxRate || 0.15,
     invoicePrefix: store?.invoicePrefix || 'INV',
     quotePrefix: store?.quotePrefix || 'QUO'
@@ -75,25 +79,25 @@ export function StoreForm({ store, onSubmit, onCancel, loading = false }: StoreF
       const validCharPattern = /^[a-zA-Z0-9\-._]+$/;
 
       if (!invoiceSequence.hash.trim()) {
-        newErrors.sequenceHash = 'Sequence hash is required when using invoice sequence';
+        newErrors.sequenceHash = t('sequenceHashRequired');
       } else if (!validCharPattern.test(invoiceSequence.hash)) {
-        newErrors.sequenceHash = 'Hash can only contain letters, numbers, dashes, dots, and underscores';
+        newErrors.sequenceHash = t('hashValidCharactersOnly');
       }
 
       if (!invoiceSequence.sequence_start.trim()) {
-        newErrors.sequenceStart = 'Sequence start is required when using invoice sequence';
+        newErrors.sequenceStart = t('sequenceStartRequired');
       } else if (!validCharPattern.test(invoiceSequence.sequence_start)) {
-        newErrors.sequenceStart = 'Sequence start can only contain letters, numbers, dashes, dots, and underscores';
+        newErrors.sequenceStart = t('sequenceStartValidCharacters');
       } else if (!/\d+$/.test(invoiceSequence.sequence_start)) {
-        newErrors.sequenceStart = 'Sequence start must end with numbers (e.g., INV-001)';
+        newErrors.sequenceStart = t('sequenceStartMustEndWithNumbers');
       }
 
       if (!invoiceSequence.sequence_end.trim()) {
-        newErrors.sequenceEnd = 'Sequence end is required when using invoice sequence';
+        newErrors.sequenceEnd = t('sequenceEndRequired');
       } else if (!validCharPattern.test(invoiceSequence.sequence_end)) {
-        newErrors.sequenceEnd = 'Sequence end can only contain letters, numbers, dashes, dots, and underscores';
+        newErrors.sequenceEnd = t('sequenceEndValidCharacters');
       } else if (!/\d+$/.test(invoiceSequence.sequence_end)) {
-        newErrors.sequenceEnd = 'Sequence end must end with numbers (e.g., INV-999)';
+        newErrors.sequenceEnd = t('sequenceEndMustEndWithNumbers');
       }
 
       // Validate that start and end have same prefix pattern
@@ -101,7 +105,7 @@ export function StoreForm({ store, onSubmit, onCancel, loading = false }: StoreF
         const startPrefix = invoiceSequence.sequence_start.replace(/\d+$/, '');
         const endPrefix = invoiceSequence.sequence_end.replace(/\d+$/, '');
         if (startPrefix !== endPrefix) {
-          newErrors.sequenceEnd = 'Sequence start and end must have the same prefix pattern';
+          newErrors.sequenceEnd = t('sequencePrefixMustMatch');
         }
 
         const startMatch = invoiceSequence.sequence_start.match(/(\d+)$/);
@@ -110,7 +114,7 @@ export function StoreForm({ store, onSubmit, onCancel, loading = false }: StoreF
           const startNum = parseInt(startMatch[1]);
           const endNum = parseInt(endMatch[1]);
           if (startNum >= endNum) {
-            newErrors.sequenceEnd = 'Sequence end number must be greater than start number';
+            newErrors.sequenceEnd = t('sequenceEndMustBeGreater');
           }
         }
       }
@@ -122,7 +126,7 @@ export function StoreForm({ store, onSubmit, onCancel, loading = false }: StoreF
         limitDate.setHours(0, 0, 0, 0);
 
         if (limitDate <= currentDate) {
-          newErrors.sequenceLimitDate = 'Sequence limit date must be in the future';
+          newErrors.sequenceLimitDate = t('sequenceLimitDateMustBeFuture');
         }
       }
     }
@@ -427,7 +431,7 @@ export function StoreForm({ store, onSubmit, onCancel, loading = false }: StoreF
                 <CardTitle>General Settings</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="currency">Currency</Label>
                     <Select value={formData.currency} onValueChange={(value) => handleChange('currency', value)}>
@@ -439,6 +443,20 @@ export function StoreForm({ store, onSubmit, onCancel, loading = false }: StoreF
                         <SelectItem value="USD">USD - US Dollar</SelectItem>
                       </SelectContent>
                     </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="language">Language</Label>
+                    <Select value={formData.language} onValueChange={(value) => handleChange('language', value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select language" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="es">Español</SelectItem>
+                        <SelectItem value="en">English</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">Default language for this store</p>
                   </div>
 
                   <div className="space-y-2">

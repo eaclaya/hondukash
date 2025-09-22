@@ -68,6 +68,7 @@ export class StoreService {
         email: store.email || undefined,
         managerName: store.managerName || undefined,
         currency: store.currency,
+        language: store.language,
         taxRate: store.taxRate,
         invoicePrefix: store.invoicePrefix,
         invoiceCounter: store.invoiceCounter,
@@ -136,6 +137,7 @@ export class StoreService {
         email: store.email || undefined,
         managerName: store.managerName || undefined,
         currency: store.currency,
+        language: store.language,
         taxRate: store.taxRate,
         invoicePrefix: store.invoicePrefix,
         invoiceCounter: store.invoiceCounter,
@@ -186,6 +188,7 @@ export class StoreService {
           email: storeData.email || null,
           managerName: storeData.managerName || null,
           currency: storeData.currency || 'HNL',
+          language: storeData.language || 'es',
           taxRate: storeData.taxRate || 0.15,
           invoicePrefix: storeData.invoicePrefix || 'INV',
           quotePrefix: storeData.quotePrefix || 'QUO',
@@ -236,6 +239,7 @@ export class StoreService {
       if (storeData.email !== undefined) updateData.email = storeData.email;
       if (storeData.managerName !== undefined) updateData.managerName = storeData.managerName;
       if (storeData.currency !== undefined) updateData.currency = storeData.currency;
+      if (storeData.language !== undefined) updateData.language = storeData.language;
       if (storeData.taxRate !== undefined) updateData.taxRate = storeData.taxRate;
       if (storeData.invoicePrefix !== undefined) updateData.invoicePrefix = storeData.invoicePrefix;
       if (storeData.quotePrefix !== undefined) updateData.quotePrefix = storeData.quotePrefix;

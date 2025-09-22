@@ -20,6 +20,7 @@ export const stores = sqliteTable('stores', {
 
   // Settings
   currency: text('currency').default('HNL'),
+  language: text('language').default('es'), // Default language for the store
   taxRate: real('tax_rate').default(0.15), // 15% default tax rate
   invoicePrefix: text('invoice_prefix').default('INV'),
   invoiceCounter: integer('invoice_counter').default(1),

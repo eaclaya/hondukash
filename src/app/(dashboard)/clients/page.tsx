@@ -11,6 +11,7 @@ import { Pagination } from '@/components/ui/pagination';
 import { Plus, Edit, Trash2, Building, User, Phone, Mail, MapPin, Users, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import LoaderSpinner from '@/components/shared/loader-spinner';
+import { useTranslations } from '@/contexts/LocaleContext';
 
 // Simple debounce function
 function debounce<T extends (...args: unknown[]) => void>(func: T, delay: number): T {
@@ -23,6 +24,8 @@ function debounce<T extends (...args: unknown[]) => void>(func: T, delay: number
 
 export default function ClientsPage() {
   const router = useRouter();
+  const t = useTranslations('clients');
+  const tCommon = useTranslations('common');
   const [clientsData, setClientsData] = useState<PaginatedResponse<Client> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -62,7 +65,7 @@ export default function ClientsPage() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch clients');
+        throw new Error(t('failedToFetchClients'));
       }
 
       const data = await response.json();
@@ -75,7 +78,7 @@ export default function ClientsPage() {
   };
 
   const handleDelete = async (clientId: number) => {
-    if (!confirm('Are you sure you want to delete this client?')) {
+    if (!confirm(t('confirmDeleteClient'))) {
       return;
     }
 
@@ -86,13 +89,13 @@ export default function ClientsPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to delete client');
+        throw new Error(errorData.error || t('failedToDeleteClient'));
       }
 
       // Refresh the clients list
       fetchClients();
     } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : 'Failed to delete client');
+      toast.error(error instanceof Error ? error.message : t('failedToDeleteClient'));
     }
   };
 
@@ -100,10 +103,10 @@ export default function ClientsPage() {
     return (
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">Clients</h1>
+          <h1 className="text-3xl font-bold">{t('clients')}</h1>
         </div>
         <div className="flex items-center justify-center py-12">
-          <div className="text-red-600">Error: {error}</div>
+          <div className="text-red-600">{tCommon('error')}: {error}</div>
         </div>
       </div>
     );
@@ -113,7 +116,7 @@ export default function ClientsPage() {
     return (
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">Clients</h1>
+          <h1 className="text-3xl font-bold">{t('clients')}</h1>
         </div>
         <div className="flex items-center justify-center py-12">
           <LoaderSpinner />
@@ -126,12 +129,12 @@ export default function ClientsPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Clients</h1>
-          <p className="text-muted-foreground">Manage your customers and their contacts</p>
+          <h1 className="text-3xl font-bold">{t('clients')}</h1>
+          <p className="text-muted-foreground">{t('manageCustomersAndContacts')}</p>
         </div>
         <Button onClick={() => router.push('/clients/create')}>
           <Plus className="h-4 w-4 mr-2" />
-          Add Client
+          {t('addClient')}
         </Button>
       </div>
 
@@ -139,7 +142,7 @@ export default function ClientsPage() {
       <div className="relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
         <Input
-          placeholder="Search clients by name, contact, email, phone, or location..."
+          placeholder={t('searchClientsPlaceholder')}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="pl-10"

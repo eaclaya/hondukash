@@ -14,6 +14,7 @@ import { Package, Warehouse, Tag, DollarSign, Settings, Tags, ExternalLink } fro
 import TaxRateSelector from '@/components/ui/TaxRateSelector';
 import SimpleTagSelector from '@/components/tags/SimpleTagSelector';
 import Link from 'next/link';
+import { useTranslations } from '@/contexts/LocaleContext';
 
 interface ProductFormProps {
   product?: ProductWithInventory;
@@ -23,6 +24,8 @@ interface ProductFormProps {
 }
 
 export default function ProductForm({ product, onSubmit, onCancel, loading = false }: ProductFormProps) {
+  const t = useTranslations('products');
+  const tCommon = useTranslations('common');
   const initialBasePrice = product?.basePrice || 0;
   const initialTaxRate = product?.taxRate || 0.15;
   const initialIsTaxable = product?.isTaxable ?? true;
@@ -145,10 +148,10 @@ export default function ProductForm({ product, onSubmit, onCancel, loading = fal
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">
-            {product ? 'Edit Product' : 'Create New Product'}
+            {product ? t('editProduct') : t('createNewProduct')}
           </h1>
           <p className="text-slate-600">
-            {product ? 'Update product information and inventory' : 'Add a new product to your catalog'}
+            {product ? t('updateProductInfo') : t('addNewProductToCatalog')}
           </p>
         </div>
         <div className="flex space-x-3">
@@ -156,24 +159,24 @@ export default function ProductForm({ product, onSubmit, onCancel, loading = fal
             <Link href={`/tags/products/${product.id}`}>
               <Button variant="outline" className="flex items-center space-x-2">
                 <Tags className="h-4 w-4" />
-                <span>Manage Tags</span>
+                <span>{t('manageTags')}</span>
                 <ExternalLink className="h-3 w-3" />
               </Button>
             </Link>
           )}
           <Button variant="outline" onClick={onCancel} disabled={loading}>
-            Cancel
+            {tCommon('cancel')}
           </Button>
           <Button onClick={handleSubmit} disabled={loading} className="btn-primary-modern">
-            {loading ? 'Saving...' : product ? 'Update Product' : 'Create Product'}
+            {loading ? tCommon('saving') : product ? t('updateProduct') : t('createProduct')}
           </Button>
         </div>
       </div>
 
       <Tabs defaultValue="product" className="space-y-6">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="product">Product Information</TabsTrigger>
-          <TabsTrigger value="inventory">Inventory & Pricing</TabsTrigger>
+          <TabsTrigger value="product">{t('productInformation')}</TabsTrigger>
+          <TabsTrigger value="inventory">{t('inventoryAndPricing')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="product" className="space-y-6">
@@ -181,29 +184,29 @@ export default function ProductForm({ product, onSubmit, onCancel, loading = fal
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <Package className="h-5 w-5" />
-                <span>Basic Information</span>
+                <span>{t('basicInformation')}</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Product Name *</Label>
+                  <Label htmlFor="name">{t('productName')} *</Label>
                   <Input
                     id="name"
                     value={formData.name}
                     onChange={(e) => handleInputChange('name', e.target.value)}
-                    placeholder="Enter product name"
+                    placeholder={t('enterProductName')}
                     required
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="sku">SKU</Label>
+                  <Label htmlFor="sku">{t('sku')}</Label>
                   <Input
                     id="sku"
                     value={formData.sku}
                     onChange={(e) => handleInputChange('sku', e.target.value)}
-                    placeholder="e.g., ABC123, PROD-001"
+                    placeholder={t('skuPlaceholder')}
                   />
                   <p className="text-xs text-muted-foreground">
                     Only letters, numbers, dash (-), dot (.), and underscore (_) allowed
@@ -211,23 +214,23 @@ export default function ProductForm({ product, onSubmit, onCancel, loading = fal
                 </div>
 
                 <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="description">Description</Label>
+                  <Label htmlFor="description">{t('description')}</Label>
                   <Textarea
                     id="description"
                     value={formData.description}
                     onChange={(e) => handleInputChange('description', e.target.value)}
-                    placeholder="Enter product description"
+                    placeholder={t('enterProductDescription')}
                     rows={3}
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="barcode">Barcode</Label>
+                  <Label htmlFor="barcode">{t('barcode')}</Label>
                   <Input
                     id="barcode"
                     value={formData.barcode}
                     onChange={(e) => handleInputChange('barcode', e.target.value)}
-                    placeholder="e.g., 123456789012"
+                    placeholder={t('barcodePlaceholder')}
                   />
                   <p className="text-xs text-muted-foreground">
                     Only letters, numbers, dash (-), dot (.), and underscore (_) allowed

@@ -4,7 +4,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { Invoice, UpdateInvoiceRequest } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
-import InvoiceForm from '@/components/invoices/InvoiceForm';
+import InvoiceEditForm from '@/components/invoices/InvoiceEditForm';
 import { toast } from 'sonner';
 import LoaderSpinner from '@/components/shared/loader-spinner';
 
@@ -37,7 +37,12 @@ export default function EditInvoicePage() {
       }
 
       const data = await response.json();
-      setInvoice(data.invoice);
+      const fetchedInvoice = data.invoice;
+      
+      // Allow access to edit page for all invoice statuses
+      // Editing restrictions will be handled in the form component
+      
+      setInvoice(fetchedInvoice);
     } catch (error: unknown) {
       toast.error(error instanceof Error ? error.message : 'Failed to fetch invoice');
       router.push('/invoices');
@@ -50,8 +55,11 @@ export default function EditInvoicePage() {
     setLoading(true);
     try {
       const response = await fetch(`/api/invoices/${invoiceId}`, {
-        method: 'PUT',
-        headers: getAuthHeaders(),
+        method: 'PATCH',
+        headers: {
+          ...getAuthHeaders(),
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify(data)
       });
 
@@ -108,5 +116,5 @@ export default function EditInvoicePage() {
     );
   }
 
-  return <InvoiceForm invoice={invoice} onSubmit={handleSubmit} onCancel={handleCancel} loading={loading} />;
+  return <InvoiceEditForm invoice={invoice} onSubmit={handleSubmit} onCancel={handleCancel} loading={loading} />;
 }

@@ -480,16 +480,25 @@ CREATE TABLE payments (
     user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
 
     -- Payment details
+    payment_number TEXT NOT NULL UNIQUE,
     payment_date TEXT NOT NULL DEFAULT (date('now')),
     amount REAL NOT NULL,
-    payment_method TEXT NOT NULL DEFAULT 'cash',
-    reference_number TEXT,
 
-    -- Additional info
+    -- Payment method and details
+    payment_method TEXT NOT NULL DEFAULT 'cash' CHECK (payment_method IN (
+        'cash', 'credit_card', 'debit_card', 'bank_transfer', 'check', 'other'
+    )),
+    payment_reference TEXT, -- Transaction ID, check number, etc.
+    bank_name TEXT,
+    account_number TEXT, -- Last 4 digits for cards
+
+    -- Status and metadata
+    status TEXT NOT NULL DEFAULT 'completed' CHECK (status IN ('pending', 'completed', 'failed', 'cancelled')),
     notes TEXT,
 
     -- Metadata
-    created_at TEXT NOT NULL DEFAULT (datetime('now', 'utc'))
+    created_at TEXT NOT NULL DEFAULT (datetime('now', 'utc')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now', 'utc'))
 );
 
 -- =========================================
@@ -747,4 +756,8 @@ CREATE INDEX idx_transfers_status ON transfers(status);
 
 -- Payments
 CREATE INDEX idx_payments_invoice_id ON payments(invoice_id);
+CREATE INDEX idx_payments_store_id ON payments(store_id);
 CREATE INDEX idx_payments_payment_date ON payments(payment_date);
+CREATE INDEX idx_payments_payment_number ON payments(payment_number);
+CREATE INDEX idx_payments_status ON payments(status);
+CREATE INDEX idx_payments_payment_method ON payments(payment_method);

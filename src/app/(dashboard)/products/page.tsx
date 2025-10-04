@@ -102,16 +102,16 @@ export default function ProductsPage() {
 
   const getStockStatus = (product: ProductWithInventory) => {
     if (!product.trackInventory) {
-      return { status: 'not-tracked', label: 'Not Tracked', color: 'bg-gray-100 text-gray-800' };
+      return { status: 'not-tracked', label: t('notTracked'), color: 'bg-gray-100 text-gray-800' };
     }
 
     const quantity = product.inventory.quantity;
     if (quantity <= 0) {
-      return { status: 'out-of-stock', label: 'Out of Stock', color: 'bg-red-100 text-red-800' };
+      return { status: 'out-of-stock', label: t('outOfStock'), color: 'bg-red-100 text-red-800' };
     } else if (quantity <= 5) { // Low stock threshold
-      return { status: 'low-stock', label: 'Low Stock', color: 'bg-yellow-100 text-yellow-800' };
+      return { status: 'low-stock', label: t('lowStock'), color: 'bg-yellow-100 text-yellow-800' };
     } else {
-      return { status: 'in-stock', label: 'In Stock', color: 'bg-green-100 text-green-800' };
+      return { status: 'in-stock', label: t('inStock'), color: 'bg-green-100 text-green-800' };
     }
   };
 
@@ -126,10 +126,10 @@ export default function ProductsPage() {
     return (
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">Products</h1>
+          <h1 className="text-3xl font-bold">{t('products')}</h1>
         </div>
         <div className="flex items-center justify-center py-12">
-          <div className="text-red-600">Error: {error}</div>
+          <div className="text-red-600">{tCommon('error')}: {error}</div>
         </div>
       </div>
     );
@@ -139,7 +139,7 @@ export default function ProductsPage() {
     return (
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">Products</h1>
+          <h1 className="text-3xl font-bold">{t('products')}</h1>
         </div>
         <div className="flex items-center justify-center py-12">
           <LoaderSpinner />
@@ -203,13 +203,13 @@ export default function ProductsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Product</TableHead>
-                  <TableHead>SKU</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Price</TableHead>
-                  <TableHead>Stock</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>{t('product')}</TableHead>
+                  <TableHead>{t('sku')}</TableHead>
+                  <TableHead>{t('category')}</TableHead>
+                  <TableHead>{t('price')}</TableHead>
+                  <TableHead>{t('stock')}</TableHead>
+                  <TableHead>{t('status')}</TableHead>
+                  <TableHead className="text-right">{tCommon('actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -253,7 +253,7 @@ export default function ProductsPage() {
                           </div>
                           {hasStorePrice && (
                             <div className="text-xs text-muted-foreground">
-                              Base: {formatCurrency(product.price)}
+                              {t('base')}: {formatCurrency(product.price)}
                             </div>
                           )}
                         </div>
@@ -271,7 +271,7 @@ export default function ProductsPage() {
                             )}
                           </div>
                         ) : (
-                          <div className="text-sm text-muted-foreground">Not tracked</div>
+                          <div className="text-sm text-muted-foreground">{t('notTracked')}</div>
                         )}
                       </TableCell>
                       <TableCell>
@@ -356,18 +356,18 @@ export default function ProductsPage() {
 
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div>
-                      <div className="text-muted-foreground">Price</div>
+                      <div className="text-muted-foreground">{t('price')}</div>
                       <div className="font-medium">
                         {formatCurrency(product.inventory.price)}
                       </div>
                       {hasStorePrice && (
                         <div className="text-xs text-muted-foreground">
-                          Base: {formatCurrency(product.price)}
+                          {t('base')}: {formatCurrency(product.price)}
                         </div>
                       )}
                     </div>
                     <div>
-                      <div className="text-muted-foreground">Stock</div>
+                      <div className="text-muted-foreground">{t('stock')}</div>
                       {product.trackInventory ? (
                         <div>
                           <div className="font-medium">
@@ -380,14 +380,14 @@ export default function ProductsPage() {
                           )}
                         </div>
                       ) : (
-                        <div className="text-muted-foreground">Not tracked</div>
+                        <div className="text-muted-foreground">{t('notTracked')}</div>
                       )}
                     </div>
                   </div>
 
                   <div className="flex justify-between items-center pt-3 border-t">
                     <div className="text-sm text-muted-foreground">
-                      {product.categoryName || 'No category'}
+                      {product.categoryName || t('noCategory')}
                     </div>
                     <div className={`inline-flex px-2 py-1 text-xs rounded-full ${stockStatus.color}`}>
                       {stockStatus.label}

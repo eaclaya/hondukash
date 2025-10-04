@@ -13,9 +13,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Plus, Edit, Trash2, Percent } from 'lucide-react';
 import { TaxRate, CreateTaxRateRequest, UpdateTaxRateRequest } from '@/lib/services/taxRateService';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTranslations } from '@/contexts/LocaleContext';
 
 export default function TaxRatesPage() {
   const { getAuthHeaders } = useAuth();
+  const t = useTranslations('taxRates');
+  const tCommon = useTranslations('common');
   const [taxRates, setTaxRates] = useState<TaxRate[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -170,56 +173,56 @@ export default function TaxRatesPage() {
     <div className="max-w-2xl mx-auto w-full p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Tax Rates</h1>
-          <p className="text-slate-600">Manage tax rates for your organization</p>
+          <h1 className="text-2xl font-bold text-slate-900">{t('taxRates')}</h1>
+          <p className="text-slate-600">{t('manageTaxRatesForOrganization')}</p>
         </div>
 
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button onClick={() => resetForm()} className="btn-primary-modern">
               <Plus className="h-4 w-4 mr-2" />
-              Add Tax Rate
+              {t('addTaxRate')}
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>
-                {editingTaxRate ? 'Edit Tax Rate' : 'Create New Tax Rate'}
+                {editingTaxRate ? t('editTaxRate') : t('createNewTaxRate')}
               </DialogTitle>
             </DialogHeader>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Name *</Label>
+                <Label htmlFor="name">{t('name')} *</Label>
                 <Input
                   id="name"
                   value={formData.name}
                   onChange={(e) => handleInputChange('name', e.target.value)}
-                  placeholder="e.g., Sales Tax"
+                  placeholder={t('nameExample')}
                   required
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="code">Code *</Label>
+                <Label htmlFor="code">{t('code')} *</Label>
                 <Input
                   id="code"
                   value={formData.code}
                   onChange={(e) => handleInputChange('code', e.target.value.toUpperCase())}
-                  placeholder="e.g., ISV"
+                  placeholder={t('codeExample')}
                   required
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="rate">Rate (%) *</Label>
+                <Label htmlFor="rate">{t('ratePercent')} *</Label>
                 <NumericInput
                   id="rate"
                   value={formData.ratePercent.toString()}
                   onValueChange={(value) => handleInputChange('ratePercent', value || 0)}
                   placeholder="15.00"
                   allowDecimals={true}
-                  maxDecimals={2}
+                  maxDecimals={4}
                   allowNegative={false}
                   required
                 />

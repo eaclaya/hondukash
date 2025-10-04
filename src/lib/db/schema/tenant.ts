@@ -702,6 +702,506 @@ export const quantityPriceTiers = sqliteTable('quantity_price_tiers', {
 });
 
 // =========================================
+// PAYMENTS TABLE
+// =========================================
+export const payments = sqliteTable('payments', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  invoiceId: integer('invoice_id')
+    .notNull()
+    .references(() => invoices.id, { onDelete: 'restrict' }),
+  storeId: integer('store_id')
+    .notNull()
+    .references(() => stores.id, { onDelete: 'restrict' }),
+  userId: integer('user_id').references(() => users.id, { onDelete: 'set null' }),
+
+  // Payment details
+  paymentNumber: text('payment_number').notNull().unique(),
+  paymentDate: text('payment_date')
+    .notNull()
+    .$defaultFn(() => new Date().toISOString().split('T')[0]),
+  amount: real('amount').notNull(),
+
+  // Payment method and details
+  paymentMethod: text('payment_method', {
+    enum: ['cash', 'credit_card', 'debit_card', 'bank_transfer', 'check', 'other']
+  }).notNull(),
+  paymentReference: text('payment_reference'), // Transaction ID, check number, etc.
+  bankName: text('bank_name'),
+  accountNumber: text('account_number'), // Last 4 digits for cards
+  
+  // Status and metadata
+  status: text('status', { enum: ['pending', 'completed', 'failed', 'cancelled'] })
+    .notNull()
+    .default('completed'),
+  notes: text('notes'),
+
+  // Metadata
+  createdAt: text('created_at')
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+  updatedAt: text('updated_at')
+    .notNull()
+    .$defaultFn(() => new Date().toISOString())
+});
+
+// =========================================
+// CHART OF ACCOUNTS
+// =========================================
+export const chartOfAccounts = sqliteTable('chart_of_accounts', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  storeId: integer('store_id')
+    .notNull()
+    .references(() => stores.id, { onDelete: 'cascade' }),
+
+  // Account details
+  accountCode: text('account_code').notNull(),
+  accountName: text('account_name').notNull(),
+  accountType: text('account_type', {
+    enum: ['asset', 'liability', 'equity', 'revenue', 'expense']
+  }).notNull(),
+  accountSubType: text('account_sub_type', {
+    enum: [
+      // Assets
+      'current_asset', 'non_current_asset', 'cash', 'accounts_receivable', 'inventory', 'prepaid_expenses', 'fixed_assets', 'intangible_assets',
+      // Liabilities
+      'current_liability', 'non_current_liability', 'accounts_payable', 'accrued_expenses', 'notes_payable', 'long_term_debt',
+      // Equity
+      'owner_equity', 'retained_earnings', 'common_stock', 'additional_paid_in_capital',
+      // Revenue
+      'operating_revenue', 'non_operating_revenue', 'sales_revenue', 'service_revenue', 'other_income',
+      // Expenses
+      'operating_expense', 'cost_of_goods_sold', 'administrative_expense', 'selling_expense', 'financial_expense', 'other_expense'
+    ]
+  }).notNull(),
+
+  // Hierarchy
+  parentAccountId: integer('parent_account_id').references(() => chartOfAccounts.id, { onDelete: 'set null' }),
+  
+  // Account behavior
+  normalBalance: text('normal_balance', { enum: ['debit', 'credit'] }).notNull(),
+  isSystemAccount: integer('is_system_account', { mode: 'boolean' }).default(false),
+  isControlAccount: integer('is_control_account', { mode: 'boolean' }).default(false),
+  
+  // Settings
+  isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
+  description: text('description'),
+  
+  // Current balance (calculated field, updated by triggers/jobs)
+  currentBalance: real('current_balance').default(0),
+  
+  // Metadata
+  createdAt: text('created_at')
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+  updatedAt: text('updated_at')
+    .notNull()
+    .$defaultFn(() => new Date().toISOString())
+});
+
+// =========================================
+// JOURNAL ENTRIES
+// =========================================
+export const journalEntries = sqliteTable('journal_entries', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  storeId: integer('store_id')
+    .notNull()
+    .references(() => stores.id, { onDelete: 'cascade' }),
+  userId: integer('user_id').references(() => users.id, { onDelete: 'set null' }),
+
+  // Entry details
+  entryNumber: text('entry_number').notNull(),
+  entryDate: text('entry_date').notNull(),
+  description: text('description').notNull(),
+  
+  // Reference information
+  referenceType: text('reference_type', {
+    enum: ['manual', 'invoice', 'payment', 'purchase', 'adjustment', 'opening_balance', 'closing_entry']
+  }).notNull().default('manual'),
+  referenceId: integer('reference_id'), // ID of invoice, payment, etc.
+  referenceNumber: text('reference_number'), // Invoice number, payment number, etc.
+  
+  // Entry status
+  status: text('status', { enum: ['draft', 'posted', 'reversed'] }).notNull().default('draft'),
+  reversedById: integer('reversed_by_id').references(() => journalEntries.id, { onDelete: 'set null' }),
+  reversedAt: text('reversed_at'),
+  
+  // Totals (should always balance)
+  totalDebits: real('total_debits').default(0),
+  totalCredits: real('total_credits').default(0),
+  
+  // Metadata
+  notes: text('notes'),
+  createdAt: text('created_at')
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+  updatedAt: text('updated_at')
+    .notNull()
+    .$defaultFn(() => new Date().toISOString())
+});
+
+// =========================================
+// JOURNAL ENTRY LINES
+// =========================================
+export const journalEntryLines = sqliteTable('journal_entry_lines', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  journalEntryId: integer('journal_entry_id')
+    .notNull()
+    .references(() => journalEntries.id, { onDelete: 'cascade' }),
+  accountId: integer('account_id')
+    .notNull()
+    .references(() => chartOfAccounts.id, { onDelete: 'restrict' }),
+
+  // Line details
+  description: text('description'),
+  debitAmount: real('debit_amount').default(0),
+  creditAmount: real('credit_amount').default(0),
+  
+  // Additional references
+  referenceType: text('reference_type'),
+  referenceId: integer('reference_id'),
+  
+  // Line order
+  lineOrder: integer('line_order').default(0),
+  
+  // Metadata
+  createdAt: text('created_at')
+    .notNull()
+    .$defaultFn(() => new Date().toISOString())
+});
+
+// =========================================
+// BANK ACCOUNTS
+// =========================================
+export const bankAccounts = sqliteTable('bank_accounts', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  storeId: integer('store_id')
+    .notNull()
+    .references(() => stores.id, { onDelete: 'cascade' }),
+  chartAccountId: integer('chart_account_id')
+    .notNull()
+    .references(() => chartOfAccounts.id, { onDelete: 'restrict' }),
+
+  // Account details
+  accountName: text('account_name').notNull(),
+  bankName: text('bank_name').notNull(),
+  accountNumber: text('account_number').notNull(),
+  accountType: text('account_type', {
+    enum: ['checking', 'savings', 'money_market', 'credit_card', 'cash', 'petty_cash']
+  }).notNull(),
+  
+  // Account information
+  routingNumber: text('routing_number'),
+  swiftCode: text('swift_code'),
+  iban: text('iban'),
+  currency: text('currency').default('HNL'),
+  
+  // Current balance (calculated from transactions)
+  currentBalance: real('current_balance').default(0),
+  availableBalance: real('available_balance').default(0),
+  
+  // Settings
+  isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
+  isDefault: integer('is_default', { mode: 'boolean' }).default(false),
+  
+  // Bank details
+  branchName: text('branch_name'),
+  branchAddress: text('branch_address'),
+  contactPerson: text('contact_person'),
+  contactPhone: text('contact_phone'),
+  
+  // Metadata
+  description: text('description'),
+  notes: text('notes'),
+  createdAt: text('created_at')
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+  updatedAt: text('updated_at')
+    .notNull()
+    .$defaultFn(() => new Date().toISOString())
+});
+
+// =========================================
+// BANK TRANSACTIONS
+// =========================================
+export const bankTransactions = sqliteTable('bank_transactions', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  bankAccountId: integer('bank_account_id')
+    .notNull()
+    .references(() => bankAccounts.id, { onDelete: 'cascade' }),
+  journalEntryId: integer('journal_entry_id').references(() => journalEntries.id, { onDelete: 'set null' }),
+
+  // Transaction details
+  transactionDate: text('transaction_date').notNull(),
+  description: text('description').notNull(),
+  referenceNumber: text('reference_number'), // Check number, wire reference, etc.
+  
+  // Amounts
+  debitAmount: real('debit_amount').default(0),
+  creditAmount: real('credit_amount').default(0),
+  runningBalance: real('running_balance').default(0),
+  
+  // Transaction details
+  transactionType: text('transaction_type', {
+    enum: ['deposit', 'withdrawal', 'transfer', 'fee', 'interest', 'check', 'electronic', 'adjustment']
+  }).notNull(),
+  
+  // Status
+  status: text('status', { enum: ['pending', 'cleared', 'reconciled', 'voided'] }).notNull().default('pending'),
+  clearedDate: text('cleared_date'),
+  reconciledDate: text('reconciled_date'),
+  
+  // References
+  payeePayor: text('payee_payor'), // Who the transaction was to/from
+  category: text('category'),
+  
+  // Metadata
+  notes: text('notes'),
+  createdAt: text('created_at')
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+  updatedAt: text('updated_at')
+    .notNull()
+    .$defaultFn(() => new Date().toISOString())
+});
+
+// =========================================
+// SUPPLIERS/VENDORS
+// =========================================
+export const suppliers = sqliteTable('suppliers', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  storeId: integer('store_id')
+    .notNull()
+    .references(() => stores.id, { onDelete: 'cascade' }),
+
+  // Basic info
+  name: text('name').notNull(),
+  supplierType: text('supplier_type', { enum: ['individual', 'company'] })
+    .notNull()
+    .default('company'),
+  
+  // Contact info
+  contactName: text('contact_name'),
+  email: text('email'),
+  phone: text('phone'),
+  mobile: text('mobile'),
+  website: text('website'),
+  
+  // Address
+  address: text('address'),
+  city: text('city'),
+  state: text('state'),
+  country: text('country').default('Honduras'),
+  postalCode: text('postal_code'),
+  
+  // Business details
+  taxId: text('tax_id'),
+  registrationNumber: text('registration_number'),
+  
+  // Payment terms
+  paymentTerms: integer('payment_terms').default(30), // days
+  creditLimit: real('credit_limit').default(0),
+  
+  // Settings
+  isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
+  
+  // Metadata
+  notes: text('notes'),
+  tags: text('tags'), // JSON array
+  createdAt: text('created_at')
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+  updatedAt: text('updated_at')
+    .notNull()
+    .$defaultFn(() => new Date().toISOString())
+});
+
+// =========================================
+// PURCHASE ORDERS
+// =========================================
+export const purchaseOrders = sqliteTable('purchase_orders', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  storeId: integer('store_id')
+    .notNull()
+    .references(() => stores.id, { onDelete: 'restrict' }),
+  supplierId: integer('supplier_id')
+    .notNull()
+    .references(() => suppliers.id, { onDelete: 'restrict' }),
+  userId: integer('user_id').references(() => users.id, { onDelete: 'set null' }),
+
+  // PO details
+  poNumber: text('po_number').notNull(),
+  poDate: text('po_date')
+    .notNull()
+    .$defaultFn(() => new Date().toISOString().split('T')[0]),
+  expectedDate: text('expected_date'),
+  
+  // Amounts
+  subtotal: real('subtotal').notNull().default(0),
+  taxAmount: real('tax_amount').notNull().default(0),
+  totalAmount: real('total_amount').notNull().default(0),
+  
+  // Status
+  status: text('status', { enum: ['draft', 'sent', 'confirmed', 'partial', 'received', 'cancelled'] })
+    .notNull()
+    .default('draft'),
+  
+  // Additional info
+  notes: text('notes'),
+  terms: text('terms'),
+  
+  // Metadata
+  createdAt: text('created_at')
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+  updatedAt: text('updated_at')
+    .notNull()
+    .$defaultFn(() => new Date().toISOString())
+});
+
+// =========================================
+// PURCHASE ORDER ITEMS
+// =========================================
+export const purchaseOrderItems = sqliteTable('purchase_order_items', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  purchaseOrderId: integer('purchase_order_id')
+    .notNull()
+    .references(() => purchaseOrders.id, { onDelete: 'cascade' }),
+  productId: integer('product_id')
+    .notNull()
+    .references(() => products.id, { onDelete: 'restrict' }),
+
+  // Item details
+  description: text('description').notNull(),
+  quantity: real('quantity').notNull(),
+  unitCost: real('unit_cost').notNull(),
+  lineTotal: real('line_total').notNull(),
+  
+  // Receiving tracking
+  quantityReceived: real('quantity_received').default(0),
+  quantityInvoiced: real('quantity_invoiced').default(0),
+  
+  // Metadata
+  sortOrder: integer('sort_order').default(0),
+  createdAt: text('created_at')
+    .notNull()
+    .$defaultFn(() => new Date().toISOString())
+});
+
+// =========================================
+// BILLS/VENDOR INVOICES
+// =========================================
+export const bills = sqliteTable('bills', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  storeId: integer('store_id')
+    .notNull()
+    .references(() => stores.id, { onDelete: 'restrict' }),
+  supplierId: integer('supplier_id')
+    .notNull()
+    .references(() => suppliers.id, { onDelete: 'restrict' }),
+  purchaseOrderId: integer('purchase_order_id').references(() => purchaseOrders.id, { onDelete: 'set null' }),
+  userId: integer('user_id').references(() => users.id, { onDelete: 'set null' }),
+
+  // Bill details
+  billNumber: text('bill_number').notNull(), // Our internal number
+  supplierInvoiceNumber: text('supplier_invoice_number'), // Supplier's invoice number
+  billDate: text('bill_date')
+    .notNull()
+    .$defaultFn(() => new Date().toISOString().split('T')[0]),
+  dueDate: text('due_date'),
+  
+  // Amounts
+  subtotal: real('subtotal').notNull().default(0),
+  taxAmount: real('tax_amount').notNull().default(0),
+  totalAmount: real('total_amount').notNull().default(0),
+  paidAmount: real('paid_amount').notNull().default(0),
+  
+  // Status
+  status: text('status', { enum: ['draft', 'open', 'paid', 'partial', 'overdue', 'cancelled'] })
+    .notNull()
+    .default('draft'),
+  
+  // Additional info
+  notes: text('notes'),
+  terms: text('terms'),
+  
+  // Metadata
+  createdAt: text('created_at')
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+  updatedAt: text('updated_at')
+    .notNull()
+    .$defaultFn(() => new Date().toISOString())
+});
+
+// =========================================
+// BILL ITEMS
+// =========================================
+export const billItems = sqliteTable('bill_items', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  billId: integer('bill_id')
+    .notNull()
+    .references(() => bills.id, { onDelete: 'cascade' }),
+  productId: integer('product_id').references(() => products.id, { onDelete: 'restrict' }),
+
+  // Item details
+  description: text('description').notNull(),
+  quantity: real('quantity').notNull(),
+  unitCost: real('unit_cost').notNull(),
+  lineTotal: real('line_total').notNull(),
+  
+  // Account assignment
+  accountId: integer('account_id').references(() => chartOfAccounts.id, { onDelete: 'restrict' }),
+  
+  // Metadata
+  sortOrder: integer('sort_order').default(0),
+  createdAt: text('created_at')
+    .notNull()
+    .$defaultFn(() => new Date().toISOString())
+});
+
+// =========================================
+// BILL PAYMENTS
+// =========================================
+export const billPayments = sqliteTable('bill_payments', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  billId: integer('bill_id')
+    .notNull()
+    .references(() => bills.id, { onDelete: 'restrict' }),
+  bankAccountId: integer('bank_account_id')
+    .notNull()
+    .references(() => bankAccounts.id, { onDelete: 'restrict' }),
+  journalEntryId: integer('journal_entry_id').references(() => journalEntries.id, { onDelete: 'set null' }),
+  userId: integer('user_id').references(() => users.id, { onDelete: 'set null' }),
+
+  // Payment details
+  paymentNumber: text('payment_number').notNull(),
+  paymentDate: text('payment_date')
+    .notNull()
+    .$defaultFn(() => new Date().toISOString().split('T')[0]),
+  amount: real('amount').notNull(),
+  
+  // Payment method
+  paymentMethod: text('payment_method', {
+    enum: ['cash', 'check', 'bank_transfer', 'credit_card', 'electronic', 'other']
+  }).notNull(),
+  referenceNumber: text('reference_number'), // Check number, confirmation number, etc.
+  
+  // Status
+  status: text('status', { enum: ['pending', 'cleared', 'voided'] })
+    .notNull()
+    .default('pending'),
+  
+  // Metadata
+  notes: text('notes'),
+  createdAt: text('created_at')
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+  updatedAt: text('updated_at')
+    .notNull()
+    .$defaultFn(() => new Date().toISOString())
+});
+
+// =========================================
 // TAX RATES
 // =========================================
 export const taxRates = sqliteTable('tax_rates', {
@@ -834,7 +1334,8 @@ export const invoicesRelations = relations(invoices, ({ one, many }) => ({
     fields: [invoices.userId],
     references: [users.id]
   }),
-  items: many(invoiceItems)
+  items: many(invoiceItems),
+  payments: many(payments)
 }));
 
 export const invoiceItemsRelations = relations(invoiceItems, ({ one }) => ({
@@ -922,6 +1423,182 @@ export const quantityPriceTiersRelations = relations(quantityPriceTiers, ({ one 
   })
 }));
 
+export const paymentsRelations = relations(payments, ({ one }) => ({
+  invoice: one(invoices, {
+    fields: [payments.invoiceId],
+    references: [invoices.id]
+  }),
+  store: one(stores, {
+    fields: [payments.storeId],
+    references: [stores.id]
+  }),
+  user: one(users, {
+    fields: [payments.userId],
+    references: [users.id]
+  })
+}));
+
+// Accounting Relations
+export const chartOfAccountsRelations = relations(chartOfAccounts, ({ one, many }) => ({
+  store: one(stores, {
+    fields: [chartOfAccounts.storeId],
+    references: [stores.id]
+  }),
+  parentAccount: one(chartOfAccounts, {
+    fields: [chartOfAccounts.parentAccountId],
+    references: [chartOfAccounts.id]
+  }),
+  childAccounts: many(chartOfAccounts),
+  journalEntryLines: many(journalEntryLines),
+  bankAccounts: many(bankAccounts),
+  billItems: many(billItems)
+}));
+
+export const journalEntriesRelations = relations(journalEntries, ({ one, many }) => ({
+  store: one(stores, {
+    fields: [journalEntries.storeId],
+    references: [stores.id]
+  }),
+  user: one(users, {
+    fields: [journalEntries.userId],
+    references: [users.id]
+  }),
+  reversedBy: one(journalEntries, {
+    fields: [journalEntries.reversedById],
+    references: [journalEntries.id]
+  }),
+  lines: many(journalEntryLines),
+  bankTransactions: many(bankTransactions),
+  billPayments: many(billPayments)
+}));
+
+export const journalEntryLinesRelations = relations(journalEntryLines, ({ one }) => ({
+  journalEntry: one(journalEntries, {
+    fields: [journalEntryLines.journalEntryId],
+    references: [journalEntries.id]
+  }),
+  account: one(chartOfAccounts, {
+    fields: [journalEntryLines.accountId],
+    references: [chartOfAccounts.id]
+  })
+}));
+
+export const bankAccountsRelations = relations(bankAccounts, ({ one, many }) => ({
+  store: one(stores, {
+    fields: [bankAccounts.storeId],
+    references: [stores.id]
+  }),
+  chartAccount: one(chartOfAccounts, {
+    fields: [bankAccounts.chartAccountId],
+    references: [chartOfAccounts.id]
+  }),
+  transactions: many(bankTransactions),
+  billPayments: many(billPayments)
+}));
+
+export const bankTransactionsRelations = relations(bankTransactions, ({ one }) => ({
+  bankAccount: one(bankAccounts, {
+    fields: [bankTransactions.bankAccountId],
+    references: [bankAccounts.id]
+  }),
+  journalEntry: one(journalEntries, {
+    fields: [bankTransactions.journalEntryId],
+    references: [journalEntries.id]
+  })
+}));
+
+export const suppliersRelations = relations(suppliers, ({ one, many }) => ({
+  store: one(stores, {
+    fields: [suppliers.storeId],
+    references: [stores.id]
+  }),
+  purchaseOrders: many(purchaseOrders),
+  bills: many(bills)
+}));
+
+export const purchaseOrdersRelations = relations(purchaseOrders, ({ one, many }) => ({
+  store: one(stores, {
+    fields: [purchaseOrders.storeId],
+    references: [stores.id]
+  }),
+  supplier: one(suppliers, {
+    fields: [purchaseOrders.supplierId],
+    references: [suppliers.id]
+  }),
+  user: one(users, {
+    fields: [purchaseOrders.userId],
+    references: [users.id]
+  }),
+  items: many(purchaseOrderItems),
+  bills: many(bills)
+}));
+
+export const purchaseOrderItemsRelations = relations(purchaseOrderItems, ({ one }) => ({
+  purchaseOrder: one(purchaseOrders, {
+    fields: [purchaseOrderItems.purchaseOrderId],
+    references: [purchaseOrders.id]
+  }),
+  product: one(products, {
+    fields: [purchaseOrderItems.productId],
+    references: [products.id]
+  })
+}));
+
+export const billsRelations = relations(bills, ({ one, many }) => ({
+  store: one(stores, {
+    fields: [bills.storeId],
+    references: [stores.id]
+  }),
+  supplier: one(suppliers, {
+    fields: [bills.supplierId],
+    references: [suppliers.id]
+  }),
+  purchaseOrder: one(purchaseOrders, {
+    fields: [bills.purchaseOrderId],
+    references: [purchaseOrders.id]
+  }),
+  user: one(users, {
+    fields: [bills.userId],
+    references: [users.id]
+  }),
+  items: many(billItems),
+  payments: many(billPayments)
+}));
+
+export const billItemsRelations = relations(billItems, ({ one }) => ({
+  bill: one(bills, {
+    fields: [billItems.billId],
+    references: [bills.id]
+  }),
+  product: one(products, {
+    fields: [billItems.productId],
+    references: [products.id]
+  }),
+  account: one(chartOfAccounts, {
+    fields: [billItems.accountId],
+    references: [chartOfAccounts.id]
+  })
+}));
+
+export const billPaymentsRelations = relations(billPayments, ({ one }) => ({
+  bill: one(bills, {
+    fields: [billPayments.billId],
+    references: [bills.id]
+  }),
+  bankAccount: one(bankAccounts, {
+    fields: [billPayments.bankAccountId],
+    references: [bankAccounts.id]
+  }),
+  journalEntry: one(journalEntries, {
+    fields: [billPayments.journalEntryId],
+    references: [journalEntries.id]
+  }),
+  user: one(users, {
+    fields: [billPayments.userId],
+    references: [users.id]
+  })
+}));
+
 // Export all tables as schema
 export const tenantSchema = {
   stores,
@@ -935,6 +1612,7 @@ export const tenantSchema = {
   clientContacts,
   invoices,
   invoiceItems,
+  payments,
   quotes,
   quoteItems,
   tags,
@@ -944,6 +1622,18 @@ export const tenantSchema = {
   discountUsage,
   quantityPriceTiers,
   taxRates,
+  // Accounting tables
+  chartOfAccounts,
+  journalEntries,
+  journalEntryLines,
+  bankAccounts,
+  bankTransactions,
+  suppliers,
+  purchaseOrders,
+  purchaseOrderItems,
+  bills,
+  billItems,
+  billPayments,
   // Relations
   storesRelations,
   usersRelations,
@@ -956,11 +1646,24 @@ export const tenantSchema = {
   inventoryMovementsRelations,
   invoicesRelations,
   invoiceItemsRelations,
+  paymentsRelations,
   quotesRelations,
   quoteItemsRelations,
   pricingRulesRelations,
   ruleConditionsRelations,
   ruleTargetsRelations,
   discountUsageRelations,
-  quantityPriceTiersRelations
+  quantityPriceTiersRelations,
+  // Accounting relations
+  chartOfAccountsRelations,
+  journalEntriesRelations,
+  journalEntryLinesRelations,
+  bankAccountsRelations,
+  bankTransactionsRelations,
+  suppliersRelations,
+  purchaseOrdersRelations,
+  purchaseOrderItemsRelations,
+  billsRelations,
+  billItemsRelations,
+  billPaymentsRelations
 };

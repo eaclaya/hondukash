@@ -352,6 +352,7 @@ export interface Invoice {
   items: InvoiceItem[];
   subtotal: number;
   tax: number;
+  discount: number;
   total: number;
   status: 'draft' | 'sent' | 'paid' | 'partial' | 'overdue' | 'cancelled';
 
@@ -392,6 +393,7 @@ export interface CreateInvoiceRequest {
   items: CreateInvoiceItemRequest[];
   subtotal: number;
   tax: number;
+  discount: number;
   total: number;
   status?: 'draft' | 'sent' | 'paid' | 'partial' | 'overdue' | 'cancelled';
   invoiceDate: string;
@@ -415,6 +417,53 @@ export interface CreateInvoiceItemRequest {
 
 export interface UpdateInvoiceRequest extends Partial<CreateInvoiceRequest> {
   id: number;
+}
+
+export interface Payment {
+  id: string;
+  invoiceId: string;
+  storeId: string;
+  userId?: string;
+  
+  // Payment details
+  paymentNumber: string;
+  paymentDate: string;
+  amount: number;
+  
+  // Payment method and details
+  paymentMethod: 'cash' | 'credit_card' | 'debit_card' | 'bank_transfer' | 'check' | 'other';
+  paymentReference?: string;
+  bankName?: string;
+  accountNumber?: string;
+  
+  // Status and metadata
+  status: 'pending' | 'completed' | 'failed' | 'cancelled';
+  notes?: string;
+  
+  createdAt: string;
+  updatedAt: string;
+  
+  // Related entities
+  invoice?: Invoice;
+  user?: User;
+}
+
+export interface CreatePaymentRequest {
+  invoiceId: number;
+  amount: number;
+  paymentMethod: 'cash' | 'credit_card' | 'debit_card' | 'bank_transfer' | 'check' | 'other';
+  paymentReference?: string;
+  bankName?: string;
+  accountNumber?: string;
+  paymentDate: string;
+  notes?: string;
+}
+
+export interface PaymentResponse {
+  success: boolean;
+  payment: Payment;
+  changeAmount?: number;
+  appliedToInvoice?: number;
 }
 
 export interface Quote {

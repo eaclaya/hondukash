@@ -65,7 +65,10 @@
     "settings": "Configuración",
     "stores": "Tiendas",
     "users": "Usuarios",
-    "pricingRules": "Reglas de Precio"
+    "pricingRules": "Reglas de Precio",
+    "taxRates": "Impuestos",
+    "allStores": "Sucursales",
+    "tags": "Etiquetas"
   },
   "auth": {
     "login": "Iniciar Sesión",
@@ -82,6 +85,7 @@
   "dashboard": {
     "title": "Panel de Control",
     "welcome": "Bienvenido",
+    "activeClients": "Clientes Activos",
     "totalSales": "Ventas Totales",
     "totalInvoices": "Total de Facturas",
     "totalClients": "Total de Clientes",
@@ -90,7 +94,13 @@
     "createInvoice": "Crear Factura",
     "createQuote": "Crear Cotización",
     "addClient": "Agregar Cliente",
-    "addProduct": "Agregar Producto"
+    "addProduct": "Agregar Producto",
+    "pendingInvoices": "Facturas Pendientes",
+    "lowStockItems": "Productos casi agotados",
+    "registerClient": "Crear Cliente",
+    "thisMonth": "Este Mes",
+    "recentActivities": "Actividades Recientes",
+    "noRecentActivities": "No hay actividades recientes"
   },
   "invoices": {
     "title": "Facturas",
@@ -144,6 +154,11 @@
   },
   "clients": {
     "title": "Clientes",
+    "clients": "Clientes",
+    "client": "Cliente",
+    "location": "Ubicacion",
+    "creditLimit": "Limite de Credito",
+    "status": "Estado",
     "create": "Crear Cliente",
     "edit": "Editar Cliente",
     "view": "Ver Cliente",
@@ -158,10 +173,18 @@
     "notFound": "Cliente no encontrado",
     "failedToCreate": "Error al crear el cliente",
     "failedToUpdate": "Error al actualizar el cliente",
-    "failedToDelete": "Error al eliminar el cliente"
+    "failedToDelete": "Error al eliminar el cliente",
+    "manageCustomersAndContacts": "Administrar Clientes",
+    "addClient": "Nuevo Cliente",
+    "searchClientsPlaceholder": "Buscar clientes",
+    "createNewClient": "Crear Nuevo Cliente",
+    "addNewClientToSystem": "Agregar nuevo cliente",
+    "createClient": "Crear cliente"
   },
   "products": {
     "title": "Productos",
+    "products": "Productos",
+    "product": "Producto",
     "create": "Crear Producto",
     "edit": "Editar Producto",
     "view": "Ver Producto",
@@ -169,18 +192,23 @@
     "list": "Lista de Productos",
     "searchPlaceholder": "Buscar productos...",
     "sku": "SKU",
+    "price": "Precio",
+    "status": "Estado",
     "category": "Categoría",
-    "stock": "Stock",
-    "lowStock": "Stock Bajo",
-    "outOfStock": "Sin Stock",
-    "inStock": "En Stock",
+    "stock": "Inventario",
+    "addProduct": "Nuevo Producto",
+    "lowStock": "Inventario Bajo",
+    "outOfStock": "Sin Inventario",
+    "inStock": "En Inventario",
     "created": "Producto creado exitosamente",
     "updated": "Producto actualizado exitosamente",
     "deleted": "Producto eliminado exitosamente",
     "notFound": "Producto no encontrado",
     "failedToCreate": "Error al crear el producto",
     "failedToUpdate": "Error al actualizar el producto",
-    "failedToDelete": "Error al eliminar el producto"
+    "failedToDelete": "Error al eliminar el producto",
+    "manageProductCatalogAndInventory": "Administrar productos e inventario",
+    "searchProductsPlaceholder": "Buscar producto"
   },
   "inventory": {
     "title": "Inventario",

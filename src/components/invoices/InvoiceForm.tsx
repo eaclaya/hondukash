@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Trash2, Tags, Calculator } from 'lucide-react';
+import { Plus, Trash2, Calculator } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import SimpleTagSelector from '@/components/tags/SimpleTagSelector';
 import { toast } from 'sonner';
@@ -69,19 +69,20 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
   });
 
   // Parse existing tags
-  const parseTagsFromString = (tagsString: string): string[] => {
-    if (!tagsString) return [];
+  const parseTagsFromString = (tagsInput: string | string[]): string[] => {
+    if (!tagsInput) return [];
+    if (Array.isArray(tagsInput)) return tagsInput;
     try {
-      return JSON.parse(tagsString);
+      return JSON.parse(tagsInput);
     } catch {
-      return tagsString
+      return tagsInput
         .split(',')
         .map((tag) => tag.trim())
         .filter((tag) => tag.length > 0);
     }
   };
 
-  const [selectedTags, setSelectedTags] = useState<string[]>(invoice ? parseTagsFromString(invoice.tags || '') : []);
+  const [selectedTags, setSelectedTags] = useState<string[]>(invoice ? parseTagsFromString(invoice.tags || []) : []);
 
   const [items, setItems] = useState<InvoiceItemForm[]>([]);
   const [taxRates, setTaxRates] = useState<TaxRate[]>([]);
@@ -646,7 +647,7 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
                     value={(globalTaxRate * 100).toString()}
                     onValueChange={(value) => handleGlobalTaxChange((value || 0) / 100)}
                     allowDecimals={true}
-                    maxDecimals={2}
+                    maxDecimals={4}
                     allowNegative={false}
                     className="w-20"
                     disabled={!useGlobalTax}
@@ -684,7 +685,8 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
                       </div>
                       <div className="flex justify-between text-sm text-green-600">
                         <span>
-                          {t('discount')} ({discountResult.appliedDiscounts.length} {discountResult.appliedDiscounts.length === 1 ? t('rule') : t('rules')}):
+                          {t('discount')} ({discountResult.appliedDiscounts.length}{' '}
+                          {discountResult.appliedDiscounts.length === 1 ? t('rule') : t('rules')}):
                         </span>
                         <span>-{formatCurrency(totals.discountAmount)}</span>
                       </div>
@@ -720,7 +722,11 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
 
               {/* Pricing Rules Status */}
               {loadingPricingRules && <div className="text-xs text-muted-foreground">{t('loadingPricingRules')}</div>}
-              {pricingRulesError && <div className="text-xs text-red-600">{t('errorLoadingPricingRules')}: {pricingRulesError}</div>}
+              {pricingRulesError && (
+                <div className="text-xs text-red-600">
+                  {t('errorLoadingPricingRules')}: {pricingRulesError}
+                </div>
+              )}
               {!loadingPricingRules && pricingRules.length === 0 && applyDiscounts && (
                 <div className="text-xs text-muted-foreground">{t('noActivePricingRulesFound')}</div>
               )}
@@ -771,7 +777,7 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
                           value={item.quantity.toString()}
                           onValueChange={(value) => handleItemChange(index, 'quantity', value || 0)}
                           allowDecimals={true}
-                          maxDecimals={2}
+                          maxDecimals={4}
                           allowNegative={false}
                           className="w-20"
                         />
@@ -781,7 +787,7 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading = fal
                           value={item.unitPrice.toString()}
                           onValueChange={(value) => handleItemChange(index, 'unitPrice', value || 0)}
                           allowDecimals={true}
-                          maxDecimals={2}
+                          maxDecimals={4}
                           allowNegative={false}
                           className="w-24 disabled:opacity-100"
                           disabled
@@ -877,6 +883,7 @@ function QuickProductEntry({ products, loading, onProductAdd, onSearchChange, se
   const [quantity, setQuantity] = useState(1);
   const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
   const [selectedProductIndex, setSelectedProductIndex] = useState(-1);
+  const t = useTranslations('invoices');
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (products.length === 0) return;
@@ -948,8 +955,9 @@ function QuickProductEntry({ products, loading, onProductAdd, onSearchChange, se
           <NumericInput
             placeholder={t('qty')}
             value={quantity.toString()}
-            onValueChange={(value) => setQuantity(Math.floor(value || 1))}
-            allowDecimals={false}
+            onValueChange={(value) => setQuantity(value || 1)}
+            allowDecimals={true}
+            maxDecimals={4}
             allowNegative={false}
             onKeyDown={handleKeyDown}
           />

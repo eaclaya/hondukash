@@ -10,8 +10,11 @@ import { Pagination } from '@/components/ui/pagination';
 import { Plus, Edit, Trash2, MapPin, Phone, Mail, User, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
+import { useTranslations } from '@/contexts/LocaleContext';
 
 export default function StoresPage() {
+  const t = useTranslations('stores');
+  const tCommon = useTranslations('common');
   const [stores, setStores] = useState<Store[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -171,12 +174,12 @@ export default function StoresPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Store</TableHead>
-                  <TableHead>Contact</TableHead>
-                  <TableHead>Location</TableHead>
-                  <TableHead>Currency & Tax</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>{t('store')}</TableHead>
+                  <TableHead>{t('contact')}</TableHead>
+                  <TableHead>{t('location')}</TableHead>
+                  <TableHead>{t('currencyAndTax')}</TableHead>
+                  <TableHead>{t('status')}</TableHead>
+                  <TableHead className="text-right">{tCommon('actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -185,7 +188,7 @@ export default function StoresPage() {
                     <TableCell>
                       <div>
                         <div className="font-medium">{store.name}</div>
-                        {store.code && <div className="text-sm text-muted-foreground">Code: {store.code}</div>}
+                        {store.code && <div className="text-sm text-muted-foreground">{t('code')}: {store.code}</div>}
                         {store.description && <div className="text-sm text-muted-foreground">{store.description}</div>}
                       </div>
                     </TableCell>
@@ -215,7 +218,7 @@ export default function StoresPage() {
                     </TableCell>
                     <TableCell>
                       <div className={`inline-flex px-2 py-1 text-xs rounded-full ${store.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                        {store.isActive ? 'Active' : 'Inactive'}
+                        {store.isActive ? t('active') : t('inactive')}
                       </div>
                     </TableCell>
                     <TableCell className="text-right">

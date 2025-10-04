@@ -574,7 +574,7 @@ export default function QuoteForm({ quote, onSubmit, onCancel, loading = false }
                           value={item.quantity.toString()}
                           onValueChange={(value) => handleItemChange(index, 'quantity', value || 0)}
                           allowDecimals={true}
-                          maxDecimals={2}
+                          maxDecimals={4}
                           allowNegative={false}
                           className="w-20"
                         />
@@ -584,7 +584,7 @@ export default function QuoteForm({ quote, onSubmit, onCancel, loading = false }
                           value={item.unitPrice.toString()}
                           onValueChange={(value) => handleItemChange(index, 'unitPrice', value || 0)}
                           allowDecimals={true}
-                          maxDecimals={2}
+                          maxDecimals={4}
                           allowNegative={false}
                           className="w-24"
                         />
@@ -644,7 +644,7 @@ export default function QuoteForm({ quote, onSubmit, onCancel, loading = false }
                     value={(taxRate * 100).toString()}
                     onValueChange={(value) => setTaxRate((value || 0) / 100)}
                     allowDecimals={true}
-                    maxDecimals={2}
+                    maxDecimals={4}
                     allowNegative={false}
                     className="w-24"
                   />

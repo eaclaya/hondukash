@@ -101,11 +101,12 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
   }
 }
 
-// PATCH /api/invoices/[id] - Update invoice status
+// PATCH /api/invoices/[id] - Update invoice (limited fields)
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const requestHeaders = await headers();
     const host = requestHeaders.get('host');
+    const storeIdHeader = requestHeaders.get('X-Store-ID');
 
     if (!host) {
       return NextResponse.json({ error: 'Host header is required' }, { status: 400 });
@@ -114,6 +115,11 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     // Extract domain from host (remove port if present)
     const domain = host.split(':')[0];
 
+    const storeId = storeIdHeader ? parseInt(storeIdHeader) : undefined;
+    if (!storeId) {
+      return NextResponse.json({ error: 'Store ID is required' }, { status: 400 });
+    }
+
     const { id } = await params;
     const invoiceId = parseInt(id);
     if (isNaN(invoiceId)) {
@@ -121,13 +127,32 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }
 
     const body = await request.json();
-    const { status, paidAmount } = body;
+    
+    // Check if this is a simple status update (for backward compatibility)
+    if (body.status && Object.keys(body).length <= 2) {
+      const { status, paidAmount } = body;
+      const result = await InvoiceService.updateInvoiceStatus(domain, invoiceId, status, paidAmount);
 
-    if (!status) {
-      return NextResponse.json({ error: 'Status is required' }, { status: 400 });
+      if (!result.success) {
+        return NextResponse.json({ error: result.error }, { status: result.error === 'Invoice not found' ? 404 : 400 });
+      }
+
+      return NextResponse.json({ invoice: result.data });
     }
 
-    const result = await InvoiceService.updateInvoiceStatus(domain, invoiceId, status, paidAmount);
+    // Full invoice update with discount recalculation
+    const invoiceData = { ...body, storeId };
+
+    // Validate required fields for full update
+    if (!invoiceData.clientId) {
+      return NextResponse.json({ error: 'Client ID is required' }, { status: 400 });
+    }
+
+    if (!invoiceData.items || invoiceData.items.length === 0) {
+      return NextResponse.json({ error: 'Invoice items are required' }, { status: 400 });
+    }
+
+    const result = await InvoiceService.updateInvoice(domain, invoiceId, invoiceData);
 
     if (!result.success) {
       return NextResponse.json({ error: result.error }, { status: result.error === 'Invoice not found' ? 404 : 400 });

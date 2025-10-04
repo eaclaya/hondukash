@@ -292,7 +292,7 @@ export default function ProductForm({ product, onSubmit, onCancel, loading = fal
                     onValueChange={(value) => handleInputChange('baseCost', value || 0)}
                     placeholder="0.00"
                     allowDecimals={true}
-                    maxDecimals={2}
+                    maxDecimals={4}
                     allowNegative={false}
                   />
                   <p className="text-xs text-muted-foreground">Original purchase/manufacturing cost</p>
@@ -306,7 +306,7 @@ export default function ProductForm({ product, onSubmit, onCancel, loading = fal
                     onValueChange={(value) => handleInputChange('cost', value || 0)}
                     placeholder="0.00"
                     allowDecimals={true}
-                    maxDecimals={2}
+                    maxDecimals={4}
                     allowNegative={false}
                   />
                   <p className="text-xs text-muted-foreground">Current replacement cost</p>
@@ -320,7 +320,7 @@ export default function ProductForm({ product, onSubmit, onCancel, loading = fal
                     onValueChange={(value) => handleInputChange('basePrice', value || 0)}
                     placeholder="0.00"
                     allowDecimals={true}
-                    maxDecimals={2}
+                    maxDecimals={4}
                     allowNegative={false}
                   />
                   <p className="text-xs text-muted-foreground">Suggested retail price</p>
@@ -335,7 +335,7 @@ export default function ProductForm({ product, onSubmit, onCancel, loading = fal
                     placeholder="0.00"
                     className="bg-muted"
                     allowDecimals={true}
-                    maxDecimals={2}
+                    maxDecimals={4}
                     allowNegative={false}
                   />
                   <p className="text-xs text-muted-foreground">
@@ -354,7 +354,7 @@ export default function ProductForm({ product, onSubmit, onCancel, loading = fal
                     onValueChange={(value) => handleInputChange('minPrice', value || 0)}
                     placeholder="0.00"
                     allowDecimals={true}
-                    maxDecimals={2}
+                    maxDecimals={4}
                     allowNegative={false}
                   />
                   <p className="text-xs text-muted-foreground">Minimum selling price allowed</p>
@@ -488,7 +488,7 @@ export default function ProductForm({ product, onSubmit, onCancel, loading = fal
                       onValueChange={(value) => handleInputChange('quantity', value || 0)}
                       placeholder="0"
                       allowDecimals={true}
-                      maxDecimals={2}
+                      maxDecimals={4}
                       allowNegative={false}
                     />
                   </div>
@@ -524,7 +524,7 @@ export default function ProductForm({ product, onSubmit, onCancel, loading = fal
                     onValueChange={(value) => handleInputChange('storePrice', value || 0)}
                     placeholder={formatCurrency(formData.price || 0)}
                     allowDecimals={true}
-                    maxDecimals={2}
+                    maxDecimals={4}
                     allowNegative={false}
                   />
                   <p className="text-xs text-muted-foreground">

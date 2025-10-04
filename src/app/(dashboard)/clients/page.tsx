@@ -154,10 +154,10 @@ export default function ClientsPage() {
           <div className="mx-auto w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-4">
             <Search className="h-12 w-12 text-muted-foreground" />
           </div>
-          <h3 className="text-lg font-semibold mb-2">No clients found</h3>
-          <p className="text-muted-foreground mb-4">Try adjusting your search terms.</p>
+          <h3 className="text-lg font-semibold mb-2">{t('noClientsFound')}</h3>
+          <p className="text-muted-foreground mb-4">{t('tryAdjustingSearchTerms')}</p>
           <Button variant="outline" onClick={() => setSearchTerm('')}>
-            Clear Search
+            {tCommon('clearSearch')}
           </Button>
         </div>
       ) : !clientsData || clientsData.pagination.total === 0 ? (
@@ -165,11 +165,11 @@ export default function ClientsPage() {
           <div className="mx-auto w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-4">
             <Users className="h-12 w-12 text-muted-foreground" />
           </div>
-          <h3 className="text-lg font-semibold mb-2">No clients found</h3>
-          <p className="text-muted-foreground mb-4">Get started by adding your first client.</p>
+          <h3 className="text-lg font-semibold mb-2">{t('noClientsFound')}</h3>
+          <p className="text-muted-foreground mb-4">{t('getStartedAddingFirstClient')}</p>
           <Button onClick={() => router.push('/clients/create')}>
             <Plus className="h-4 w-4 mr-2" />
-            Add Client
+            {t('addClient')}
           </Button>
         </div>
       ) : (
@@ -179,12 +179,12 @@ export default function ClientsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Client</TableHead>
-                  <TableHead>Contact</TableHead>
-                  <TableHead>Location</TableHead>
-                  <TableHead>Credit Limit</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>{t('client')}</TableHead>
+                  <TableHead>{t('contact')}</TableHead>
+                  <TableHead>{t('location')}</TableHead>
+                  <TableHead>{t('creditLimit')}</TableHead>
+                  <TableHead>{t('status')}</TableHead>
+                  <TableHead className="text-right">{tCommon('actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -229,7 +229,7 @@ export default function ClientsPage() {
                     </TableCell>
                     <TableCell>
                       <div className={`inline-flex px-2 py-1 text-xs rounded-full ${client.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                        {client.isActive ? 'Active' : 'Inactive'}
+                        {client.isActive ? t('active') : t('inactive')}
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
@@ -324,10 +324,10 @@ export default function ClientsPage() {
 
                 <div className="flex justify-between items-center pt-3 border-t">
                   <div className="text-sm text-muted-foreground">
-                    Credit: ${client.creditLimit.toLocaleString()}
+                    {t('credit')}: ${client.creditLimit.toLocaleString()}
                   </div>
                   <div className={`px-2 py-1 text-xs rounded-full ${client.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                    {client.isActive ? 'Active' : 'Inactive'}
+                    {client.isActive ? t('active') : t('inactive')}
                   </div>
                 </div>
               </div>

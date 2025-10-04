@@ -246,13 +246,13 @@ export default function QuotesPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Quote #</TableHead>
-                  <TableHead>Client</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Valid Until</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>{t('quoteNumber')}</TableHead>
+                  <TableHead>{t('client')}</TableHead>
+                  <TableHead>{t('date')}</TableHead>
+                  <TableHead>{t('validUntil')}</TableHead>
+                  <TableHead>{t('amount')}</TableHead>
+                  <TableHead>{t('status')}</TableHead>
+                  <TableHead className="text-right">{tCommon('actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -353,11 +353,11 @@ export default function QuotesPage() {
 
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <span className="text-muted-foreground">Date:</span>
+                    <span className="text-muted-foreground">{t('date')}:</span>
                     <div>{formatDate(quote.quoteDate)}</div>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">Valid Until:</span>
+                    <span className="text-muted-foreground">{t('validUntil')}:</span>
                     <div>{quote.validUntil ? formatDate(quote.validUntil) : '—'}</div>
                   </div>
                 </div>
@@ -391,15 +391,15 @@ export default function QuotesPage() {
       <Dialog open={convertDialogOpen} onOpenChange={setConvertDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Convert Quote to Invoice</DialogTitle>
+            <DialogTitle>{t('convertQuoteToInvoice')}</DialogTitle>
             <DialogDescription>
-              Convert quote {convertingQuote?.number} to an invoice. This action cannot be undone.
+              {t('convertQuoteDescription', { quoteNumber: convertingQuote?.number })}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="invoice-date">Invoice Date</Label>
+              <Label htmlFor="invoice-date">{t('invoiceDate')}</Label>
               <Input
                 id="invoice-date"
                 type="date"
@@ -412,19 +412,19 @@ export default function QuotesPage() {
             {convertingQuote && (
               <div className="bg-muted/50 p-4 rounded-lg space-y-2">
                 <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Client:</span>
+                  <span className="text-sm text-muted-foreground">{t('client')}:</span>
                   <span className="text-sm font-medium">
                     {convertingQuote.client?.name || convertingQuote.clientName}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Quote Amount:</span>
+                  <span className="text-sm text-muted-foreground">{t('quoteAmount')}:</span>
                   <span className="text-sm font-medium">
                     {formatCurrency(convertingQuote.total)}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Quote Date:</span>
+                  <span className="text-sm text-muted-foreground">{t('quoteDate')}:</span>
                   <span className="text-sm font-medium">
                     {formatDate(convertingQuote.quoteDate)}
                   </span>
@@ -439,14 +439,14 @@ export default function QuotesPage() {
               onClick={() => setConvertDialogOpen(false)}
               disabled={converting}
             >
-              Cancel
+              {tCommon('cancel')}
             </Button>
             <Button
               onClick={handleConvertToInvoice}
               disabled={converting || !invoiceDate}
               className="bg-green-600 hover:bg-green-700"
             >
-              {converting ? 'Converting...' : 'Convert to Invoice'}
+              {converting ? t('converting') : t('convertToInvoice')}
             </Button>
           </DialogFooter>
         </DialogContent>

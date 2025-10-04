@@ -2,7 +2,7 @@
 
 import { useTenantAuth } from '@/hooks/useTenantAuth';
 import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { User, LogOut, Settings, ChevronDown } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect } from 'react';
@@ -95,6 +95,26 @@ export default function DashboardLayout({
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link href="/transfers">{tNav('transfers')}</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel>Accounting</DropdownMenuLabel>
+                  <DropdownMenuItem asChild>
+                    <Link href="/accounting/chart-of-accounts">Chart of Accounts</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/accounting/journal-entries">Journal Entries</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/accounting/bank-accounts">Bank Accounts</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/accounting/suppliers">Suppliers</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/accounting/bills">Bills & Payments</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/accounting/reports">Financial Reports</Link>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

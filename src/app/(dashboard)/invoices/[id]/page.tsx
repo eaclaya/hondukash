@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Edit, ArrowLeft, Download, Send, DollarSign, Printer } from 'lucide-react';
 import { toast } from 'sonner';
 import LoaderSpinner from '@/components/shared/loader-spinner';
+import PaymentHistory from '@/components/invoices/PaymentHistory';
 
 export default function InvoiceDetailPage() {
   const router = useRouter();
@@ -160,10 +161,18 @@ export default function InvoiceDetailPage() {
             <Send className="h-4 w-4 mr-2" />
             Send
           </Button>
-          <Button onClick={() => router.push(`/invoices/${invoiceId}/edit`)}>
-            <Edit className="h-4 w-4 mr-2" />
-            Edit
-          </Button>
+          {invoice.balanceDue > 0 && invoice.status !== 'cancelled' && (
+            <Button onClick={() => router.push(`/invoices/${invoiceId}/payment`)}>
+              <DollarSign className="h-4 w-4 mr-2" />
+              Process Payment
+            </Button>
+          )}
+          {(invoice.status === 'draft' || invoice.status === 'sent' || invoice.status === 'partial' || invoice.status === 'overdue') && (
+            <Button variant="outline" onClick={() => router.push(`/invoices/${invoiceId}/edit`)}>
+              <Edit className="h-4 w-4 mr-2" />
+              Edit
+            </Button>
+          )}
         </div>
       </div>
 
@@ -319,6 +328,11 @@ export default function InvoiceDetailPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Payment History */}
+      {invoice.paidAmount > 0 && (
+        <PaymentHistory invoiceId={invoiceId} />
+      )}
     </div>
   );
 }

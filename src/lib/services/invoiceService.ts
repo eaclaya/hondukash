@@ -3,6 +3,7 @@ import { getTenantDb } from '@/lib/turso';
 import { invoices, invoiceItems, clients, products, stores, inventory, inventoryMovements } from '@/lib/db/schema/tenant';
 import { eq, and, desc, like, or, count, sql, inArray } from 'drizzle-orm';
 import { InvoiceNumberService } from './invoiceNumberService';
+import { PricingRuleService } from './pricingRuleService';
 
 interface ServiceResult<T> {
   success: boolean;
@@ -185,10 +186,15 @@ export class InvoiceService {
       const items: InvoiceItem[] = itemsResult.map(item => ({
         id: item.id.toString(),
         productId: item.productId?.toString() || '',
+        productName: item.productName || item.description,
         description: item.description,
         quantity: item.quantity,
         unitPrice: item.unitPrice,
-        lineTotal: item.lineTotal
+        taxRateId: undefined,
+        taxRate: 0.15, // Default 15%
+        taxAmount: item.lineTotal * 0.15,
+        lineTotal: item.lineTotal,
+        total: item.lineTotal + (item.lineTotal * 0.15)
       }));
 
       const transformedInvoice: Invoice = {
@@ -452,57 +458,246 @@ static async createInvoice(domain: string, invoiceData: CreateInvoiceRequest): P
     }
   }
 
-  static async updateInvoice(domain: string, invoiceData: UpdateInvoiceRequest): Promise<ServiceResult<Invoice>> {
+  static async updateInvoice(domain: string, invoiceId: number, invoiceData: UpdateInvoiceRequest): Promise<ServiceResult<Invoice>> {
     try {
       const db = await getTenantDb(domain);
 
       await db.transaction(async (tx) => {
+        // Check if invoice exists and can be edited
+        const [existingInvoice] = await tx
+          .select()
+          .from(invoices)
+          .where(eq(invoices.id, invoiceId))
+          .limit(1);
+
+        if (!existingInvoice) {
+          throw new Error('Invoice not found');
+        }
+
+        if (existingInvoice.status !== 'draft') {
+          throw new Error('Only draft invoices can be edited');
+        }
+
+        // Recalculate discounts if items are being updated
+        let finalInvoiceData = { ...invoiceData };
+        if (invoiceData.items && invoiceData.clientId) {
+          try {
+            // Prepare cart data for discount calculation
+            const cartData = {
+              items: invoiceData.items.map(item => ({
+                productId: item.productId,
+                quantity: item.quantity,
+                unitPrice: item.unitPrice,
+                lineTotal: item.total
+              })),
+              subtotal: invoiceData.subtotal,
+              clientId: invoiceData.clientId,
+              invoiceTags: invoiceData.tags || []
+            };
+
+            // Apply discounts
+            const discountResult = await PricingRuleService.applyDiscounts(domain, cartData);
+            
+            if (discountResult.success && discountResult.data) {
+              finalInvoiceData = {
+                ...finalInvoiceData,
+                discount: discountResult.data.totalDiscount,
+                total: discountResult.data.finalTotal
+              };
+            }
+          } catch (discountError) {
+            console.warn('Discount calculation failed during invoice update:', discountError);
+            // Continue with original data if discount calculation fails
+          }
+        }
+
         // Update invoice
         await tx
           .update(invoices)
           .set({
-            clientId: invoiceData.clientId,
-            invoiceDate: invoiceData.invoiceDate,
-            dueDate: invoiceData.dueDate || null,
-            clientName: invoiceData.clientName || null,
-            subtotal: invoiceData.subtotal,
-            taxAmount: invoiceData.tax,
-            discountAmount: invoiceData.discount,
-            totalAmount: invoiceData.total,
-            status: invoiceData.status,
-            notes: invoiceData.notes || null,
-            terms: invoiceData.terms || null,
+            clientId: finalInvoiceData.clientId,
+            clientName: finalInvoiceData.clientName || null,
+            subtotal: finalInvoiceData.subtotal,
+            taxAmount: finalInvoiceData.tax,
+            discountAmount: finalInvoiceData.discount || 0,
+            totalAmount: finalInvoiceData.total,
+            notes: finalInvoiceData.notes || null,
+            terms: finalInvoiceData.terms || null,
             updatedAt: new Date().toISOString()
           })
-          .where(eq(invoices.id, invoiceData.id));
+          .where(eq(invoices.id, invoiceId));
 
         // Update invoice items if provided
         if (invoiceData.items) {
+          // First, get existing items to calculate stock restoration
+          const existingItems = await tx
+            .select({
+              productId: invoiceItems.productId,
+              quantity: invoiceItems.quantity
+            })
+            .from(invoiceItems)
+            .where(eq(invoiceItems.invoiceId, invoiceId));
+
+          // Calculate stock changes
+          const existingItemsMap = new Map(existingItems.map(item => [item.productId, item.quantity]));
+          const newItemsMap = new Map(invoiceData.items.map(item => [item.productId, item.quantity]));
+          
+          // Find products that need stock restoration (removed or reduced quantity)
+          const stockRestorations: Array<{productId: number, quantityChange: number}> = [];
+          const stockReductions: Array<{productId: number, quantityChange: number}> = [];
+          
+          // Check each existing item
+          for (const [productId, oldQuantity] of existingItemsMap) {
+            const newQuantity = newItemsMap.get(productId) || 0;
+            const quantityDiff = oldQuantity - newQuantity;
+            
+            if (quantityDiff > 0) {
+              // Stock should be restored (quantity reduced or item removed)
+              stockRestorations.push({ productId, quantityChange: quantityDiff });
+            } else if (quantityDiff < 0) {
+              // More stock should be removed (quantity increased)
+              stockReductions.push({ productId, quantityChange: -quantityDiff });
+            }
+          }
+          
+          // Check for new items that need stock reduction
+          for (const [productId, newQuantity] of newItemsMap) {
+            if (!existingItemsMap.has(productId)) {
+              // New item, reduce stock
+              stockReductions.push({ productId, quantityChange: newQuantity });
+            }
+          }
+
+          // Validate stock availability for reductions
+          if (stockReductions.length > 0) {
+            const productIds = stockReductions.map(item => item.productId);
+            const currentInventory = await tx
+              .select({
+                productId: inventory.productId,
+                quantity: inventory.quantity,
+                productName: products.name
+              })
+              .from(inventory)
+              .innerJoin(products, eq(products.id, inventory.productId))
+              .where(
+                and(
+                  inArray(inventory.productId, productIds),
+                  eq(inventory.storeId, existingInvoice.storeId)
+                )
+              );
+
+            const inventoryMap = new Map(currentInventory.map(item => [item.productId, item]));
+            
+            for (const reduction of stockReductions) {
+              const inventoryItem = inventoryMap.get(reduction.productId);
+              if (!inventoryItem) {
+                throw new Error(`Product with ID ${reduction.productId} not found in inventory`);
+              }
+              if (inventoryItem.quantity < reduction.quantityChange) {
+                throw new Error(`Insufficient stock for ${inventoryItem.productName}. Available: ${inventoryItem.quantity}, Required: ${reduction.quantityChange}`);
+              }
+            }
+          }
+
           // Delete existing items
-          await tx.delete(invoiceItems).where(eq(invoiceItems.invoiceId, invoiceData.id));
+          await tx.delete(invoiceItems).where(eq(invoiceItems.invoiceId, invoiceId));
 
           // Insert new items
           if (invoiceData.items.length > 0) {
             await tx.insert(invoiceItems).values(
               invoiceData.items
                 .filter(item => item.productId && item.productId > 0) // Only items with valid productId
-                .map(item => ({
-                  invoiceId: invoiceData.id,
+                .map((item, index) => ({
+                  invoiceId: invoiceId,
                   productId: item.productId,
-                  description: '',
+                  description: item.description || '',
                   quantity: item.quantity,
                   unitPrice: item.unitPrice,
                   lineTotal: item.total,
-                  taxRate: 0,
-                  taxAmount: 0
+                  taxRate: 0.15, // Default tax rate
+                  taxAmount: item.total * 0.15,
+                  sortOrder: index
                 }))
             );
           }
+
+          // Apply stock changes
+          const allStockChanges = [...stockRestorations, ...stockReductions.map(r => ({...r, quantityChange: -r.quantityChange}))];
+          
+          if (allStockChanges.length > 0) {
+            // Get current inventory quantities for movement records
+            const currentInventoryForMovements = await tx
+              .select({
+                productId: inventory.productId,
+                quantity: inventory.quantity
+              })
+              .from(inventory)
+              .where(
+                and(
+                  inArray(inventory.productId, allStockChanges.map(c => c.productId)),
+                  eq(inventory.storeId, existingInvoice.storeId)
+                )
+              );
+
+            const currentQuantitiesMap = new Map(currentInventoryForMovements.map(item => [item.productId, item.quantity]));
+
+            // Update inventory quantities
+            for (const change of allStockChanges) {
+              if (change.quantityChange !== 0) {
+                await tx
+                  .update(inventory)
+                  .set({
+                    quantity: sql.raw(`quantity + ${change.quantityChange}`),
+                    updatedAt: new Date().toISOString()
+                  })
+                  .where(
+                    and(
+                      eq(inventory.productId, change.productId),
+                      eq(inventory.storeId, existingInvoice.storeId)
+                    )
+                  );
+
+                // Create inventory movement record
+                const currentQty = currentQuantitiesMap.get(change.productId) || 0;
+                const newQty = currentQty + change.quantityChange;
+                
+                await tx.insert(inventoryMovements).values({
+                  productId: change.productId,
+                  storeId: existingInvoice.storeId,
+                  movementType: change.quantityChange > 0 ? 'in' : 'out',
+                  quantity: change.quantityChange,
+                  previousQuantity: currentQty,
+                  newQuantity: newQty,
+                  referenceType: 'invoice_edit',
+                  referenceId: invoiceId,
+                  referenceNumber: existingInvoice.invoiceNumber,
+                  unitCost: 0, // We don't have unit cost in this context
+                  totalValue: 0,
+                  notes: `Invoice edit - ${existingInvoice.invoiceNumber}${change.quantityChange > 0 ? ' (stock restored)' : ' (stock reduced)'}`,
+                  userId: null
+                });
+
+                // Update the current quantities map for next iteration
+                currentQuantitiesMap.set(change.productId, newQty);
+              }
+            }
+          }
+        }
+
+        // Update tags if provided
+        if (invoiceData.tags !== undefined) {
+          await tx
+            .update(invoices)
+            .set({
+              tags: JSON.stringify(invoiceData.tags),
+              updatedAt: new Date().toISOString()
+            })
+            .where(eq(invoices.id, invoiceId));
         }
       });
 
       // Fetch updated invoice
-      const updatedInvoice = await this.getInvoiceById(domain, invoiceData.id);
+      const updatedInvoice = await this.getInvoiceById(domain, invoiceId);
       return updatedInvoice;
     } catch (error: unknown) {
       console.error('InvoiceService.updateInvoice error:', error);

@@ -11,6 +11,7 @@ import { Pagination } from '@/components/ui/pagination';
 import { Plus, Edit, Trash2, FileText, Search, Eye } from 'lucide-react';
 import { toast } from 'sonner';
 import LoaderSpinner from '@/components/shared/loader-spinner';
+import { useTranslations } from '@/contexts/LocaleContext';
 
 // Simple debounce function
 function debounce<T extends (...args: unknown[]) => void>(func: T, delay: number): T {
@@ -30,6 +31,8 @@ export default function InvoicesPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const { getAuthHeaders } = useAuth();
+  const t = useTranslations('invoices');
+  const tCommon = useTranslations('common');
 
   // Debounce search input
   const debouncedSetSearch = useCallback(
@@ -207,13 +210,13 @@ export default function InvoicesPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Invoice</TableHead>
-                  <TableHead>Client</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Due Date</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>{t('invoice')}</TableHead>
+                  <TableHead>{t('client')}</TableHead>
+                  <TableHead>{t('date')}</TableHead>
+                  <TableHead>{t('dueDate')}</TableHead>
+                  <TableHead>{t('amount')}</TableHead>
+                  <TableHead>{t('status')}</TableHead>
+                  <TableHead className="text-right">{tCommon('actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -227,34 +230,28 @@ export default function InvoicesPage() {
                         <div className="min-w-0">
                           <div className="font-medium hover:text-blue-600">{invoice.number}</div>
                           {invoice.contactName && (
-                            <div className="text-sm text-muted-foreground">Contact: {invoice.contactName}</div>
+                            <div className="text-sm text-muted-foreground">
+                              {t('contact')}: {invoice.contactName}
+                            </div>
                           )}
                         </div>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="text-sm">
-                        {invoice.client?.name || '—'}
-                      </div>
+                      <div className="text-sm">{invoice.client?.name || '—'}</div>
                     </TableCell>
                     <TableCell>
-                      <div className="text-sm">
-                        {formatDate(invoice.invoiceDate)}
-                      </div>
+                      <div className="text-sm">{formatDate(invoice.invoiceDate)}</div>
                     </TableCell>
                     <TableCell>
-                      <div className="text-sm">
-                        {invoice.dueDate ? formatDate(invoice.dueDate) : '—'}
-                      </div>
+                      <div className="text-sm">{invoice.dueDate ? formatDate(invoice.dueDate) : '—'}</div>
                     </TableCell>
                     <TableCell>
                       <div className="space-y-1">
-                        <div className="text-sm font-medium">
-                          {formatCurrency(invoice.total)}
-                        </div>
+                        <div className="text-sm font-medium">{formatCurrency(invoice.total)}</div>
                         {invoice.balanceDue > 0 && (
                           <div className="text-xs text-muted-foreground">
-                            Balance: {formatCurrency(invoice.balanceDue)}
+                            {t('balance')}: {formatCurrency(invoice.balanceDue)}
                           </div>
                         )}
                       </div>
@@ -266,18 +263,10 @@ export default function InvoicesPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end space-x-2" onClick={(e) => e.stopPropagation()}>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => router.push(`/invoices/${invoice.id}`)}
-                        >
+                        <Button variant="ghost" size="sm" onClick={() => router.push(`/invoices/${invoice.id}`)}>
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => router.push(`/invoices/${invoice.id}/edit`)}
-                        >
+                        <Button variant="ghost" size="sm" onClick={() => router.push(`/invoices/${invoice.id}/edit`)}>
                           <Edit className="h-4 w-4" />
                         </Button>
                         <Button
@@ -301,34 +290,25 @@ export default function InvoicesPage() {
             {invoicesData?.data.map((invoice) => (
               <div key={invoice.id} className="border rounded-lg p-4 space-y-3 hover:shadow-md transition-shadow cursor-pointer">
                 <div className="flex justify-between items-start">
-                  <div
-                    className="flex items-start space-x-3 flex-1"
-                    onClick={() => router.push(`/invoices/${invoice.id}`)}
-                  >
+                  <div className="flex items-start space-x-3 flex-1" onClick={() => router.push(`/invoices/${invoice.id}`)}>
                     <div className="w-12 h-12 rounded-md bg-blue-100 flex items-center justify-center flex-shrink-0">
                       <FileText className="h-6 w-6 text-blue-600" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <h3 className="font-semibold hover:text-blue-600">{invoice.number}</h3>
-                      <p className="text-sm text-muted-foreground">{invoice.client?.name || 'No client'}</p>
+                      <p className="text-sm text-muted-foreground">{invoice.client?.name || t('noClient')}</p>
                       {invoice.contactName && (
-                        <p className="text-xs text-muted-foreground">Contact: {invoice.contactName}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {t('contact')}: {invoice.contactName}
+                        </p>
                       )}
                     </div>
                   </div>
                   <div className="flex space-x-1 flex-shrink-0">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => router.push(`/invoices/${invoice.id}`)}
-                    >
+                    <Button variant="ghost" size="sm" onClick={() => router.push(`/invoices/${invoice.id}`)}>
                       <Eye className="h-4 w-4" />
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => router.push(`/invoices/${invoice.id}/edit`)}
-                    >
+                    <Button variant="ghost" size="sm" onClick={() => router.push(`/invoices/${invoice.id}/edit`)}>
                       <Edit className="h-4 w-4" />
                     </Button>
                     <Button
@@ -344,33 +324,27 @@ export default function InvoicesPage() {
 
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div>
-                    <div className="text-muted-foreground">Amount</div>
-                    <div className="font-medium">
-                      {formatCurrency(invoice.total)}
-                    </div>
+                    <div className="text-muted-foreground">{t('amount')}</div>
+                    <div className="font-medium">{formatCurrency(invoice.total)}</div>
                     {invoice.balanceDue > 0 && (
                       <div className="text-xs text-muted-foreground">
-                        Balance: {formatCurrency(invoice.balanceDue)}
+                        {t('balance')}: {formatCurrency(invoice.balanceDue)}
                       </div>
                     )}
                   </div>
                   <div>
-                    <div className="text-muted-foreground">Date</div>
-                    <div className="font-medium">
-                      {formatDate(invoice.invoiceDate)}
-                    </div>
+                    <div className="text-muted-foreground">{t('date')}</div>
+                    <div className="font-medium">{formatDate(invoice.invoiceDate)}</div>
                     {invoice.dueDate && (
                       <div className="text-xs text-muted-foreground">
-                        Due: {formatDate(invoice.dueDate)}
+                        {t('due')}: {formatDate(invoice.dueDate)}
                       </div>
                     )}
                   </div>
                 </div>
 
                 <div className="flex justify-between items-center pt-3 border-t">
-                  <div className={`inline-flex px-2 py-1 text-xs rounded-full capitalize ${getStatusColor(invoice.status)}`}>
-                    {invoice.status}
-                  </div>
+                  <div className={`inline-flex px-2 py-1 text-xs rounded-full capitalize ${getStatusColor(invoice.status)}`}>{invoice.status}</div>
                 </div>
               </div>
             ))}

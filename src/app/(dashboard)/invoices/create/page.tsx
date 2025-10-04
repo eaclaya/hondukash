@@ -37,8 +37,8 @@ export default function CreateInvoicePage() {
       const result = await response.json();
       toast.success('Invoice created successfully');
 
-      // Redirect to invoice detail page
-      router.push(`/invoices/${result.invoice.id}`);
+      // Redirect to payment form for immediate payment processing
+      router.push(`/invoices/${result.invoice.id}/payment`);
     } catch (error: unknown) {
       console.error('Submit error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to create invoice';

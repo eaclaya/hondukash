@@ -334,7 +334,7 @@ export default function PricingRuleForm({ rule, onSubmit, onCancel, loading = fa
                       onValueChange={(value) => handleInputChange('discountPercentage', value || 0)}
                       placeholder="0"
                       allowDecimals={true}
-                      maxDecimals={2}
+                      maxDecimals={4}
                       allowNegative={false}
                     />
                   </div>
@@ -349,7 +349,7 @@ export default function PricingRuleForm({ rule, onSubmit, onCancel, loading = fa
                       onValueChange={(value) => handleInputChange('discountAmount', value || 0)}
                       placeholder="0.00"
                       allowDecimals={true}
-                      maxDecimals={2}
+                      maxDecimals={4}
                       allowNegative={false}
                     />
                   </div>
@@ -364,7 +364,7 @@ export default function PricingRuleForm({ rule, onSubmit, onCancel, loading = fa
                       onValueChange={(value) => handleInputChange('fixedPrice', value || 0)}
                       placeholder="0.00"
                       allowDecimals={true}
-                      maxDecimals={2}
+                      maxDecimals={4}
                       allowNegative={false}
                     />
                   </div>
@@ -402,7 +402,7 @@ export default function PricingRuleForm({ rule, onSubmit, onCancel, loading = fa
                         onValueChange={(value) => handleInputChange('getDiscountPercentage', value || 0)}
                         placeholder="100 for free"
                         allowDecimals={true}
-                        maxDecimals={2}
+                        maxDecimals={4}
                         allowNegative={false}
                       />
                     </div>
@@ -462,7 +462,7 @@ export default function PricingRuleForm({ rule, onSubmit, onCancel, loading = fa
                                 onValueChange={(value) => handleTierChange(index, 'tierPrice', value)}
                                 placeholder="Fixed price"
                                 allowDecimals={true}
-                                maxDecimals={2}
+                                maxDecimals={4}
                                 allowNegative={false}
                               />
                             </div>
@@ -472,7 +472,7 @@ export default function PricingRuleForm({ rule, onSubmit, onCancel, loading = fa
                                 value={tier.tierDiscountPercentage?.toString() || '0'}
                                 onValueChange={(value) => handleTierChange(index, 'tierDiscountPercentage', value || 0)}
                                 allowDecimals={true}
-                                maxDecimals={2}
+                                maxDecimals={4}
                                 allowNegative={false}
                               />
                             </div>

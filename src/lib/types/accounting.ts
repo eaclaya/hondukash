@@ -3,20 +3,19 @@
 // =========================================
 
 export interface ChartOfAccount {
-  id: string
-  storeId: string
+  id: number
+  storeId: number
   accountCode: string
   accountName: string
-  accountType: 'asset' | 'liability' | 'equity' | 'revenue' | 'expense' | 'cost_of_goods_sold'
-  accountSubtype?: string
-  currentAccount: boolean
-  parentAccountId?: string
-  isActive: boolean
-  isSystemAccount: boolean
-  requiresTaxTracking: boolean
+  accountType: 'asset' | 'liability' | 'equity' | 'revenue' | 'expense'
+  accountSubType: 'current_asset' | 'non_current_asset' | 'cash' | 'accounts_receivable' | 'inventory' | 'prepaid_expenses' | 'fixed_assets' | 'intangible_assets' | 'current_liability' | 'non_current_liability' | 'accounts_payable' | 'accrued_expenses' | 'notes_payable' | 'long_term_debt' | 'owner_equity' | 'retained_earnings' | 'common_stock' | 'additional_paid_in_capital' | 'operating_revenue' | 'non_operating_revenue' | 'sales_revenue' | 'service_revenue' | 'other_income' | 'operating_expense' | 'cost_of_goods_sold' | 'administrative_expense' | 'selling_expense' | 'financial_expense' | 'other_expense'
+  parentAccountId?: number
   normalBalance: 'debit' | 'credit'
-  currentBalance: number
+  isSystemAccount: boolean
+  isControlAccount: boolean
+  isActive: boolean
   description?: string
+  currentBalance: number
   createdAt: string
   updatedAt: string
 }
@@ -36,50 +35,46 @@ export interface FiscalPeriod {
 }
 
 export interface JournalEntry {
-  id: string
-  storeId: string
-  periodId?: string
-  userId?: string
+  id: number
+  storeId: number
+  userId?: number
   entryNumber: string
   entryDate: string
-  entryType: 'manual' | 'automatic' | 'closing' | 'adjusting' | 'reversing'
-  sourceType?: string
-  sourceId?: string
   description: string
-  reference?: string
-  totalDebit: number
-  totalCredit: number
+  referenceType: 'manual' | 'invoice' | 'payment' | 'purchase' | 'adjustment' | 'opening_balance' | 'closing_entry'
+  referenceId?: number
+  referenceNumber?: string
   status: 'draft' | 'posted' | 'reversed'
-  postedAt?: string
+  reversedById?: number
   reversedAt?: string
-  reversedBy?: string
+  totalDebits: number
+  totalCredits: number
+  notes?: string
   lines: JournalEntryLine[]
   createdAt: string
   updatedAt: string
 }
 
 export interface JournalEntryLine {
-  id: string
-  journalEntryId: string
-  accountId: string
-  lineNumber: number
+  id: number
+  journalEntryId: number
+  accountId: number
   description?: string
   debitAmount: number
   creditAmount: number
-  taxCode?: string
-  taxAmount: number
   referenceType?: string
-  referenceId?: string
+  referenceId?: number
+  lineOrder: number
   account?: ChartOfAccount
   createdAt: string
 }
 
 export interface Supplier {
-  id: string
-  storeId: string
-  supplierCode?: string
-  companyName: string
-  contactPerson?: string
+  id: number
+  storeId: number
+  name: string
+  supplierType: 'individual' | 'company'
+  contactName?: string
   email?: string
   phone?: string
   mobile?: string
@@ -89,15 +84,13 @@ export interface Supplier {
   state?: string
   country: string
   postalCode?: string
-  taxRateId?: number
+  taxId?: string
   registrationNumber?: string
   paymentTerms: number
   creditLimit: number
-  currency: string
-  accountsPayableAccountId?: string
-  expenseAccountId?: string
   isActive: boolean
   notes?: string
+  tags?: string[]
   createdAt: string
   updatedAt: string
 }
@@ -183,19 +176,26 @@ export interface TaxConfiguration {
 }
 
 export interface BankAccount {
-  id: string
-  storeId: string
+  id: number
+  storeId: number
+  chartAccountId: number
   accountName: string
-  accountNumber?: string
   bankName: string
-  bankBranch?: string
-  accountType: 'checking' | 'savings' | 'credit_card' | 'loan'
+  accountNumber: string
+  accountType: 'checking' | 'savings' | 'money_market' | 'credit_card' | 'cash' | 'petty_cash'
+  routingNumber?: string
+  swiftCode?: string
+  iban?: string
   currency: string
-  openingBalance: number
   currentBalance: number
-  chartAccountId: string
+  availableBalance: number
   isActive: boolean
   isDefault: boolean
+  branchName?: string
+  branchAddress?: string
+  contactPerson?: string
+  contactPhone?: string
+  description?: string
   notes?: string
   chartAccount?: ChartOfAccount
   createdAt: string
@@ -203,18 +203,24 @@ export interface BankAccount {
 }
 
 export interface BankTransaction {
-  id: string
-  bankAccountId: string
+  id: number
+  bankAccountId: number
+  journalEntryId?: number
   transactionDate: string
-  transactionType: 'deposit' | 'withdrawal' | 'transfer' | 'fee'
-  amount: number
-  runningBalance: number
   description: string
   referenceNumber?: string
-  isReconciled: boolean
-  reconciledAt?: string
-  journalEntryId?: string
+  debitAmount: number
+  creditAmount: number
+  runningBalance: number
+  transactionType: 'deposit' | 'withdrawal' | 'transfer' | 'fee' | 'interest' | 'check' | 'electronic' | 'adjustment'
+  status: 'pending' | 'cleared' | 'reconciled' | 'voided'
+  clearedDate?: string
+  reconciledDate?: string
+  payeePayor?: string
+  category?: string
+  notes?: string
   createdAt: string
+  updatedAt: string
 }
 
 export interface FinancialReportCache {
@@ -304,14 +310,109 @@ export interface CreateExpenseRequest {
 }
 
 export interface CreateSupplierRequest {
-  companyName: string
-  contactPerson?: string
+  name: string
+  supplierType: 'individual' | 'company'
+  contactName?: string
   email?: string
   phone?: string
+  mobile?: string
+  website?: string
   address?: string
   city?: string
+  state?: string
   country?: string
-  taxRateId?: number
+  postalCode?: string
+  taxId?: string
+  registrationNumber?: string
   paymentTerms?: number
   creditLimit?: number
+  notes?: string
+}
+
+// New interfaces for Bills and Purchase Orders
+export interface Bill {
+  id: number
+  storeId: number
+  supplierId: number
+  purchaseOrderId?: number
+  userId?: number
+  billNumber: string
+  supplierInvoiceNumber?: string
+  billDate: string
+  dueDate?: string
+  subtotal: number
+  taxAmount: number
+  totalAmount: number
+  paidAmount: number
+  status: 'draft' | 'open' | 'paid' | 'partial' | 'overdue' | 'cancelled'
+  notes?: string
+  terms?: string
+  supplier?: Supplier
+  purchaseOrder?: PurchaseOrder
+  items: BillItem[]
+  payments: BillPayment[]
+  createdAt: string
+  updatedAt: string
+}
+
+export interface BillItem {
+  id: number
+  billId: number
+  productId?: number
+  description: string
+  quantity: number
+  unitCost: number
+  lineTotal: number
+  accountId?: number
+  sortOrder: number
+  account?: ChartOfAccount
+  createdAt: string
+}
+
+export interface BillPayment {
+  id: number
+  billId: number
+  bankAccountId: number
+  journalEntryId?: number
+  userId?: number
+  paymentNumber: string
+  paymentDate: string
+  amount: number
+  paymentMethod: 'cash' | 'check' | 'bank_transfer' | 'credit_card' | 'electronic' | 'other'
+  referenceNumber?: string
+  status: 'pending' | 'cleared' | 'voided'
+  notes?: string
+  bill?: Bill
+  bankAccount?: BankAccount
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CreateBillRequest {
+  supplierId: number
+  purchaseOrderId?: number
+  billDate: string
+  dueDate?: string
+  supplierInvoiceNumber?: string
+  items: Array<{
+    productId?: number
+    description: string
+    quantity: number
+    unitCost: number
+    accountId?: number
+  }>
+  notes?: string
+  terms?: string
+}
+
+export interface CreateBankAccountRequest {
+  accountName: string
+  bankName: string
+  accountNumber: string
+  accountType: 'checking' | 'savings' | 'money_market' | 'credit_card' | 'cash' | 'petty_cash'
+  routingNumber?: string
+  currency?: string
+  isDefault?: boolean
+  description?: string
+  notes?: string
 }
